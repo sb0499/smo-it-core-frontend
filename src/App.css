@@ -1,0 +1,33 @@
+/* SMO IT CORE MAIN APP LAYOUT CSS */
+
+.app-layout {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-main);
+  overflow: hidden;
+}
+
+.app-main-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100vh;
+  padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.view-content-wrapper {
+  display: flex;
+  flex: 1;
+  width: 100%;
+}
+
+/* Mobile responsive padding compensation */
+@media (max-width: 768px) {
+  .app-main-content {
+    padding: 104px 16px 24px 16px; /* Offsets content down so it does not overlap with fixed mobile top bar */
+    height: 100vh;
+  }
+}

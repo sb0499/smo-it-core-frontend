@@ -1,0 +1,205 @@
+/* Navbar Styles for SMO IT CORE */
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+  width: 100%;
+  border-radius: 14px;
+  padding: 0 20px;
+  margin-bottom: 24px;
+  background: var(--bg-panel);
+  border: var(--border-glass);
+  flex-shrink: 0;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mobile-toggle-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--color-text-main);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  transition: var(--transition-smooth);
+}
+.mobile-toggle-btn:hover {
+  color: var(--color-primary);
+}
+
+.view-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.breadcrumb-sub {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-dim);
+}
+
+.breadcrumb-slash {
+  font-size: 14px;
+  color: var(--color-text-dim);
+}
+
+.breadcrumb-main {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text-main);
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Admin Cierre Reminder Button */
+.admin-cierre-btn {
+  background: rgba(127, 0, 255, 0.15);
+  border: 1px solid rgba(127, 0, 255, 0.3);
+  color: #c084fc;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition-smooth);
+}
+
+.admin-cierre-btn:hover:not(:disabled) {
+  background: rgba(127, 0, 255, 0.3);
+  border-color: rgba(127, 0, 255, 0.5);
+  box-shadow: 0 0 12px rgba(127, 0, 255, 0.2);
+}
+
+.admin-cierre-btn.success {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+/* Spinner Animation */
+.spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.refresh-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: var(--border-glass);
+  color: var(--color-text-main);
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+.refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: rotate(45deg);
+}
+
+.system-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  background-color: var(--state-low);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--state-low);
+  animation: pulse 1.8s infinite;
+}
+
+.status-text {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #34d399;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: var(--border-glass);
+  color: var(--color-text-main);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+}
+.theme-toggle-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    width: calc(100% - 24px);
+    z-index: 98;
+    margin-bottom: 0;
+  }
+
+  .mobile-toggle-btn {
+    display: block;
+  }
+
+  .breadcrumb-sub, .breadcrumb-slash {
+    display: none;
+  }
+
+  .breadcrumb-main {
+    font-size: 16px;
+  }
+
+  .system-status {
+    display: none;
+  }
+}
