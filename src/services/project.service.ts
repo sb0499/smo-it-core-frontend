@@ -161,12 +161,17 @@ export const projectService = {
     return apiClient.post<ProyectoComentario>('/proyectos/comentarios', payload);
   },
 
-  // File Uploads
+  // Files
   async addArchivo(formData: FormData): Promise<ProyectoArchivo> {
     return apiClient.post<ProyectoArchivo>('/proyectos/archivos', formData);
   },
 
-  // Scale Ticket
+  getArchivoUrl(archivoId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/proyectos/archivos/${archivoId}?token=${token}`;
+  },
+
+  // Utilities Ticket
   async escalarTicket(ticketId: number, payload: {
     nombre: string;
     descripcion?: string;

@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -57,7 +58,7 @@ export const Proyectos: React.FC = () => {
       const detail = await projectService.getProyectoById(id);
       setActiveProyecto(detail);
     } catch (e) {
-      alert('Error cargando detalles del proyecto.');
+      showAlert('Error cargando detalles del proyecto.');
     } finally {
       setLoadingDetail(false);
     }
@@ -82,7 +83,7 @@ export const Proyectos: React.FC = () => {
       
       fetchProjects();
     } catch (err: any) {
-      alert('Error creando proyecto: ' + err.message);
+      showAlert('Error creando proyecto: ' + err.message);
     }
   };
 
@@ -101,7 +102,7 @@ export const Proyectos: React.FC = () => {
       // Reload project detail to compute parent tasks/project progress updates
       handleSelectProyecto(activeProyecto.id);
     } catch (err: any) {
-      alert('Error actualizando subtarea: ' + err.message);
+      showAlert('Error actualizando subtarea: ' + err.message);
     }
   };
 
@@ -117,7 +118,7 @@ export const Proyectos: React.FC = () => {
       setNewComment('');
       handleSelectProyecto(activeProyecto.id);
     } catch (err: any) {
-      alert('Error agregando comentario.');
+      showAlert('Error agregando comentario.');
     }
   };
 
@@ -140,7 +141,7 @@ export const Proyectos: React.FC = () => {
 
       handleSelectProyecto(activeProyecto.id);
     } catch (err: any) {
-      alert('Error cargando archivo: ' + err.message);
+      showAlert('Error cargando archivo: ' + err.message);
     } finally {
       setIsUploading(false);
     }
@@ -149,6 +150,28 @@ export const Proyectos: React.FC = () => {
   const handleCloseProject = () => {
     setActiveProyecto(null);
     fetchProjects();
+  };
+
+  const handleFinishProject = async (proj: Proyecto) => {
+    if (!await showConfirm(`¿Estás seguro de finalizar el proyecto "${proj.nombre}"?`)) return;
+    try {
+      await projectService.updateProyecto(proj.id, { estado: 'Finalizado' });
+      showAlert('Proyecto finalizado exitosamente.');
+      handleSelectProyecto(proj.id);
+    } catch (e: any) {
+      showAlert('Error al finalizar proyecto: ' + e.message);
+    }
+  };
+
+  const handleFinishTask = async (task: Tarea) => {
+    if (!await showConfirm(`¿Estás seguro de finalizar la tarea "${task.titulo}"?`)) return;
+    try {
+      await projectService.updateTarea(task.id, { estado: 'Finalizado', avance_porcentaje: 100 });
+      showAlert('Tarea finalizada exitosamente.');
+      if (activeProyecto) handleSelectProyecto(activeProyecto.id);
+    } catch (e: any) {
+      showAlert('Error al finalizar tarea: ' + e.message);
+    }
   };
 
   return (
@@ -226,7 +249,12 @@ export const Proyectos: React.FC = () => {
               <h2 className="project-name mt-2">{activeProyecto.nombre}</h2>
               <span className="project-tag mt-1">Categoría: {activeProyecto.tipo_proyecto} • Estado: {activeProyecto.estado}</span>
             </div>
-            <div className="header-right">
+            <div className="header-right" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              {(!activeProyecto.tareas || activeProyecto.tareas.length === 0) && activeProyecto.estado !== 'Finalizado' && (
+                <button className="btn btn-secondary" onClick={() => handleFinishProject(activeProyecto)} style={{ height: 'fit-content' }}>
+                  ✅ Terminar Proyecto
+                </button>
+              )}
               <div className="detail-circular-progress">
                 <span className="progress-big-val">{activeProyecto.avance_porcentaje}%</span>
                 <span className="progress-lbl">Completado</span>
@@ -252,9 +280,20 @@ export const Proyectos: React.FC = () => {
                           <span className="task-title">{task.titulo}</span>
                           <span className="task-assignee text-muted">👤 {task.responsable_nombre}</span>
                         </div>
-                        <span className={`badge badge-state-${task.estado.toLowerCase().replace(' ', '')}`}>
-                          {task.estado} ({task.avance_porcentaje}%)
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {(!task.subtareas || task.subtareas.length === 0) && task.estado !== 'Finalizado' && (
+                            <button 
+                              className="btn btn-secondary" 
+                              style={{ padding: '4px 8px', fontSize: '11px' }}
+                              onClick={() => handleFinishTask(task)}
+                            >
+                              Terminar
+                            </button>
+                          )}
+                          <span className={`badge badge-state-${task.estado.toLowerCase().replace(' ', '')}`}>
+                            {task.estado} ({task.avance_porcentaje}%)
+                          </span>
+                        </div>
                       </div>
                       
                       {task.descripcion && <p className="task-desc-text text-muted">{task.descripcion}</p>}
@@ -343,7 +382,7 @@ export const Proyectos: React.FC = () => {
                           </div>
                         </div>
                         <a 
-                          href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/../uploads/${f.nombre_guardado}`} 
+                          href={projectService.getArchivoUrl(f.id)} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="file-download-btn"

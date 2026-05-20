@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { guardService, GuardiaFeriado } from '../services/guard.service';
@@ -48,7 +49,7 @@ export const Guardias: React.FC = () => {
 
   const handleRaffle = () => {
     if (technicians.length === 0) {
-      alert('No hay técnicos cargados para realizar el sorteo.');
+      showAlert('No hay técnicos cargados para realizar el sorteo.');
       return;
     }
     
@@ -74,7 +75,7 @@ export const Guardias: React.FC = () => {
   const handleCreateGuardia = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFecha || newTechId <= 0) {
-      alert('Por favor selecciona una fecha y un técnico.');
+      showAlert('Por favor selecciona una fecha y un técnico.');
       return;
     }
 
@@ -89,19 +90,19 @@ export const Guardias: React.FC = () => {
 
       fetchGuardiasData();
     } catch (err: any) {
-      alert('Error registrando guardia: ' + err.message);
+      showAlert('Error registrando guardia: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteGuardia = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este turno de guardia?')) return;
+    if (!await showConfirm('¿Estás seguro de que deseas eliminar este turno de guardia?')) return;
     try {
       await guardService.deleteGuardia(id);
       fetchGuardiasData();
     } catch (err: any) {
-      alert('Error eliminando guardia: ' + err.message);
+      showAlert('Error eliminando guardia: ' + err.message);
     }
   };
 

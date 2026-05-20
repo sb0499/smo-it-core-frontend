@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ticketService } from '../services/ticket.service';
@@ -58,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       setTimeout(() => setAlertSuccess(false), 3000);
       onRefresh();
     } catch (e) {
-      alert('Error ejecutando alerta: ' + (e as Error).message);
+      showAlert('Error ejecutando alerta: ' + (e as Error).message);
     } finally {
       setRunningAlert(false);
     }

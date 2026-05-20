@@ -15,6 +15,8 @@ import { Proveedores } from './views/Proveedores';
 import { Plantillas } from './views/Plantillas';
 import { Usuarios } from './views/Usuarios';
 import { MovimientosInventario } from './views/MovimientosInventario';
+import { Reportes } from './views/Reportes';
+import { AlertContainer } from './components/AlertContainer';
 import './App.css';
 
 function AppContent() {
@@ -68,6 +70,8 @@ function AppContent() {
         return <Usuarios key={refreshKey} />;
       case 'movimientos':
         return <MovimientosInventario key={refreshKey} />;
+      case 'reportes':
+        return <Reportes key={refreshKey} />;
       default:
         return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
     }
@@ -100,6 +104,7 @@ function App() {
   return (
     <AuthProvider>
       <AppContent />
+      <AlertContainer />
     </AuthProvider>
   );
 }

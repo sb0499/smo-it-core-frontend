@@ -42,6 +42,18 @@
   --backdrop-blur: blur(14px);
   --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  /* Overlays for dark/light adaptability */
+  --overlay-01: rgba(255, 255, 255, 0.01);
+  --overlay-02: rgba(255, 255, 255, 0.02);
+  --overlay-03: rgba(255, 255, 255, 0.03);
+  --overlay-04: rgba(255, 255, 255, 0.04);
+  --overlay-05: rgba(255, 255, 255, 0.05);
+  --overlay-06: rgba(255, 255, 255, 0.06);
+  --overlay-08: rgba(255, 255, 255, 0.08);
+  --overlay-10: rgba(255, 255, 255, 0.1);
+  --overlay-15: rgba(255, 255, 255, 0.15);
+  --overlay-20: rgba(255, 255, 255, 0.2);
 }
 
 * {
@@ -309,6 +321,18 @@ body.light-theme {
     radial-gradient(at 0% 0%, rgba(0, 143, 160, 0.04) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(98, 0, 208, 0.05) 0px, transparent 50%),
     radial-gradient(at 50% 50%, rgba(229, 231, 235, 0.4) 0px, transparent 80%);
+
+  /* Overlays for dark/light adaptability */
+  --overlay-01: rgba(0, 0, 0, 0.01);
+  --overlay-02: rgba(0, 0, 0, 0.02);
+  --overlay-03: rgba(0, 0, 0, 0.03);
+  --overlay-04: rgba(0, 0, 0, 0.04);
+  --overlay-05: rgba(0, 0, 0, 0.05);
+  --overlay-06: rgba(0, 0, 0, 0.06);
+  --overlay-08: rgba(0, 0, 0, 0.08);
+  --overlay-10: rgba(0, 0, 0, 0.1);
+  --overlay-15: rgba(0, 0, 0, 0.15);
+  --overlay-20: rgba(0, 0, 0, 0.2);
 }
 
 /* Global Transition for Theme Toggling */

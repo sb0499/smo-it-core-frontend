@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../services/api';
 import './Inventario.css';
@@ -101,14 +102,14 @@ export const Proveedores: React.FC = () => {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar al proveedor "${name}"?`)) {
+    if (!await showConfirm(`¿Estás seguro de que deseas eliminar al proveedor "${name}"?`)) {
       return;
     }
     try {
       await apiClient.delete(`/proveedores/${id}`);
       fetchProveedores();
     } catch (err: any) {
-      alert(`Error al eliminar proveedor: ${err.message}`);
+      showAlert(`Error al eliminar proveedor: ${err.message}`);
     }
   };
 

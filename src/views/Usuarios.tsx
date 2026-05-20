@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../services/api';
 import './Inventario.css';
@@ -343,7 +344,7 @@ export const Usuarios: React.FC = () => {
                       style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
                       onClick={() => {
                         navigator.clipboard.writeText(generatedPassword);
-                        alert('¡Copiado al portapapeles!');
+                        showAlert('¡Copiado al portapapeles!');
                       }}
                     >
                       Copiar
@@ -371,7 +372,7 @@ export const Usuarios: React.FC = () => {
                 <p className="text-dim" style={{ fontSize: '11px', marginTop: '-4px', marginBottom: '8px' }}>
                   El técnico solo recibirá y visualizará tickets correspondientes a las sedes seleccionadas.
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', maxHeight: '120px', overflowY: 'auto', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', maxHeight: '120px', overflowY: 'auto', padding: '10px', background: 'var(--overlay-05)', borderRadius: '6px' }}>
                   {empresas.map(emp => (
                     <label key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: 'pointer', userSelect: 'none' }}>
                       <input

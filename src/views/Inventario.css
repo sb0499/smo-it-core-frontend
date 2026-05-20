@@ -29,7 +29,7 @@
 }
 
 .tab-btn:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--overlay-03);
   color: var(--color-text-main);
 }
 
@@ -58,8 +58,8 @@
 }
 
 .assets-table th {
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--overlay-02);
+  border-bottom: 1px solid var(--overlay-05);
   color: var(--color-text-dim);
   font-size: 11px;
   font-weight: 700;
@@ -70,7 +70,7 @@
 
 .assets-table td {
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--overlay-03);
   font-size: 13px;
   color: var(--color-text-main);
   vertical-align: middle;
@@ -101,7 +101,7 @@
 }
 
 .holder-badge {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--overlay-03);
   border: var(--border-glass);
   padding: 4px 10px;
   border-radius: 6px;
@@ -180,7 +180,7 @@
 .stock-meter-track {
   width: 100%;
   height: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-05);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -194,7 +194,7 @@
 
 .consumable-adjuster-bar {
   margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--overlay-04);
   padding-top: 16px;
 }
 
@@ -236,7 +236,7 @@
 }
 
 .asset-spec-box {
-  background: rgba(255, 255, 255, 0.01);
+  background: var(--overlay-01);
   border: var(--border-glass);
   padding: 20px;
   border-radius: 12px;
@@ -247,7 +247,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--overlay-05);
   padding-bottom: 12px;
 }
 
@@ -267,7 +267,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 13px;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
+  border-bottom: 1px dashed var(--overlay-04);
   padding-bottom: 8px;
 }
 .spec-item span {
@@ -288,7 +288,7 @@
 
 .spec-desc {
   font-size: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--overlay-02);
   padding: 10px 14px;
   border-radius: 8px;
   border: var(--border-glass);
@@ -316,7 +316,7 @@
   top: 8px;
   bottom: 8px;
   width: 1px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--overlay-06);
 }
 
 .timeline-item {
@@ -338,7 +338,7 @@
 }
 
 .timeline-content {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--overlay-02);
   border: var(--border-glass);
   padding: 12px 16px;
   border-radius: 10px;
@@ -367,7 +367,7 @@
   font-style: italic;
   color: var(--color-text-muted);
   margin-top: 6px;
-  background: rgba(255,255,255,0.01);
+  background: var(--overlay-01);
   padding: 6px 10px;
   border-radius: 6px;
 }
@@ -401,15 +401,16 @@
   flex-direction: column;
   gap: 24px;
   width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .view-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 24px;
+  background: var(--overlay-02);
+  border: 1px solid var(--overlay-05);
+  padding: 20px 24px;
   border-radius: 16px;
   backdrop-filter: blur(10px);
 }
@@ -438,19 +439,19 @@
 }
 
 .inventario-table th {
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--overlay-02);
+  border-bottom: 1px solid var(--overlay-05);
   color: var(--color-text-dim);
   font-size: 11px;
   font-weight: 700;
-  padding: 18px 24px;
+  padding: 12px 16px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .inventario-table td {
-  padding: 18px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--overlay-03);
   font-size: 13px;
   color: var(--color-text-main);
   vertical-align: middle;

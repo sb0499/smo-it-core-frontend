@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ticketService, Ticket, CreateTicketPayload } from '../services/ticket.service';
@@ -65,7 +66,7 @@ export const Tickets: React.FC = () => {
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle || !newDesc) {
-      alert('Por favor completa el título y descripción.');
+      showAlert('Por favor completa el título y descripción.');
       return;
     }
 
@@ -92,7 +93,7 @@ export const Tickets: React.FC = () => {
       
       fetchTicketsData();
     } catch (err: any) {
-      alert('Error al crear el ticket: ' + err.message);
+      showAlert('Error al crear el ticket: ' + err.message);
     }
   };
 
@@ -120,7 +121,7 @@ export const Tickets: React.FC = () => {
       setSelectedTicket(null);
       fetchTicketsData();
     } catch (err: any) {
-      alert('Error al actualizar el ticket: ' + err.message);
+      showAlert('Error al actualizar el ticket: ' + err.message);
     } finally {
       setIsUpdating(false);
     }
@@ -132,12 +133,12 @@ export const Tickets: React.FC = () => {
   };
 
   const handleTriggerCierreDiario = async () => {
-    if (!window.confirm('¿Deseas enviar alertas de cierre diario a todos los técnicos con tickets pendientes?')) return;
+    if (!await showConfirm('¿Deseas enviar alertas de cierre diario a todos los técnicos con tickets pendientes?')) return;
     try {
       const res = await ticketService.triggerCierreDiario() as any;
-      alert(`Éxito: ${res.message || 'Recordatorios enviados'}\n\nTécnicos alertados: ${res.totalTecnicosAlertados}\nTickets pendientes reportados: ${res.totalTicketsRemitidos}`);
+      showAlert(`Éxito: ${res.message || 'Recordatorios enviados'}\n\nTécnicos alertados: ${res.totalTecnicosAlertados}\nTickets pendientes reportados: ${res.totalTicketsRemitidos}`);
     } catch (err: any) {
-      alert('Error enviando recordatorios: ' + err.message);
+      showAlert('Error enviando recordatorios: ' + err.message);
     }
   };
 
@@ -425,18 +426,23 @@ export const Tickets: React.FC = () => {
 
                   <div className="form-row">
                     <div className="form-group half">
-                      <label className="form-label">ASIGNAR TÉCNICO TI</label>
-                      <select 
-                        className="form-control" 
-                        value={editTechId} 
-                        onChange={(e) => setEditTechId(Number(e.target.value))}
-                        disabled={user.rol !== 'ADMIN'} // Technical staff cannot reassign, only ADMIN
-                      >
-                        <option value="0">Seleccionar Técnico...</option>
-                        {technicians.map(t => (
-                          <option key={t.id} value={t.id}>{t.nombre_completo}</option>
-                        ))}
-                      </select>
+                      <label className="form-label">TÉCNICO TI ASIGNADO</label>
+                      {user.rol === 'ADMIN' ? (
+                        <select 
+                          className="form-control" 
+                          value={editTechId} 
+                          onChange={(e) => setEditTechId(Number(e.target.value))}
+                        >
+                          <option value="0">Seleccionar Técnico...</option>
+                          {technicians.map(t => (
+                            <option key={t.id} value={t.id}>{t.nombre_completo}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="static-field-value" style={{ fontWeight: '600' }}>
+                          👨‍💻 {technicians.find(t => t.id === editTechId)?.nombre_completo || 'Sin técnico asignado'}
+                        </div>
+                      )}
                     </div>
 
                     <div className="form-group half">

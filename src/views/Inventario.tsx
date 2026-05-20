@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -60,7 +61,7 @@ export const Inventario: React.FC = () => {
   const handleCreateAsset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assetCodigo || !assetSerial || !assetMarca || !assetModelo) {
-      alert('Por favor completa los campos requeridos para el activo.');
+      showAlert('Por favor completa los campos requeridos para el activo.');
       return;
     }
 
@@ -88,7 +89,7 @@ export const Inventario: React.FC = () => {
 
       fetchInventoryData();
     } catch (err: any) {
-      alert('Error registrando activo: ' + err.message);
+      showAlert('Error registrando activo: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -97,7 +98,7 @@ export const Inventario: React.FC = () => {
   const handleCreateConsumable = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!consNombre || !consUnidadMedida) {
-      alert('Por favor completa los campos requeridos para el consumible.');
+      showAlert('Por favor completa los campos requeridos para el consumible.');
       return;
     }
 
@@ -121,7 +122,7 @@ export const Inventario: React.FC = () => {
 
       fetchInventoryData();
     } catch (err: any) {
-      alert('Error registrando consumible: ' + err.message);
+      showAlert('Error registrando consumible: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -165,7 +166,7 @@ export const Inventario: React.FC = () => {
   const handleAsignar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedActivo || selectedPersonaId <= 0) {
-      alert('Por favor selecciona un empleado.');
+      showAlert('Por favor selecciona un empleado.');
       return;
     }
 
@@ -181,7 +182,7 @@ export const Inventario: React.FC = () => {
       
       fetchInventoryData();
     } catch (err: any) {
-      alert('Error en asignación: ' + err.message);
+      showAlert('Error en asignación: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -202,7 +203,7 @@ export const Inventario: React.FC = () => {
       
       fetchInventoryData();
     } catch (err: any) {
-      alert('Error al devolver el activo: ' + err.message);
+      showAlert('Error al devolver el activo: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -216,7 +217,7 @@ export const Inventario: React.FC = () => {
       setAdjustAmount(0);
       fetchInventoryData();
     } catch (err: any) {
-      alert('Error al actualizar el stock: ' + err.message);
+      showAlert('Error al actualizar el stock: ' + err.message);
     }
   };
 
@@ -558,6 +559,39 @@ export const Inventario: React.FC = () => {
                 <button type="button" className="btn btn-secondary" onClick={() => setShowAssignModal(false)}>Cancelar</button>
                 <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                   {isSubmitting ? 'Registrando...' : 'Entregar Equipo'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DEVOLVER HARDWARE MODAL */}
+      {showDevolverModal && selectedActivo && (
+        <div className="modal-overlay animate-fade" style={{ zIndex: 1001 }}>
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '480px' }}>
+            <div className="modal-header">
+              <h2>Recibir Activo {selectedActivo.codigo} en Bodega</h2>
+              <button className="modal-close-btn" onClick={() => setShowDevolverModal(false)}>×</button>
+            </div>
+
+            <form onSubmit={handleDevolver} className="modal-form">
+              <div className="form-group">
+                <label className="form-label">OBSERVACIONES DE LA DEVOLUCIÓN</label>
+                <textarea
+                  className="form-control textarea-field"
+                  placeholder="Ej: Se recibe con pantalla rota, o en perfectas condiciones..."
+                  rows={3}
+                  value={observations}
+                  onChange={(e) => setObservations(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowDevolverModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-danger" disabled={isSubmitting}>
+                  {isSubmitting ? 'Procesando...' : 'Recibir y Liberar Custodio'}
                 </button>
               </div>
             </form>

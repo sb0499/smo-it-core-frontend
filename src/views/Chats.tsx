@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { chatService, ChatCanal, ChatMensaje, ChatCanalMiembro } from '../services/chat.service';
@@ -17,7 +18,12 @@ export const Chats: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newChanName, setNewChanName] = useState('');
   const [newChanPrivate, setNewChanPrivate] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Manage members modal
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [channelMembers, setChannelMembers] = useState<ChatCanalMiembro[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -43,9 +49,14 @@ export const Chats: React.FC = () => {
 
   const handleSelectCanal = async (canal: ChatCanal) => {
     setActiveCanal(canal);
+    setActiveCanal(canal);
     try {
       const chatHistory = await chatService.getCanalMensajes(canal.id);
       setMensajes(chatHistory);
+      if (canal.is_private) {
+        const members = await chatService.getCanalMiembros(canal.id);
+        setChannelMembers(members);
+      }
     } catch (e) {
       setMensajes([]);
     }
@@ -93,7 +104,7 @@ export const Chats: React.FC = () => {
       }]);
       setNewMsg('');
     } catch (err: any) {
-      alert('Error enviando mensaje: ' + err.message);
+      showAlert('Error enviando mensaje: ' + err.message);
     }
   };
 
@@ -105,16 +116,23 @@ export const Chats: React.FC = () => {
       setIsSubmitting(true);
       const created = await chatService.createCanal(newChanName, newChanPrivate);
       
+      if (newChanPrivate && selectedUsers.length > 0) {
+        for (const uid of selectedUsers) {
+          await chatService.unirMiembro(created.id, uid);
+        }
+      }
+      
       setShowCreateModal(false);
       setNewChanName('');
       setNewChanPrivate(false);
+      setSelectedUsers([]);
 
       // Re-fetch and select new
       const list = await chatService.getCanales();
       setCanales(list);
       handleSelectCanal(created);
     } catch (err: any) {
-      alert('Error creando canal: ' + err.message);
+      showAlert('Error creando canal: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -125,6 +143,21 @@ export const Chats: React.FC = () => {
     if (role === 'ADMIN') return '👑 Admin';
     if (role === 'TECNICO') return '🔧 Técnico';
     return '👤 Sede';
+  };
+
+  const handleToggleMember = async (userId: number, isMember: boolean) => {
+    if (!activeCanal) return;
+    try {
+      if (isMember) {
+        await chatService.removerMiembro(activeCanal.id, userId);
+      } else {
+        await chatService.unirMiembro(activeCanal.id, userId);
+      }
+      const updated = await chatService.getCanalMiembros(activeCanal.id);
+      setChannelMembers(updated);
+    } catch (e: any) {
+      showAlert('Error modificando miembro: ' + e.message);
+    }
   };
 
   return (
@@ -170,10 +203,19 @@ export const Chats: React.FC = () => {
             {activeCanal ? (
               <>
                 <div className="stream-header">
-                  <span className="active-channel-name">💬 #{activeCanal.nombre}</span>
-                  <button className="refresh-chat-btn" onClick={() => handleSelectCanal(activeCanal)} title="Recargar Chat">
-                    🔄
-                  </button>
+                  <span className="active-channel-name">
+                    💬 {activeCanal.is_private ? '🔒' : '#'} {activeCanal.nombre}
+                  </span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {activeCanal.is_private && (user?.rol === 'ADMIN' || activeCanal.creador_id === user?.id) && (
+                      <button className="refresh-chat-btn" onClick={() => setShowMembersModal(true)} title="Gestionar Miembros">
+                        👥
+                      </button>
+                    )}
+                    <button className="refresh-chat-btn" onClick={() => handleSelectCanal(activeCanal)} title="Recargar Chat">
+                      🔄
+                    </button>
+                  </div>
                 </div>
 
                 <div className="messages-timeline-box">
@@ -259,11 +301,36 @@ export const Chats: React.FC = () => {
                     type="checkbox"
                     className="subtask-checkbox"
                     checked={newChanPrivate}
-                    onChange={(e) => setNewChanPrivate(e.target.checked)}
+                    onChange={(e) => {
+                      setNewChanPrivate(e.target.checked);
+                      if (!e.target.checked) setSelectedUsers([]);
+                    }}
                   />
                   <span className="checkbox-wrap-text font-sm ml-2">Canal Privado (Solo invitados)</span>
                 </label>
               </div>
+
+              {newChanPrivate && (
+                <div className="form-group mt-3">
+                  <label className="form-label">SELECCIONAR MIEMBROS (Además de ti)</label>
+                  <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #e5e7eb', padding: '10px', borderRadius: '8px' }}>
+                    {users.filter(u => u.id !== user?.id).map(u => (
+                      <label key={u.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '6px', fontSize: '13px' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.includes(u.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedUsers([...selectedUsers, u.id]);
+                            else setSelectedUsers(selectedUsers.filter(id => id !== u.id));
+                          }}
+                          style={{ marginRight: '8px' }}
+                        />
+                        {u.nombre_completo} ({u.rol})
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>Cancelar</button>
@@ -272,6 +339,48 @@ export const Chats: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* MANAGE MEMBERS MODAL */}
+      {showMembersModal && activeCanal && (
+        <div className="modal-overlay animate-fade">
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '440px' }}>
+            <div className="modal-header">
+              <h2>Miembros de {activeCanal.nombre}</h2>
+              <button className="modal-close-btn" onClick={() => setShowMembersModal(false)}>×</button>
+            </div>
+            
+            <div className="form-group mt-3">
+              <label className="form-label">MIEMBROS DEL CANAL</label>
+              <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #e5e7eb', padding: '10px', borderRadius: '8px' }}>
+                {users.map(u => {
+                  const isMember = channelMembers.some(m => m.usuario_id === u.id);
+                  const isCreator = activeCanal.creador_id === u.id;
+                  
+                  return (
+                    <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', padding: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
+                        {u.nombre_completo} ({u.rol}) {isCreator && '👑'}
+                      </div>
+                      {!isCreator && (
+                        <button 
+                          className={`btn ${isMember ? 'btn-secondary' : 'btn-primary'}`}
+                          style={{ padding: '2px 8px', fontSize: '11px' }}
+                          onClick={() => handleToggleMember(u.id, isMember)}
+                        >
+                          {isMember ? 'Quitar' : 'Agregar'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="modal-actions mt-3">
+              <button type="button" className="btn btn-primary" onClick={() => setShowMembersModal(false)}>Cerrar</button>
+            </div>
           </div>
         </div>
       )}

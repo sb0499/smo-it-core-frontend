@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useState, useEffect } from 'react';
 import { apiClient, API_BASE_URL } from '../services/api';
 import './Inventario.css';
@@ -29,9 +30,6 @@ export const MovimientosInventario: React.FC = () => {
   // Search and filter
   const [search, setSearch] = useState('');
   const [tipoFilter, setTipoFilter] = useState('');
-
-  // Selected movement for digitalized receipt/signature view modal
-  const [selectedMov, setSelectedMov] = useState<Movimiento | null>(null);
 
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
@@ -76,7 +74,7 @@ export const MovimientosInventario: React.FC = () => {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
-      alert(`Error al descargar PDF: ${err.message}`);
+      showAlert(`Error al descargar PDF: ${err.message}`);
     } finally {
       setDownloadingId(null);
     }
@@ -189,13 +187,7 @@ export const MovimientosInventario: React.FC = () => {
                     <td className="text-muted">{m.usuario_nombre}</td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button 
-                          className="btn btn-secondary" 
-                          style={{ padding: '6px 12px', fontSize: '12px' }}
-                          onClick={() => setSelectedMov(m)}
-                        >
-                          👁️ Ver Acta
-                        </button>
+
                         {m.persona_recibe_nombre && (
                           <button 
                             className="btn btn-primary" 
@@ -216,126 +208,6 @@ export const MovimientosInventario: React.FC = () => {
         </div>
       )}
 
-      {/* Modal View for Digitalized Acta & Signatures */}
-      {selectedMov && (
-        <div className="modal-backdrop animate-fade" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '650px', padding: '32px', background: '#fff', color: '#1f2937', border: '1px solid #d1d5db', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto' }}>
-            
-            {/* Institution header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #3b82f6', paddingBottom: '16px', marginBottom: '20px' }}>
-              <div>
-                <h2 style={{ margin: 0, color: '#1e3a8a', fontSize: '22px', fontWeight: 'bold' }}>SMO IT CORE</h2>
-                <p style={{ margin: '2px 0 0 0', color: '#4b5563', fontSize: '12px', letterSpacing: '0.5px' }}>SHOPPING MANAGEMENTS OPERADORA</p>
-                <p style={{ margin: '2px 0 0 0', color: '#9ca3af', fontSize: '11px' }}>DEPARTAMENTO DE TECNOLOGÍA E INFORMACIÓN</p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '12px', fontWeight: '600', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', padding: '4px 10px', borderRadius: '4px' }}>
-                  ACTA Nº {selectedMov.id.toString().padStart(5, '0')}
-                </span>
-                <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: '#6b7280' }}>
-                  Fecha: {new Date(selectedMov.fecha).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Document Title */}
-            <h3 style={{ textAlign: 'center', color: '#111827', fontSize: '16px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '16px' }}>
-              ACTA DE ENTREGA - RECEPCIÓN DE EQUIPOS Y ACTIVOS
-            </h3>
-
-            {/* Description Paragraph */}
-            <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#374151', marginBottom: '20px' }}>
-              Por medio del presente documento, se deja constancia de la entrega física y configuración del activo detallado a continuación, bajo las condiciones y observaciones registradas. El receptor asume la responsabilidad del cuidado y uso exclusivo institucional del bien.
-            </p>
-
-            {/* Assets details table */}
-            <div style={{ background: '#f3f4f6', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #e5e7eb' }}>
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: '700', color: '#1f2937' }}>DETALLES DEL ACTIVO</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px 20px', fontSize: '12px' }}>
-                <div><strong>CÓDIGO DE ACTIVO:</strong> <span style={{ color: '#2563eb', fontWeight: 'bold' }}>{selectedMov.activo_codigo}</span></div>
-                <div><strong>TIPO DE MOVIMIENTO:</strong> {selectedMov.tipo}</div>
-                <div><strong>MARCA Y MODELO:</strong> {selectedMov.activo_marca} {selectedMov.activo_modelo}</div>
-                <div><strong>AUTORIZADO POR:</strong> {selectedMov.usuario_nombre}</div>
-              </div>
-              
-              <div style={{ marginTop: '12px', borderTop: '1px dashed #d1d5db', paddingTop: '8px', fontSize: '12px' }}>
-                <strong>OBSERVACIONES:</strong>
-                <p style={{ margin: '4px 0 0 0', italic: 'true', color: '#4b5563' }}>
-                  {selectedMov.observaciones || 'Sin observaciones específicas. Se entrega en perfecto estado funcional.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Signatures block */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '40px', marginTop: '30px', borderTop: '1px solid #e5e7eb', paddingTop: '20px' }}>
-              {/* Deliverer (Emisor) */}
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#6b7280', marginBottom: '15px' }}>ENTREGADO / AUTORIZADO POR</p>
-                
-                {/* Simulated signature image */}
-                <div style={{ height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px auto', borderBottom: '1px solid #9ca3af', width: '80%', position: 'relative' }}>
-                  <span style={{ fontFamily: 'monospace', fontSize: '16px', color: '#4b5563', letterSpacing: '-1px', transform: 'rotate(-5deg)' }}>
-                    SMO_IT_SECURE_AUTH
-                  </span>
-                  <div style={{ position: 'absolute', bottom: '2px', right: '10px', fontSize: '8px', color: '#10b981' }}>✓ Firma Digitalizada</div>
-                </div>
-
-                <p style={{ margin: 0, fontSize: '12px', fontWeight: '600' }}>{selectedMov.usuario_nombre}</p>
-                <p style={{ margin: 0, fontSize: '10px', color: '#6b7280' }}>Soporte Técnico SMO IT CORE</p>
-              </div>
-
-              {/* Receiver (Receptor) */}
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#6b7280', marginBottom: '15px' }}>RECIBIDO CONFORME POR</p>
-                
-                {/* Simulated signature image */}
-                <div style={{ height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px auto', borderBottom: '1px solid #9ca3af', width: '80%', position: 'relative' }}>
-                  {selectedMov.persona_recibe_nombre ? (
-                    <>
-                      <span style={{ fontFamily: 'Georgia, serif', fontSize: '18px', color: '#1e3a8a', fontStyle: 'italic', transform: 'rotate(-3deg)' }}>
-                        {selectedMov.persona_recibe_nombre.split(' ').slice(0,2).join(' ')}
-                      </span>
-                      <div style={{ position: 'absolute', bottom: '2px', right: '10px', fontSize: '8px', color: '#10b981' }}>✓ OTP Sign Verified</div>
-                    </>
-                  ) : (
-                    <span style={{ fontSize: '11px', color: '#9ca3af' }}>N/A (Bodega)</span>
-                  )}
-                </div>
-
-                <p style={{ margin: 0, fontSize: '12px', fontWeight: '600' }}>{selectedMov.persona_recibe_nombre || 'Bodega Central'}</p>
-                <p style={{ margin: 0, fontSize: '10px', color: '#6b7280' }}>
-                  {selectedMov.persona_recibe_cedula ? `C.I. ${selectedMov.persona_recibe_cedula}` : 'Soporte Inventario'}
-                </p>
-              </div>
-            </div>
-
-            {/* Buttons */}
-            <div style={{ display: 'flex', gap: '12px', marginTop: '30px', justifyContent: 'flex-end' }}>
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
-                style={{ background: '#e5e7eb', color: '#374151', border: '1px solid #d1d5db' }} 
-                onClick={() => setSelectedMov(null)}
-              >
-                Cerrar Acta
-              </button>
-              {selectedMov.persona_recibe_nombre && (
-                <button 
-                  type="button" 
-                  className="btn btn-primary"
-                  onClick={() => {
-                    handleDownloadPDF(selectedMov);
-                    setSelectedMov(null);
-                  }}
-                  disabled={downloadingId === selectedMov.id}
-                >
-                  {downloadingId === selectedMov.id ? 'Descargando...' : 'Descargar Impresión PDF'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

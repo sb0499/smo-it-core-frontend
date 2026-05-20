@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../services/api';
 import { ticketService } from '../services/ticket.service';
@@ -123,14 +124,14 @@ export const Plantillas: React.FC = () => {
   };
 
   const handleDelete = async (id: number, title: string) => {
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar la plantilla "${title}"?`)) {
+    if (!await showConfirm(`¿Estás seguro de que deseas eliminar la plantilla "${title}"?`)) {
       return;
     }
     try {
       await apiClient.delete(`/plantillas/${id}`);
       fetchData();
     } catch (err: any) {
-      alert(`Error al eliminar plantilla: ${err.message}`);
+      showAlert(`Error al eliminar plantilla: ${err.message}`);
     }
   };
 
@@ -138,9 +139,9 @@ export const Plantillas: React.FC = () => {
     setTriggeringId(plantillaId);
     try {
       await ticketService.createDesdePlantilla(plantillaId);
-      alert('¡Ticket generado exitosamente a partir de la plantilla! El técnico de turno ha sido asignado.');
+      showAlert('¡Ticket generado exitosamente a partir de la plantilla! El técnico de turno ha sido asignado.');
     } catch (err: any) {
-      alert(`Error al generar ticket: ${err.message}`);
+      showAlert(`Error al generar ticket: ${err.message}`);
     } finally {
       setTriggeringId(null);
     }
