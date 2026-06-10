@@ -112,10 +112,5 @@ export const inventoryService = {
   getActaUrl(movimientoId: number): string {
     const token = localStorage.getItem('smo_token');
     return `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/inventarios/movimientos/${movimientoId}/acta?token=${token}`;
-  },
-
-  // Devolver activo
-  async devolverActivo(activoId: number, observaciones?: string): Promise<Activo> {
-    return apiClient.post<Activo>(`/inventarios/${activoId}/devolver`, { observaciones });
   }
 };

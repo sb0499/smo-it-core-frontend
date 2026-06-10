@@ -140,8 +140,8 @@
 
 .consumable-card.low-stock-critical {
   border-color: rgba(239, 68, 68, 0.3);
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.03), rgba(22, 28, 38, 0.55));
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.05);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.04), rgba(255, 255, 255, 0.9));
+  box-shadow: 0 10px 15px rgba(239, 68, 68, 0.02);
 }
 
 .consumable-card-header {

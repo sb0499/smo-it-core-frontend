@@ -140,9 +140,9 @@ export const Chats: React.FC = () => {
 
   const getRoleLabel = (role?: string) => {
     if (!role) return '';
-    if (role === 'ADMIN') return '👑 Admin';
-    if (role === 'TECNICO') return '🔧 Técnico';
-    return '👤 Sede';
+    if (role === 'ADMIN') return 'Admin';
+    if (role === 'TECNICO') return 'Técnico';
+    return 'Sede';
   };
 
   const handleToggleMember = async (userId: number, isMember: boolean) => {
@@ -172,10 +172,10 @@ export const Chats: React.FC = () => {
           {/* Left Panel: Channel list */}
           <div className="channels-sidebar">
             <div className="sidebar-chat-header">
-              <h4>💬 CANALES TI</h4>
+              <h4>CANALES TI</h4>
               {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
                 <button className="add-channel-btn" onClick={() => setShowCreateModal(true)} title="Crear Canal">
-                  ＋
+                  +
                 </button>
               )}
             </div>
@@ -189,8 +189,13 @@ export const Chats: React.FC = () => {
                     key={c.id} 
                     className={`channel-item-btn ${activeCanal?.id === c.id ? 'active' : ''}`}
                     onClick={() => handleSelectCanal(c)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
-                    <span className="hash-symbol">{c.is_private ? '🔒' : '#'}</span>
+                    <span className="hash-symbol" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      {c.is_private ? (
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      ) : '#'}
+                    </span>
                     <span className="channel-name-txt">{c.nombre}</span>
                   </button>
                 ))
@@ -203,17 +208,22 @@ export const Chats: React.FC = () => {
             {activeCanal ? (
               <>
                 <div className="stream-header">
-                  <span className="active-channel-name">
-                    💬 {activeCanal.is_private ? '🔒' : '#'} {activeCanal.nombre}
+                  <span className="active-channel-name" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      {activeCanal.is_private ? (
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      ) : '#'}
+                    </span>
+                    {activeCanal.nombre}
                   </span>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {activeCanal.is_private && (user?.rol === 'ADMIN' || activeCanal.creador_id === user?.id) && (
-                      <button className="refresh-chat-btn" onClick={() => setShowMembersModal(true)} title="Gestionar Miembros">
-                        👥
+                      <button className="refresh-chat-btn" onClick={() => setShowMembersModal(true)} title="Gestionar Miembros" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                       </button>
                     )}
-                    <button className="refresh-chat-btn" onClick={() => handleSelectCanal(activeCanal)} title="Recargar Chat">
-                      🔄
+                    <button className="refresh-chat-btn" onClick={() => handleSelectCanal(activeCanal)} title="Recargar Chat" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                     </button>
                   </div>
                 </div>
@@ -221,7 +231,9 @@ export const Chats: React.FC = () => {
                 <div className="messages-timeline-box">
                   {mensajes.length === 0 ? (
                     <div className="empty-chat text-center py-5">
-                      <span className="chat-welcome-icon">💬</span>
+                      <span className="chat-welcome-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: 'var(--color-text-dim)' }}>
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                      </span>
                       <h4>¡Te damos la bienvenida a #{activeCanal.nombre}!</h4>
                       <p className="text-muted font-xs mt-1">Este es el inicio de la conversación de este canal.</p>
                     </div>
@@ -264,7 +276,9 @@ export const Chats: React.FC = () => {
               </>
             ) : (
               <div className="select-channel-placeholder">
-                <span className="placeholder-big-icon">💬</span>
+                <span className="placeholder-big-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: 'var(--color-text-dim)' }}>
+                  <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                </span>
                 <h3>Mesa de Canales SMO IT CORE</h3>
                 <p className="text-muted">Selecciona un canal de la barra lateral para empezar a mensajear.</p>
               </div>
@@ -361,7 +375,7 @@ export const Chats: React.FC = () => {
                   return (
                     <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', padding: '4px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
-                        {u.nombre_completo} ({u.rol}) {isCreator && '👑'}
+                        {u.nombre_completo} ({u.rol}) {isCreator && ' (Creador)'}
                       </div>
                       {!isCreator && (
                         <button 

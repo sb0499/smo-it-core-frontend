@@ -103,7 +103,10 @@ export const Dashboard: React.FC = () => {
         <div className="welcome-right">
           <div className="guard-bubble">
             <span className="guard-label text-dim">Guardia TI Hoy:</span>
-            <span className="guard-value">🚨 {getTodayGuardTechName()}</span>
+            <span className="guard-value" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#ef4444' }}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              {getTodayGuardTechName()}
+            </span>
           </div>
         </div>
       </div>
@@ -113,7 +116,9 @@ export const Dashboard: React.FC = () => {
         {/* Metric 1: Active Support Tickets */}
         <div className="metric-card glass-panel glass-panel-interactive">
           <div className="metric-header">
-            <span className="metric-icon blue-icon">🎟️</span>
+            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: '#eff6ff' }}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path><line x1="13" y1="5" x2="13" y2="19"></line></svg>
+            </span>
             <span className="metric-badge active-badge">En Curso</span>
           </div>
           <div className="metric-body">
@@ -129,7 +134,9 @@ export const Dashboard: React.FC = () => {
         {/* Metric 2: Process Advance */}
         <div className="metric-card glass-panel glass-panel-interactive">
           <div className="metric-header">
-            <span className="metric-icon orange-icon">⚡</span>
+            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: '#fff7ed' }}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            </span>
             <span className="metric-badge process-badge">Avance</span>
           </div>
           <div className="metric-body">
@@ -144,7 +151,9 @@ export const Dashboard: React.FC = () => {
         {/* Metric 3: Assets Stock */}
         <div className="metric-card glass-panel glass-panel-interactive">
           <div className="metric-header">
-            <span className="metric-icon cyan-icon">📦</span>
+            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: '#ecfeff' }}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0891b2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            </span>
             <span className="metric-badge stock-badge">Hardware</span>
           </div>
           <div className="metric-body">
@@ -169,7 +178,6 @@ export const Dashboard: React.FC = () => {
           <div className="recent-tickets-list">
             {openTickets.length === 0 ? (
               <div className="empty-operation text-center py-4">
-                <span className="empty-icon">🎉</span>
                 <p className="text-muted mt-2">¡Todo al día! No hay tickets pendientes de soporte.</p>
               </div>
             ) : (
@@ -202,7 +210,6 @@ export const Dashboard: React.FC = () => {
           <div className="low-stock-list">
             {lowStockConsumibles.length === 0 ? (
               <div className="empty-operation text-center py-4">
-                <span className="empty-icon">🛡️</span>
                 <p className="text-muted mt-2">Stock robusto. Todos los consumibles por encima del mínimo.</p>
               </div>
             ) : (

@@ -18,20 +18,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { user } = useAuth();
   const [runningAlert, setRunningAlert] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-
-  useEffect(() => {
-    if (theme === 'light') {
-      document.body.classList.add('light-theme');
-    } else {
-      document.body.classList.remove('light-theme');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
 
   const getViewTitle = () => {
     switch (activeView) {
@@ -94,19 +80,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : alertSuccess ? (
               <span>✓ Enviado</span>
             ) : (
-              <span>⏰ Alerta Cierre</span>
+              <span>Alerta Cierre</span>
             )}
           </button>
         )}
-
-        {/* Theme Toggle Button */}
-        <button className="theme-toggle-btn" onClick={toggleTheme} title="Cambiar tema">
-          {theme === 'light' ? (
-            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12.1 22a10 10 0 0 1-7.7-3.6 10 10 0 0 1-1.8-7.9 10.3 10.3 0 0 1 6.1-7.3 1 1 0 0 1 1.2.4 1 1 0 0 1-.1 1.3 8 8 0 0 0-.8 6.5 8 8 0 0 0 5.4 5.3 8 8 0 0 0 6.5-.8 1 1 0 0 1 1.3.1 1 1 0 0 1 .4 1.1 10.1 10.1 0 0 1-7.2 6.1 10 10 0 0 1-3.2.1z"/></svg>
-          ) : (
-            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 7a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm0-10a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1zm0 14a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1zm8.49-13.08a1 1 0 0 0-1.41 0l-.71.71a1 1 0 0 0 1.41 1.41l.71-.71a1 1 0 0 0 0-1.41zm-14.14 14.14a1 1 0 0 0-1.41 0l-.71.71a1 1 0 0 0 1.41 1.41l.71-.71a1 1 0 0 0 0-1.41zM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2zM4 11H3a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2zm14.49 3.08a1 1 0 0 0 0 1.41l.71.71a1 1 0 0 0 1.41-1.41l-.71-.71a1 1 0 0 0-1.41 0zM5.64 5.64a1 1 0 0 0 0 1.41l.71.71a1 1 0 0 0 1.41-1.41l-.71-.71a1 1 0 0 0-1.41 0z"/></svg>
-          )}
-        </button>
 
         <button className="refresh-btn" onClick={onRefresh} title="Refrescar datos">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>

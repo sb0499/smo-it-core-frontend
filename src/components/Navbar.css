@@ -68,9 +68,9 @@
 
 /* Admin Cierre Reminder Button */
 .admin-cierre-btn {
-  background: rgba(127, 0, 255, 0.15);
-  border: 1px solid rgba(127, 0, 255, 0.3);
-  color: #c084fc;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  color: #6d28d9;
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 700;
@@ -82,17 +82,17 @@
   gap: 6px;
   transition: var(--transition-smooth);
 }
-
+ 
 .admin-cierre-btn:hover:not(:disabled) {
-  background: rgba(127, 0, 255, 0.3);
-  border-color: rgba(127, 0, 255, 0.5);
-  box-shadow: 0 0 12px rgba(127, 0, 255, 0.2);
+  background: #ede9fe;
+  border-color: #c4b5fd;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
-
+ 
 .admin-cierre-btn.success {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: rgba(16, 185, 129, 0.4);
-  color: #34d399;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
 }
 
 /* Spinner Animation */
@@ -105,18 +105,21 @@
 }
 
 .refresh-btn {
-  background: rgba(255, 255, 255, 0.03);
-  border: var(--border-glass);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   color: var(--color-text-main);
   font-size: 14px;
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: var(--transition-smooth);
 }
 .refresh-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: #f1f5f9;
+  border-color: #cbd5e1;
   transform: rotate(45deg);
 }
 
@@ -124,8 +127,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.15);
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
   padding: 6px 12px;
   border-radius: 20px;
 }
@@ -144,7 +147,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #34d399;
+  color: #15803d;
 }
 
 @keyframes pulse {
@@ -153,28 +156,7 @@
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
-.theme-toggle-btn {
-  background: rgba(255, 255, 255, 0.03);
-  border: var(--border-glass);
-  color: var(--color-text-main);
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition-smooth);
-}
-.theme-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: scale(1.05);
-}
-.theme-toggle-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-}
+
 
 @media (max-width: 768px) {
   .navbar {

@@ -24,22 +24,22 @@ export const Plantillas: React.FC = () => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Search state
   const [search, setSearch] = useState('');
-  
+
   // Modal / Form state
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  
+
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [categoria, setCategoria] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [areaSolicitante, setAreaSolicitante] = useState('');
   const [isActive, setIsActive] = useState(true);
-  
+
   const [submitting, setSubmitting] = useState(false);
   const [triggeringId, setTriggeringId] = useState<number | null>(null);
 
@@ -147,8 +147,8 @@ export const Plantillas: React.FC = () => {
     }
   };
 
-  const filteredPlantillas = plantillas.filter(p => 
-    p.titulo.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredPlantillas = plantillas.filter(p =>
+    p.titulo.toLowerCase().includes(search.toLowerCase()) ||
     p.categoria.toLowerCase().includes(search.toLowerCase()) ||
     (p.empresa && p.empresa.toLowerCase().includes(search.toLowerCase()))
   );
@@ -186,7 +186,9 @@ export const Plantillas: React.FC = () => {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px' }}>
-          <div className="spinner" style={{ fontSize: '32px' }}>⏳</div>
+          <div className="spinner" style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" stroke="rgba(0,0,0,0.1)"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path></svg>
+          </div>
           <p className="text-muted" style={{ marginTop: '12px' }}>Cargando plantillas...</p>
         </div>
       ) : error && !showModal ? (
@@ -241,13 +243,13 @@ export const Plantillas: React.FC = () => {
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        <button 
-                          className="btn btn-primary" 
+                        <button
+                          className="btn btn-primary"
                           style={{ padding: '6px 12px', fontSize: '12px', background: 'linear-gradient(135deg, #7f00ff, #a855f7)', color: '#fff', boxShadow: 'none' }}
                           onClick={() => handleTriggerTicket(p.id)}
                           disabled={triggeringId === p.id}
                         >
-                          {triggeringId === p.id ? 'Gatillando...' : 'Gatillar Ticket ⚡'}
+                          {triggeringId === p.id ? 'Gatillando...' : 'Gatillar Ticket'}
                         </button>
                         <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => openEditModal(p)}>
                           Editar
@@ -267,17 +269,17 @@ export const Plantillas: React.FC = () => {
 
       {/* Modal Overlay */}
       {showModal && (
-        <div className="modal-backdrop animate-fade" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '500px', padding: '28px', background: 'var(--bg-sidebar)', border: '1px solid var(--border-color-active)' }}>
+        <div className="modal-backdrop animate-fade" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '500px', padding: '28px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3>{isEditing ? 'Editar Plantilla Recurrente' : 'Registrar Nueva Plantilla'}</h3>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '20px', cursor: 'pointer' }}>×</button>
             </div>
-            
+
             {error && (
-              <div className="login-error-alert" style={{ marginBottom: '16px' }}>
-                <span className="alert-icon">⚠️</span>
-                <span className="alert-text">{error}</span>
+              <div className="login-error-alert" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '8px', padding: '10px 14px' }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="#ef4444" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span className="alert-text" style={{ color: '#b91c1c', fontSize: '13px', fontWeight: 600 }}>{error}</span>
               </div>
             )}
 

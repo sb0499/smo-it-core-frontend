@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ticketService, Ticket, CreateTicketPayload } from '../services/ticket.service';
 import { projectService, User } from '../services/project.service';
+import { apiClient } from '../services/api';
 import './Tickets.css';
 
 export const Tickets: React.FC = () => {
@@ -142,7 +143,6 @@ export const Tickets: React.FC = () => {
     }
   };
 
-  // Filter & Search
   const filteredTickets = tickets.filter(t => {
     const matchEstado = filterEstado === 'todos' || t.estado === filterEstado;
     const matchSearch = t.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -159,7 +159,7 @@ export const Tickets: React.FC = () => {
           <input
             type="text"
             className="form-control search-input"
-            placeholder="🔍 Buscar por título, categoría, descripción..."
+            placeholder="Buscar por título, categoría, descripción..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -177,7 +177,7 @@ export const Tickets: React.FC = () => {
             <option value="Escalado a Proyecto">Escalado a Proyecto</option>
           </select>
         </div>
-
+ 
         <div className="controls-right-buttons">
           {user?.rol === 'ADMIN' && (
             <>
@@ -186,15 +186,15 @@ export const Tickets: React.FC = () => {
                 style={{ border: '1px solid var(--color-critical)', color: 'var(--color-critical)' }} 
                 onClick={handleTriggerCierreDiario}
               >
-                ⚠️ Alertas Cierre Diario
+                Alertas Cierre Diario
               </button>
               <button className="btn btn-secondary excel-btn" onClick={handleDownloadReport}>
-                📊 Reporte Semanal Excel
+                Reporte Semanal Excel
               </button>
             </>
           )}
           <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
-            ➕ Reportar Soporte / Ticket
+            Reportar Soporte / Ticket
           </button>
         </div>
       </div>
@@ -207,7 +207,9 @@ export const Tickets: React.FC = () => {
         </div>
       ) : filteredTickets.length === 0 ? (
         <div className="empty-panel glass-panel text-center py-5">
-          <span className="empty-big-icon">🎫</span>
+          <span className="empty-big-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-dim)' }}><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path><line x1="13" y1="5" x2="13" y2="19"></line></svg>
+          </span>
           <h3>No se encontraron tickets</h3>
           <p className="text-muted">Ajusta tus filtros o crea un nuevo reporte para empezar.</p>
         </div>
@@ -233,14 +235,16 @@ export const Tickets: React.FC = () => {
                 <p className="ticket-desc text-muted">{ticket.descripcion.substring(0, 110)}{ticket.descripcion.length > 110 ? '...' : ''}</p>
                 
                 <div className="ticket-meta mt-3">
-                  <div className="meta-tag">📂 {ticket.categoria}</div>
-                  <div className="meta-tag">🏢 {ticket.empresa_nombre || 'CONDADO'}</div>
+                  <div className="meta-tag">{ticket.categoria}</div>
+                  <div className="meta-tag">{ticket.empresa_nombre || 'CONDADO'}</div>
                 </div>
               </div>
 
               <div className="ticket-card-footer">
                 <div className="assignee-info">
-                  <span className="assignee-avatar">👤</span>
+                  <span className="assignee-avatar" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', borderRadius: '50%', width: '32px', height: '32px' }}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#475569" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  </span>
                   <div className="assignee-text">
                     <span className="assignee-label">Técnico Asignado:</span>
                     <span className="assignee-name">{ticket.tecnico_nombre || 'Asignación automática...'}</span>
@@ -301,10 +305,10 @@ export const Tickets: React.FC = () => {
                     value={newPrioridad} 
                     onChange={(e) => setNewPrioridad(e.target.value as any)}
                   >
-                    <option value="Baja">🟢 Baja</option>
-                    <option value="Media">🟡 Media</option>
-                    <option value="Alta">🔴 Alta</option>
-                    <option value="Critica">🚨 Crítica</option>
+                    <option value="Baja">Baja</option>
+                    <option value="Media">Media</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Critica">Crítica</option>
                   </select>
                 </div>
               </div>
@@ -439,16 +443,18 @@ export const Tickets: React.FC = () => {
                           ))}
                         </select>
                       ) : (
-                        <div className="static-field-value" style={{ fontWeight: '600' }}>
-                          👨‍💻 {technicians.find(t => t.id === editTechId)?.nombre_completo || 'Sin técnico asignado'}
+                        <div className="static-field-value" style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                          {technicians.find(t => t.id === editTechId)?.nombre_completo || 'Sin técnico asignado'}
                         </div>
                       )}
                     </div>
 
                     <div className="form-group half">
                       <label className="form-label">ÁREA / SOLICITANTE</label>
-                      <div className="static-field-value">
-                        👤 {selectedTicket.persona_solicitante || 'Sin especificar'} ({selectedTicket.area_solicitante || 'General'})
+                      <div className="static-field-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        {selectedTicket.persona_solicitante || 'Sin especificar'} ({selectedTicket.area_solicitante || 'General'})
                       </div>
                     </div>
                   </div>

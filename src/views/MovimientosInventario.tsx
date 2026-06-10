@@ -101,8 +101,9 @@ export const MovimientosInventario: React.FC = () => {
           <h1 className="gradient-text">Historial de Movimientos de Inventario</h1>
           <p className="text-muted">Registro de asignaciones, transferencias y actas de entrega firmadas digitalmente</p>
         </div>
-        <button className="btn btn-secondary" onClick={fetchMovimientos}>
-          ⚙️ Recargar Registro
+        <button className="btn btn-secondary" onClick={fetchMovimientos} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Recargar Registro
         </button>
       </div>
 
@@ -137,7 +138,9 @@ export const MovimientosInventario: React.FC = () => {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px' }}>
-          <div className="spinner" style={{ fontSize: '32px' }}>⏳</div>
+          <div className="spinner" style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" stroke="rgba(0,0,0,0.1)"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path></svg>
+          </div>
           <p className="text-muted" style={{ marginTop: '12px' }}>Cargando bitácora de inventarios...</p>
         </div>
       ) : error ? (
@@ -195,7 +198,14 @@ export const MovimientosInventario: React.FC = () => {
                             onClick={() => handleDownloadPDF(m)}
                             disabled={downloadingId === m.id}
                           >
-                            {downloadingId === m.id ? 'Descargando...' : 'Descargar PDF 📄'}
+                            {downloadingId === m.id ? (
+                              'Descargando...'
+                            ) : (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                Descargar PDF
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                              </span>
+                            )}
                           </button>
                         )}
                       </div>

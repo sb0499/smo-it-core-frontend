@@ -243,13 +243,13 @@ export const Inventario: React.FC = () => {
           className={`tab-btn ${activeTab === 'activos' ? 'active' : ''}`}
           onClick={() => { setActiveTab('activos'); setSearchQuery(''); }}
         >
-          💻 Activos Tecnológicos (Hardware)
+          Activos Tecnológicos (Hardware)
         </button>
         <button 
           className={`tab-btn ${activeTab === 'consumibles' ? 'active' : ''}`}
           onClick={() => { setActiveTab('consumibles'); setSearchQuery(''); }}
         >
-          🔌 Consumibles y Suministros
+          Consumibles y Suministros
         </button>
       </div>
 
@@ -259,7 +259,7 @@ export const Inventario: React.FC = () => {
           <input
             type="text"
             className="form-control search-input"
-            placeholder={activeTab === 'activos' ? "🔍 Buscar activos por código, marca, serial..." : "🔍 Buscar consumibles..."}
+            placeholder={activeTab === 'activos' ? "Buscar activos por código, marca, serial..." : "Buscar consumibles..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ flex: 1 }}
@@ -284,11 +284,11 @@ export const Inventario: React.FC = () => {
           <div className="controls-right">
             {activeTab === 'activos' ? (
               <button className="btn btn-primary" onClick={() => setShowCreateAssetModal(true)}>
-                ➕ Registrar Activo
+                Registrar Activo
               </button>
             ) : (
               <button className="btn btn-primary" onClick={() => setShowCreateConsumableModal(true)}>
-                ➕ Registrar Consumible
+                Registrar Consumible
               </button>
             )}
           </div>
@@ -304,7 +304,9 @@ export const Inventario: React.FC = () => {
         /* TAB 1: ACTIVOS HARDWARE */
         filteredActivos.length === 0 ? (
           <div className="empty-panel glass-panel text-center py-5">
-            <span className="empty-big-icon">💻</span>
+            <span className="empty-big-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-dim)' }}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            </span>
             <h3>No se encontraron activos tecnológicos</h3>
             <p className="text-muted">Prueba a registrar un activo o redefine tus filtros.</p>
           </div>
@@ -339,14 +341,17 @@ export const Inventario: React.FC = () => {
                     </td>
                     <td className="asset-holder">
                       {a.persona_nombre ? (
-                        <span className="holder-badge">👤 {a.persona_nombre}</span>
+                        <span className="holder-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                          {a.persona_nombre}
+                        </span>
                       ) : (
                         <span className="holder-empty">Bodega Central</span>
                       )}
                     </td>
                     <td>
                       <button className="btn btn-secondary btn-sm-view" onClick={() => handleOpenDetail(a)}>
-                        🔍 Ver Ficha
+                        Ver Ficha
                       </button>
                     </td>
                   </tr>
@@ -359,7 +364,9 @@ export const Inventario: React.FC = () => {
         /* TAB 2: CONSUMIBLES */
         filteredConsumibles.length === 0 ? (
           <div className="empty-panel glass-panel text-center py-5">
-            <span className="empty-big-icon">🔌</span>
+            <span className="empty-big-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-dim)' }}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            </span>
             <h3>No se encontraron consumibles</h3>
           </div>
         ) : (
@@ -368,9 +375,11 @@ export const Inventario: React.FC = () => {
               const isLowStock = c.stock_actual <= c.stock_minimo;
               return (
                 <div key={c.id} className={`consumable-card glass-panel ${isLowStock ? 'low-stock-critical' : ''} animate-slide-up`}>
-                  <div className="consumable-card-header">
-                    <span className="consumable-icon">🏷️</span>
-                    {isLowStock && <span className="badge badge-state-baja">⚠️ Stock Mínimo</span>}
+                  <div className="consumable-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <span className="consumable-icon-wrap" style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--color-text-muted)' }}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                    </span>
+                    {isLowStock && <span className="badge badge-state-baja" style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#b91c1c' }}>Stock Mínimo</span>}
                   </div>
                   <div className="consumable-card-body mt-2">
                     <h3>{c.nombre}</h3>
@@ -416,7 +425,7 @@ export const Inventario: React.FC = () => {
                         </div>
                       ) : (
                         <button className="btn btn-secondary btn-adjust-trigger" onClick={() => { setAdjustingConsumableId(c.id); setAdjustAmount(0); }}>
-                          ⚡ Ajustar Inventario
+                          Ajustar Inventario
                         </button>
                       )}
                     </div>
@@ -465,11 +474,11 @@ export const Inventario: React.FC = () => {
                   <div className="asset-actions-row mt-4">
                     {selectedActivo.estado === 'Stock' ? (
                       <button className="btn btn-primary w-100" onClick={() => setShowAssignModal(true)}>
-                        👤 Entregar a Empleado
+                        Entregar a Empleado
                       </button>
                     ) : selectedActivo.estado === 'Asignado' ? (
                       <button className="btn btn-danger w-100" onClick={() => setShowDevolverModal(true)}>
-                        📦 Recibir en Bodega
+                        Recibir en Bodega
                       </button>
                     ) : null}
                   </div>
@@ -504,8 +513,10 @@ export const Inventario: React.FC = () => {
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="download-acta-link mt-2"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                           >
-                            📄 Descargar Acta Entrega PDF
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                            Descargar Acta Entrega PDF
                           </a>
                         </div>
                       </div>

@@ -13,15 +13,16 @@
   height: 100%;
   overflow: hidden;
   border-radius: 16px;
-  background: rgba(13, 17, 23, 0.45);
+  background: var(--bg-panel);
+  border: var(--border-glass);
 }
 
 /* Sidebar Channels */
 .channels-sidebar {
   display: flex;
   flex-direction: column;
-  background: rgba(13, 17, 23, 0.6);
-  border-right: 1px solid var(--overlay-05);
+  background: #f1f5f9;
+  border-right: 1px solid var(--border-color);
   height: 100%;
 }
 
@@ -58,7 +59,7 @@
 }
 .add-channel-btn:hover {
   background: var(--color-primary);
-  color: #0d0f12;
+  color: #ffffff;
   box-shadow: 0 0 8px var(--color-primary);
 }
 
@@ -115,7 +116,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: rgba(13, 17, 23, 0.15);
+  background: #f8fafc;
 }
 
 .stream-header {
@@ -181,7 +182,7 @@
   height: 36px;
   border-radius: 8px;
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  color: #0d0f12;
+  color: #ffffff;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -222,9 +223,9 @@
   text-transform: uppercase;
 }
 
-.msg-role-lbl.role-admin { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25); }
-.msg-role-lbl.role-tecnico { background: rgba(0, 242, 254, 0.15); color: var(--color-primary); border: 1px solid rgba(0, 242, 254, 0.25); }
-.msg-role-lbl.role-usuario { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); }
+.msg-role-lbl.role-admin { background: rgba(168, 85, 247, 0.15); color: #7c3aed; border: 1px solid rgba(168, 85, 247, 0.25); }
+.msg-role-lbl.role-tecnico { background: rgba(30, 58, 138, 0.1); color: var(--color-primary); border: 1px solid rgba(30, 58, 138, 0.2); }
+.msg-role-lbl.role-usuario { background: rgba(148, 163, 184, 0.15); color: #475569; border: 1px solid rgba(148, 163, 184, 0.25); }
 
 .msg-time {
   font-size: 10px;
@@ -241,9 +242,9 @@
 .message-composer-form {
   display: flex;
   padding: 16px 24px;
-  border-top: 1px solid var(--overlay-05);
+  border-top: 1px solid var(--border-color);
   gap: 12px;
-  background: rgba(13, 17, 23, 0.4);
+  background: var(--bg-panel);
   flex-shrink: 0;
 }
 

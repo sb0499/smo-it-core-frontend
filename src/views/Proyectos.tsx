@@ -183,7 +183,7 @@ export const Proyectos: React.FC = () => {
           <div className="projects-header-controls glass-panel">
             <h3>Portafolio de Proyectos Activos</h3>
             <button className="btn btn-primary" onClick={() => setShowAddProjectModal(true)}>
-              ➕ Crear Proyecto
+              Crear Proyecto
             </button>
           </div>
 
@@ -194,7 +194,9 @@ export const Proyectos: React.FC = () => {
             </div>
           ) : proyectos.length === 0 ? (
             <div className="empty-panel glass-panel text-center py-5">
-              <span className="empty-big-icon">🚀</span>
+              <span className="empty-big-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-dim)' }}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+              </span>
               <h3>No hay proyectos registrados</h3>
               <p className="text-muted">Comienza creando tu primer proyecto colaborativo.</p>
             </div>
@@ -207,7 +209,7 @@ export const Proyectos: React.FC = () => {
                   onClick={() => handleSelectProyecto(p.id)}
                 >
                   <div className="proj-card-header">
-                    <span className="proj-tag">📂 {p.tipo_proyecto}</span>
+                    <span className="proj-tag">{p.tipo_proyecto}</span>
                     <span className={`badge badge-state-${p.estado.toLowerCase().replace(' ', '')}`}>
                       {p.estado}
                     </span>
@@ -229,8 +231,9 @@ export const Proyectos: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="proj-dates text-muted font-xs mt-2">
-                      📅 Término: {new Date(p.fecha_fin_estimada).toLocaleDateString()}
+                    <div className="proj-dates text-muted font-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      Término: {new Date(p.fecha_fin_estimada).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -243,8 +246,9 @@ export const Proyectos: React.FC = () => {
         <div className="project-detail-layout animate-fade">
           <div className="detail-header glass-panel">
             <div className="header-left">
-              <button className="back-btn-trigger" onClick={handleCloseProject}>
-                ⬅ Volver a Proyectos
+              <button className="back-btn-trigger" onClick={handleCloseProject} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Volver a Proyectos
               </button>
               <h2 className="project-name mt-2">{activeProyecto.nombre}</h2>
               <span className="project-tag mt-1">Categoría: {activeProyecto.tipo_proyecto} • Estado: {activeProyecto.estado}</span>
@@ -252,7 +256,7 @@ export const Proyectos: React.FC = () => {
             <div className="header-right" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
               {(!activeProyecto.tareas || activeProyecto.tareas.length === 0) && activeProyecto.estado !== 'Finalizado' && (
                 <button className="btn btn-secondary" onClick={() => handleFinishProject(activeProyecto)} style={{ height: 'fit-content' }}>
-                  ✅ Terminar Proyecto
+                  Terminar Proyecto
                 </button>
               )}
               <div className="detail-circular-progress">
@@ -265,7 +269,7 @@ export const Proyectos: React.FC = () => {
           <div className="project-grid-columns mt-4">
             {/* Column 1: Tasks & Subtasks (Kanban accordion) */}
             <div className="project-column-left glass-panel">
-              <h3 className="column-title mb-4">📋 Lista de Tareas y Subtareas</h3>
+              <h3 className="column-title mb-4">Lista de Tareas y Subtareas</h3>
 
               {loadingDetail ? (
                 <div className="loader-detail"></div>
@@ -278,7 +282,10 @@ export const Proyectos: React.FC = () => {
                       <div className="task-header">
                         <div className="task-title-group">
                           <span className="task-title">{task.titulo}</span>
-                          <span className="task-assignee text-muted">👤 {task.responsable_nombre}</span>
+                          <span className="task-assignee text-muted" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            {task.responsable_nombre}
+                          </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {(!task.subtareas || task.subtareas.length === 0) && task.estado !== 'Finalizado' && (
@@ -318,7 +325,10 @@ export const Proyectos: React.FC = () => {
                                     {sub.titulo}
                                   </span>
                                 </label>
-                                <span className="subtask-owner text-muted font-xs">👤 {sub.responsable_nombre}</span>
+                                <span className="subtask-owner text-muted font-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                  {sub.responsable_nombre}
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -334,7 +344,7 @@ export const Proyectos: React.FC = () => {
             <div className="project-column-right">
               {/* Discuss comments */}
               <div className="discuss-section glass-panel">
-                <h3 className="column-title mb-3">💬 Mesa de Discusión</h3>
+                <h3 className="column-title mb-3">Mesa de Discusión</h3>
                 
                 <div className="comments-timeline">
                   {!activeProyecto.comentarios || activeProyecto.comentarios.length === 0 ? (
@@ -366,7 +376,7 @@ export const Proyectos: React.FC = () => {
 
               {/* Uploaded Documents */}
               <div className="files-section glass-panel mt-4">
-                <h3 className="column-title mb-3">📂 Documentos y Planos</h3>
+                <h3 className="column-title mb-3">Documentos y Planos</h3>
                 
                 <div className="files-list">
                   {!activeProyecto.archivos || activeProyecto.archivos.length === 0 ? (
@@ -375,7 +385,9 @@ export const Proyectos: React.FC = () => {
                     activeProyecto.archivos.map((f) => (
                       <div key={f.id} className="file-row">
                         <div className="file-info-group">
-                          <span className="file-icon-type">📄</span>
+                          <span className="file-icon-type" style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--color-text-muted)' }}>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                          </span>
                           <div className="file-text">
                             <span className="file-name">{f.nombre_original}</span>
                             <span className="file-size text-muted font-xs">Autor: {f.autor_nombre}</span>
@@ -387,8 +399,9 @@ export const Proyectos: React.FC = () => {
                           rel="noopener noreferrer"
                           className="file-download-btn"
                           title="Descargar archivo"
+                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                         >
-                          ⬇
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         </a>
                       </div>
                     ))
@@ -410,7 +423,7 @@ export const Proyectos: React.FC = () => {
 
               {/* Project Logs */}
               <div className="logs-section glass-panel mt-4">
-                <h3 className="column-title mb-3">🕒 Historial de Cambios</h3>
+                <h3 className="column-title mb-3">Historial de Cambios</h3>
                 <div className="logs-timeline-list">
                   {!activeProyecto.historial || activeProyecto.historial.length === 0 ? (
                     <p className="text-muted font-xs">Sin registros históricos.</p>

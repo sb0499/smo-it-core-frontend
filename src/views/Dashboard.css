@@ -32,7 +32,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 30px;
-  background: linear-gradient(135deg, rgba(22, 28, 38, 0.8), rgba(13, 17, 23, 0.8));
+  background: linear-gradient(135deg, rgba(204, 204, 204, 0.8), rgba(255, 255, 255, 0.8));
   border-radius: 18px;
   position: relative;
   overflow: hidden;
@@ -105,9 +105,20 @@
   border-radius: 10px;
 }
 
-.blue-icon { background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); }
-.orange-icon { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); }
-.cyan-icon { background: rgba(0, 242, 254, 0.1); border: 1px solid rgba(0, 242, 254, 0.2); }
+.blue-icon {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.orange-icon {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.cyan-icon {
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.2);
+}
 
 .metric-badge {
   font-size: 10px;
@@ -117,9 +128,20 @@
   text-transform: uppercase;
 }
 
-.active-badge { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
-.process-badge { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-.stock-badge { background: rgba(0, 242, 254, 0.15); color: var(--color-primary); }
+.active-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.process-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.stock-badge {
+  background: rgba(0, 242, 254, 0.15);
+  color: var(--color-primary);
+}
 
 .metric-body {
   margin-top: 14px;
@@ -215,6 +237,7 @@
   padding: 12px 16px;
   transition: var(--transition-smooth);
 }
+
 .mini-ticket-row:hover {
   background: var(--overlay-04);
   border-color: var(--overlay-10);
@@ -233,10 +256,24 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
-.priority-critica { background: var(--state-critical); box-shadow: 0 0 8px var(--state-critical); }
-.priority-alta { background: var(--state-high); box-shadow: 0 0 8px var(--state-high); }
-.priority-media { background: var(--state-medium); }
-.priority-baja { background: var(--state-low); }
+
+.priority-critica {
+  background: var(--state-critical);
+  box-shadow: 0 0 8px var(--state-critical);
+}
+
+.priority-alta {
+  background: var(--state-high);
+  box-shadow: 0 0 8px var(--state-high);
+}
+
+.priority-media {
+  background: var(--state-medium);
+}
+
+.priority-baja {
+  background: var(--state-low);
+}
 
 .mini-ticket-info {
   display: flex;
@@ -313,7 +350,7 @@
     align-items: flex-start;
     gap: 16px;
   }
-  
+
   .guard-bubble {
     width: 100%;
   }
