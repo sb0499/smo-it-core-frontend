@@ -29,7 +29,6 @@ export const Tickets: React.FC = () => {
 
   // Ticket edit state
   const [editEstado, setEditEstado] = useState<string>('');
-  const [editAvance, setEditAvance] = useState<number>(0);
   const [editObs, setEditObs] = useState<string>('');
   const [editTechId, setEditTechId] = useState<number>(0);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -111,7 +110,6 @@ export const Tickets: React.FC = () => {
   const handleOpenEditModal = (ticket: Ticket) => {
     setSelectedTicket(ticket);
     setEditEstado(ticket.estado);
-    setEditAvance(ticket.avance_proceso);
     setEditObs(ticket.observaciones || '');
     setEditTechId(ticket.tecnico_id || 0);
     setShowCierrePanel(false);
@@ -130,7 +128,6 @@ export const Tickets: React.FC = () => {
       setIsUpdating(true);
       await ticketService.updateTicket(selectedTicket.id, {
         estado: 'Finalizada',
-        avance_proceso: 100,
         observaciones: cierreObs,
         tecnico_id: editTechId > 0 ? editTechId : user?.id,
       });
@@ -153,7 +150,6 @@ export const Tickets: React.FC = () => {
       setIsUpdating(true);
       await ticketService.updateTicket(selectedTicket.id, {
         estado: editEstado as any,
-        avance_proceso: Number(editAvance),
         observaciones: editObs || null,
         tecnico_id: editTechId > 0 ? editTechId : null,
       });
@@ -290,12 +286,6 @@ export const Tickets: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="progress-percentage-wrapper">
-                  <span className="progress-value">{ticket.avance_proceso}%</span>
-                  <div className="mini-progress-track">
-                    <div className="mini-progress-fill" style={{ width: `${ticket.avance_proceso}%` }}></div>
-                  </div>
-                </div>
               </div>
             </div>
           ))}
@@ -482,7 +472,7 @@ export const Tickets: React.FC = () => {
                   )}
 
                   <div className="form-row">
-                    <div className="form-group half">
+                    <div className="form-group">
                       <label className="form-label">ESTADO DEL SOPORTE</label>
                       <select 
                         className="form-control" 
@@ -496,19 +486,6 @@ export const Tickets: React.FC = () => {
                         <option value="Finalizada">Finalizada</option>
                         <option value="Escalado a Proyecto">Escalado a Proyecto</option>
                       </select>
-                    </div>
-
-                    <div className="form-group half">
-                      <label className="form-label">AVANCE PROCESO ({editAvance}%)</label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="5"
-                        className="form-control range-slider"
-                        value={editAvance}
-                        onChange={(e) => setEditAvance(Number(e.target.value))}
-                      />
                     </div>
                   </div>
 
@@ -557,11 +534,7 @@ export const Tickets: React.FC = () => {
               ) : (
                 <div className="user-view-only-section">
                   <h4 className="section-title mt-3">Estado de la Solución</h4>
-                  <div className="static-progress-bar-container mt-2">
-                    <div className="static-progress-fill" style={{ width: `${selectedTicket.avance_proceso}%` }}></div>
-                  </div>
                   <div className="static-progress-details mt-2">
-                    <span>Avance: <strong>{selectedTicket.avance_proceso}%</strong></span>
                     <span>Técnico Responsable: <strong>{selectedTicket.tecnico_nombre || 'Asignación automática programada'}</strong></span>
                   </div>
                   {selectedTicket.observaciones && (
