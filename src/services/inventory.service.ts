@@ -111,6 +111,6 @@ export const inventoryService = {
   // Actas PDF
   getActaUrl(movimientoId: number): string {
     const token = localStorage.getItem('smo_token');
-    return `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/inventarios/movimientos/${movimientoId}/acta?token=${token}`;
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/movimientos/${movimientoId}/acta?token=${token}`;
   }
 };

@@ -19,7 +19,7 @@ export const Reportes: React.FC = () => {
   }, [user]);
 
   const handleDownloadReport = () => {
-    let url = `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/reportes/${tipoReporte}`;
+    let url = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/reportes/${tipoReporte}`;
     const token = localStorage.getItem('smo_token');
     const params = new URLSearchParams();
     

@@ -284,3 +284,26 @@
     display: none; /* Collapses sidebar on mobile chat for simplified view */
   }
 }
+
+.dm-user-option-btn:hover {
+  background: var(--overlay-05) !important;
+  transform: translateX(2px);
+}
+
+.attach-file-btn:hover {
+  background: var(--overlay-02) !important;
+  color: var(--color-primary);
+  border-color: var(--color-primary) !important;
+}
+
+.selected-file-preview {
+  border: 1px dashed var(--color-primary);
+  background: rgba(0, 242, 254, 0.05);
+}
+
+.msg-attachment-box {
+  transition: transform 0.2s ease-in-out;
+}
+.msg-attachment-box:hover {
+  transform: scale(1.02);
+}

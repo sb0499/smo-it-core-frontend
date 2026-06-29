@@ -2,6 +2,7 @@ import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ticketService } from '../services/ticket.service';
+import { notificacionService, Notificacion } from '../services/notificacion.service';
 import './Navbar.css';
 
 interface NavbarProps {
@@ -18,6 +19,53 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { user } = useAuth();
   const [runningAlert, setRunningAlert] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState(false);
+
+  const [notifList, setNotifList] = useState<Notificacion[]>([]);
+  const [showNotifMenu, setShowNotifMenu] = useState(false);
+
+  const fetchNotifs = async () => {
+    try {
+      const list = await notificacionService.getNotificaciones();
+      setNotifList(list);
+    } catch (e) {
+      console.error('Error fetching notifications:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifs();
+      const interval = setInterval(fetchNotifs, 45000); // 45 seconds polling
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const handleNotifClick = async (notif: Notificacion) => {
+    if (!notif.leido) {
+      try {
+        await notificacionService.marcarLeida(notif.id);
+        setNotifList(prev => prev.map(n => n.id === notif.id ? { ...n, leido: true } : n));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const handleMarcarTodasLeidas = async () => {
+    try {
+      await notificacionService.marcarTodasLeidas();
+      setNotifList(prev => prev.map(n => ({ ...n, leido: true })));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRefreshClick = () => {
+    fetchNotifs();
+    onRefresh();
+  };
+
+  const unreadCount = notifList.filter(n => !n.leido).length;
 
   const getViewTitle = () => {
     switch (activeView) {
@@ -85,7 +133,64 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         )}
 
-        <button className="refresh-btn" onClick={onRefresh} title="Refrescar datos">
+        {/* Notification Bell Dropdown */}
+        <div className="notification-bell-container" style={{ position: 'relative' }}>
+          <button 
+            className={`bell-btn ${unreadCount > 0 ? 'unread' : ''}`}
+            onClick={() => setShowNotifMenu(!showNotifMenu)} 
+            title="Notificaciones internas"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            {unreadCount > 0 && (
+              <span className="bell-badge">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {showNotifMenu && (
+            <div className="notif-dropdown glass-panel animate-slide-up">
+              <div className="notif-header">
+                <h4>Notificaciones</h4>
+                {unreadCount > 0 && (
+                  <button className="mark-all-read-btn" onClick={handleMarcarTodasLeidas}>
+                    Marcar todo leído
+                  </button>
+                )}
+              </div>
+
+              <div className="notif-list-scroll">
+                {notifList.length === 0 ? (
+                  <div className="empty-notifs">
+                    No tienes notificaciones
+                  </div>
+                ) : (
+                  notifList.map(n => (
+                    <div 
+                      key={n.id} 
+                      onClick={() => { handleNotifClick(n); setShowNotifMenu(false); }}
+                      className={`notif-item-row ${n.leido ? 'read' : 'unread'}`}
+                    >
+                      <div className="notif-title-row">
+                        <span className="notif-title">{n.titulo}</span>
+                        {!n.leido && <span className="notif-unread-dot"></span>}
+                      </div>
+                      <p className="notif-desc">{n.mensaje}</p>
+                      <span className="notif-time">
+                        {new Date(n.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} • {new Date(n.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button className="refresh-btn" onClick={handleRefreshClick} title="Refrescar datos">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
         </button>
 

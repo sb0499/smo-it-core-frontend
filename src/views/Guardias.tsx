@@ -17,6 +17,7 @@ export const Guardias: React.FC = () => {
   const [newTechId, setNewTechId] = useState<number>(0);
   const [newObs, setNewObs] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [guardType, setGuardType] = useState<'feriado' | 'fin_de_semana'>('feriado');
 
   // Raffle State
   const [isRaffling, setIsRaffling] = useState(false);
@@ -66,7 +67,11 @@ export const Guardias: React.FC = () => {
         const winner = technicians[finalIndex];
         setNewTechId(winner.id);
         setCurrentRaffleName(winner.nombre_completo);
-        setNewObs('Sorteo automático de guardia realizado entre todos los técnicos de turno.');
+        
+        const obs = guardType === 'fin_de_semana'
+          ? 'Sorteo automático de guardia para fin de semana (Sábado y Domingo).'
+          : 'Sorteo automático de guardia realizado para el feriado.';
+        setNewObs(obs);
         setIsRaffling(false);
       }
     }, 100);
@@ -81,12 +86,32 @@ export const Guardias: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      await guardService.createGuardia(newFecha, newTechId, newObs || undefined);
+      if (guardType === 'fin_de_semana') {
+        const satDate = newFecha;
+        const [yr, mo, dy] = satDate.split('-').map(Number);
+        const satDateObj = new Date(yr, mo - 1, dy);
+        
+        const sunDateObj = new Date(satDateObj);
+        sunDateObj.setDate(satDateObj.getDate() + 1);
+        
+        const sunYr = sunDateObj.getFullYear();
+        const sunMo = String(sunDateObj.getMonth() + 1).padStart(2, '0');
+        const sunDy = String(sunDateObj.getDate()).padStart(2, '0');
+        const sunDate = `${sunYr}-${sunMo}-${sunDy}`;
+
+        // Create Saturday
+        await guardService.createGuardia(satDate, newTechId, newObs || 'Guardia de Fin de Semana (Sábado)');
+        // Create Sunday
+        await guardService.createGuardia(sunDate, newTechId, newObs || 'Guardia de Fin de Semana (Domingo)');
+      } else {
+        await guardService.createGuardia(newFecha, newTechId, newObs || 'Guardia de Feriado');
+      }
       
       setShowAddModal(false);
       setNewFecha('');
       setNewTechId(0);
       setNewObs('');
+      setGuardType('feriado');
 
       fetchGuardiasData();
     } catch (err: any) {
@@ -138,14 +163,26 @@ export const Guardias: React.FC = () => {
         <div className="guardias-timeline mt-4">
           {guardias.map((g) => {
             const isToday = new Date().toISOString().split('T')[0] === g.fecha.split('T')[0];
+            const [yr, mo, dy] = g.fecha.split('T')[0].split('-').map(Number);
+            const dateObj = new Date(yr, mo - 1, dy);
+            const dateDay = dy;
+            const dateMonth = dateObj.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase();
+            const dateFull = dateObj.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // Check if weekend (Saturday = 6, Sunday = 0)
+            const dayOfWeek = dateObj.getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
             return (
-              <div key={g.id} className={`guardia-card glass-panel ${isToday ? 'active-today' : ''} animate-slide-up`}>
+              <div key={g.id} className={`guardia-card glass-panel ${isToday ? 'active-today' : ''} ${isWeekend ? 'guardia-weekend' : 'guardia-holiday'} animate-slide-up`}>
                 <div className="guardia-left">
-                  <div className="date-badge">
-                    <span className="date-day">{new Date(g.fecha).getDate() + 1}</span>
-                    <span className="date-month">
-                      {new Date(g.fecha).toLocaleDateString('es-ES', { month: 'short' }).toUpperCase()}
-                    </span>
+                  <div className="date-badge" style={{
+                    background: isWeekend ? 'rgba(124, 58, 237, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                    color: isWeekend ? 'var(--color-primary)' : '#ef4444',
+                    border: isWeekend ? '1px solid rgba(124, 58, 237, 0.15)' : '1px solid rgba(239, 68, 68, 0.15)'
+                  }}>
+                    <span className="date-day">{dateDay}</span>
+                    <span className="date-month">{dateMonth}</span>
                   </div>
                   
                   <div className="guardia-info">
@@ -154,7 +191,7 @@ export const Guardias: React.FC = () => {
                       {g.tecnico_nombre}
                     </span>
                     <span className="guardia-date-full text-muted">
-                      Fecha: {new Date(g.fecha).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      Fecha: {dateFull}
                     </span>
                     {g.observaciones && (
                       <p className="guardia-obs" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -165,7 +202,12 @@ export const Guardias: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="guardia-right">
+                <div className="guardia-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {isWeekend ? (
+                    <span className="badge badge-weekend" style={{ background: 'rgba(124, 58, 237, 0.08)', color: '#8b5cf6', border: '1px solid rgba(124, 58, 237, 0.15)', fontSize: '11px', padding: '4px 10px', borderRadius: '20px', fontWeight: '600' }}>FIN DE SEMANA</span>
+                  ) : (
+                    <span className="badge badge-holiday" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.15)', fontSize: '11px', padding: '4px 10px', borderRadius: '20px', fontWeight: '600' }}>FERIADO</span>
+                  )}
                   {isToday && (
                     <span className="today-badge pulse-badge">ACTIVO HOY</span>
                   )}
@@ -191,8 +233,36 @@ export const Guardias: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateGuardia} className="modal-form">
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>TIPO DE TURNO DE GUARDIA</label>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                    <input
+                      type="radio"
+                      name="guardType"
+                      value="feriado"
+                      checked={guardType === 'feriado'}
+                      onChange={() => { setGuardType('feriado'); setNewFecha(''); setNewTechId(0); setNewObs(''); }}
+                    />
+                    Feriado (1 Día)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                    <input
+                      type="radio"
+                      name="guardType"
+                      value="fin_de_semana"
+                      checked={guardType === 'fin_de_semana'}
+                      onChange={() => { setGuardType('fin_de_semana'); setNewFecha(''); setNewTechId(0); setNewObs(''); }}
+                    />
+                    Fin de Semana (Sáb + Dom)
+                  </label>
+                </div>
+              </div>
+
               <div className="form-group">
-                <label className="form-label">SELECCIONAR FECHA DEL FERIADO</label>
+                <label className="form-label">
+                  {guardType === 'fin_de_semana' ? 'SELECCIONAR SÁBADO DEL FIN DE SEMANA' : 'SELECCIONAR FECHA DEL FERIADO'}
+                </label>
                 <input
                   type="date"
                   className="form-control"

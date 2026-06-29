@@ -145,3 +145,11 @@
     justify-content: space-between;
   }
 }
+
+.guardia-card.guardia-weekend {
+  border-left: 4px solid #8b5cf6 !important;
+}
+
+.guardia-card.guardia-holiday {
+  border-left: 4px solid #ef4444 !important;
+}

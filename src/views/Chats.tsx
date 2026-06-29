@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { chatService, ChatCanal, ChatMensaje, ChatCanalMiembro } from '../services/chat.service';
 import { projectService, User } from '../services/project.service';
+import { API_BASE_URL } from '../services/api';
 import './Chats.css';
 
 export const Chats: React.FC = () => {
@@ -20,6 +21,13 @@ export const Chats: React.FC = () => {
   const [newChanPrivate, setNewChanPrivate] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Direct messaging state
+  const [showDmSelect, setShowDmSelect] = useState(false);
+
+  // File attachment state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Manage members modal
   const [showMembersModal, setShowMembersModal] = useState(false);
@@ -91,18 +99,45 @@ export const Chats: React.FC = () => {
     return () => clearInterval(interval);
   }, [activeCanal, mensajes]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleStartDM = async (targetUserId: number) => {
+    try {
+      const dmChan = await chatService.getOrCreateDMChannel(targetUserId);
+      setShowDmSelect(false);
+      
+      const list = await chatService.getCanales();
+      setCanales(list);
+      
+      const updatedDmChan = list.find(c => c.id === dmChan.id) || dmChan;
+      handleSelectCanal(updatedDmChan);
+    } catch (e: any) {
+      showAlert('Error al iniciar chat directo: ' + e.message);
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMsg || !activeCanal) return;
+    if ((!newMsg && !selectedFile) || !activeCanal) return;
 
     try {
-      const sent = await chatService.addMensaje(activeCanal.id, newMsg);
+      const sent = await chatService.addMensaje(activeCanal.id, newMsg, selectedFile || undefined);
       setMensajes(prev => [...prev, {
         ...sent,
         usuario_nombre: user?.nombre || 'Tú',
         usuario_rol: user?.rol
       }]);
       setNewMsg('');
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
       showAlert('Error enviando mensaje: ' + err.message);
     }
@@ -170,21 +205,48 @@ export const Chats: React.FC = () => {
       ) : (
         <div className="chat-layout glass-panel">
           {/* Left Panel: Channel list */}
-          <div className="channels-sidebar">
+          <div className="channels-sidebar" style={{ position: 'relative' }}>
             <div className="sidebar-chat-header">
               <h4>CANALES TI</h4>
-              {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
-                <button className="add-channel-btn" onClick={() => setShowCreateModal(true)} title="Crear Canal">
-                  +
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button className="add-channel-btn" onClick={() => setShowDmSelect(!showDmSelect)} title="Nuevo Chat Directo" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px' }}>
+                  💬
                 </button>
-              )}
+                {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
+                  <button className="add-channel-btn" onClick={() => setShowCreateModal(true)} title="Crear Canal">
+                    +
+                  </button>
+                )}
+              </div>
             </div>
 
+            {showDmSelect && (
+              <div className="dm-select-dropdown glass-panel" style={{ position: 'absolute', top: '55px', left: '16px', right: '16px', zIndex: 100, padding: '12px', borderRadius: '10px', border: 'var(--border-glass)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid var(--overlay-05)', paddingBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Chat Directo con...</span>
+                  <button onClick={() => setShowDmSelect(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', color: 'var(--color-text-main)' }}>×</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
+                  {users.filter(u => u.id !== user?.id).map(u => (
+                    <button 
+                      key={u.id}
+                      onClick={() => handleStartDM(u.id)}
+                      style={{ padding: '6px 8px', borderRadius: '6px', border: 'none', background: 'transparent', color: 'var(--color-text-main)', textAlign: 'left', cursor: 'pointer', fontSize: '12px', display: 'block', width: '100%', transition: 'var(--transition-smooth)' }}
+                      className="dm-user-option-btn"
+                    >
+                      {u.nombre_completo}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="channels-list">
-              {canales.length === 0 ? (
-                <p className="text-muted font-xs text-center py-3">No hay canales.</p>
+              <div className="sidebar-section-title" style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--color-text-dim)', margin: '12px 0 6px 0', letterSpacing: '0.05em' }}>Canales de Grupo</div>
+              {canales.filter(c => !c.is_dm).length === 0 ? (
+                <p className="text-muted font-xs text-center py-2" style={{ fontSize: '11px' }}>No hay canales públicos.</p>
               ) : (
-                canales.map((c) => (
+                canales.filter(c => !c.is_dm).map((c) => (
                   <button 
                     key={c.id} 
                     className={`channel-item-btn ${activeCanal?.id === c.id ? 'active' : ''}`}
@@ -200,6 +262,25 @@ export const Chats: React.FC = () => {
                   </button>
                 ))
               )}
+
+              <div className="sidebar-section-title" style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--color-text-dim)', margin: '16px 0 6px 0', letterSpacing: '0.05em' }}>Mensajes Directos</div>
+              {canales.filter(c => c.is_dm).length === 0 ? (
+                <p className="text-muted font-xs text-center py-2" style={{ fontSize: '11px' }}>No hay chats activos.</p>
+              ) : (
+                canales.filter(c => c.is_dm).map((c) => (
+                  <button 
+                    key={c.id} 
+                    className={`channel-item-btn ${activeCanal?.id === c.id ? 'active' : ''}`}
+                    onClick={() => handleSelectCanal(c)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <span className="hash-symbol" style={{ display: 'inline-flex', alignItems: 'center', color: '#10b981' }}>
+                      ●
+                    </span>
+                    <span className="channel-name-txt">{c.dm_destinatario_nombre || c.nombre || 'Tú mismo'}</span>
+                  </button>
+                ))
+              )}
             </div>
           </div>
 
@@ -210,14 +291,16 @@ export const Chats: React.FC = () => {
                 <div className="stream-header">
                   <span className="active-channel-name" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                      {activeCanal.is_private ? (
+                      {activeCanal.is_dm ? (
+                        <span style={{ color: '#10b981', fontSize: '14px', marginRight: '2px' }}>●</span>
+                      ) : activeCanal.is_private ? (
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                       ) : '#'}
                     </span>
-                    {activeCanal.nombre}
+                    {activeCanal.is_dm ? (activeCanal.dm_destinatario_nombre || 'Tú mismo') : activeCanal.nombre}
                   </span>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {activeCanal.is_private && (user?.rol === 'ADMIN' || activeCanal.creador_id === user?.id) && (
+                    {!activeCanal.is_dm && activeCanal.is_private && (user?.rol === 'ADMIN' || activeCanal.creador_id === user?.id) && (
                       <button className="refresh-chat-btn" onClick={() => setShowMembersModal(true)} title="Gestionar Miembros" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                       </button>
@@ -234,8 +317,8 @@ export const Chats: React.FC = () => {
                       <span className="chat-welcome-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: 'var(--color-text-dim)' }}>
                         <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                       </span>
-                      <h4>¡Te damos la bienvenida a #{activeCanal.nombre}!</h4>
-                      <p className="text-muted font-xs mt-1">Este es el inicio de la conversación de este canal.</p>
+                      <h4>¡Te damos la bienvenida a {activeCanal.is_dm ? (activeCanal.dm_destinatario_nombre || 'tu chat directo') : `#${activeCanal.nombre}`}!</h4>
+                      <p className="text-muted font-xs mt-1">Este es el inicio de la conversación de este chat.</p>
                     </div>
                   ) : (
                     mensajes.map((m) => (
@@ -251,7 +334,30 @@ export const Chats: React.FC = () => {
                             </span>
                             <span className="msg-time text-dim">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
-                          <p className="msg-content-text">{m.mensaje}</p>
+                          {m.mensaje && <p className="msg-content-text">{m.mensaje}</p>}
+                          {m.archivo_ruta && (
+                            <div className="msg-attachment-box" style={{ marginTop: '8px', padding: '8px', borderRadius: '8px', background: 'var(--overlay-02)', border: 'var(--border-glass)', display: 'inline-flex', flexDirection: 'column', gap: '6px', maxWidth: '280px' }}>
+                              {m.archivo_mimetype?.startsWith('image/') ? (
+                                <a href={API_BASE_URL.replace('/api/v1', '') + m.archivo_ruta} target="_blank" rel="noopener noreferrer">
+                                  <img 
+                                    src={API_BASE_URL.replace('/api/v1', '') + m.archivo_ruta} 
+                                    alt={m.archivo_nombre} 
+                                    style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '6px', objectFit: 'contain', cursor: 'zoom-in' }} 
+                                  />
+                                </a>
+                              ) : (
+                                <a 
+                                  href={API_BASE_URL.replace('/api/v1', '') + m.archivo_ruta} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}
+                                >
+                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                  <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{m.archivo_nombre}</span>
+                                </a>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))
@@ -259,15 +365,31 @@ export const Chats: React.FC = () => {
                   <div ref={messagesEndRef} />
                 </div>
 
+                {/* File Attachment Preview */}
+                {selectedFile && (
+                  <div className="selected-file-preview animate-fade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--overlay-02)', border: 'var(--border-glass)', padding: '6px 12px', borderRadius: '8px', margin: '0 16px 8px 16px', fontSize: '11px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                      <span style={{ fontWeight: '600', color: 'var(--color-text-main)' }}>{selectedFile.name}</span>
+                      <span style={{ color: 'var(--color-text-dim)' }}>({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                    <button type="button" onClick={() => setSelectedFile(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', fontWeight: 'bold' }}>Quitar</button>
+                  </div>
+                )}
+
                 {/* Send message text box */}
                 <form onSubmit={handleSendMessage} className="message-composer-form">
+                  <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} />
+                  <button type="button" className="btn btn-secondary attach-file-btn" onClick={triggerFileInput} title="Adjuntar archivo" style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                  </button>
                   <input
                     type="text"
                     className="form-control composer-input"
-                    placeholder={`Enviar mensaje a #${activeCanal.nombre}...`}
+                    placeholder={`Enviar mensaje a ${activeCanal.is_dm ? (activeCanal.dm_destinatario_nombre || 'chat directo') : '#' + activeCanal.nombre}...`}
                     value={newMsg}
                     onChange={(e) => setNewMsg(e.target.value)}
-                    required
+                    required={!selectedFile}
                   />
                   <button type="submit" className="btn btn-primary btn-send-msg">
                     Enviar ➔

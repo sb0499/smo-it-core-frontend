@@ -168,7 +168,7 @@ export const projectService = {
 
   getArchivoUrl(archivoId: number): string {
     const token = localStorage.getItem('smo_token');
-    return `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/proyectos/archivos/${archivoId}?token=${token}`;
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/proyectos/archivos/${archivoId}?token=${token}`;
   },
 
   // Utilities Ticket

@@ -4,6 +4,8 @@ export interface ChatCanal {
   id: number;
   nombre: string;
   is_private: boolean;
+  is_dm?: boolean;
+  dm_destinatario_nombre?: string;
   creador_id: number;
   created_at: string;
 }
@@ -13,6 +15,9 @@ export interface ChatMensaje {
   canal_id: number;
   usuario_id: number;
   mensaje: string;
+  archivo_nombre?: string;
+  archivo_ruta?: string;
+  archivo_mimetype?: string;
   created_at: string;
   usuario_nombre?: string;
   usuario_rol?: string;
@@ -39,8 +44,18 @@ export const chatService = {
     return apiClient.get<ChatMensaje[]>(`/chats/canales/${canalId}/mensajes`);
   },
 
-  async addMensaje(canalId: number, mensaje: string): Promise<ChatMensaje> {
+  async addMensaje(canalId: number, mensaje: string, file?: File): Promise<ChatMensaje> {
+    if (file) {
+      const formData = new FormData();
+      formData.append('mensaje', mensaje || '');
+      formData.append('archivo', file);
+      return apiClient.post<ChatMensaje>(`/chats/canales/${canalId}/mensajes`, formData);
+    }
     return apiClient.post<ChatMensaje>(`/chats/canales/${canalId}/mensajes`, { mensaje });
+  },
+
+  async getOrCreateDMChannel(targetUserId: number): Promise<ChatCanal> {
+    return apiClient.post<ChatCanal>('/chats/dm', { usuario_id: targetUserId });
   },
 
   async getCanalMiembros(canalId: number): Promise<ChatCanalMiembro[]> {

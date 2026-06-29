@@ -64,8 +64,12 @@ export const ticketService = {
     return apiClient.post<{ message: string }>('/tickets/alertas/cierre-diario');
   },
 
+  async getCategorias(): Promise<{ id: number; nombre: string; is_active: boolean }[]> {
+    return apiClient.get<{ id: number; nombre: string; is_active: boolean }[]>('/tickets/categorias');
+  },
+
   getReporteUrl(): string {
     const token = localStorage.getItem('smo_token');
-    return `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/tickets/reporte/semanal?token=${token}`;
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/tickets/reporte/semanal?token=${token}`;
   }
 };

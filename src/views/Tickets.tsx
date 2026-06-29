@@ -33,8 +33,11 @@ export const Tickets: React.FC = () => {
   const [editObs, setEditObs] = useState<string>('');
   const [editTechId, setEditTechId] = useState<number>(0);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showCierrePanel, setShowCierrePanel] = useState(false);
+  const [cierreObs, setCierreObs] = useState('');
 
   const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
+  const [categoriesList, setCategoriesList] = useState<{ id: number; nombre: string }[]>([]);
 
   const fetchTicketsData = async () => {
     try {
@@ -47,6 +50,13 @@ export const Tickets: React.FC = () => {
       setEmpresas(companiesList);
       if (companiesList.length > 0 && newEmpresaId === 0) {
         setNewEmpresaId(companiesList[0].id);
+      }
+
+      // Load categories
+      const cats = await ticketService.getCategorias().catch(() => []);
+      setCategoriesList(cats);
+      if (cats.length > 0) {
+        setNewCat(cats[0].nombre);
       }
 
       // Load techs for assignment
@@ -104,6 +114,35 @@ export const Tickets: React.FC = () => {
     setEditAvance(ticket.avance_proceso);
     setEditObs(ticket.observaciones || '');
     setEditTechId(ticket.tecnico_id || 0);
+    setShowCierrePanel(false);
+    setCierreObs('');
+  };
+
+  const handleCerrarTicketConfirmado = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!selectedTicket) return;
+    if (!cierreObs.trim()) {
+      showAlert('Por favor ingresa las observaciones finales de la solución.');
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      await ticketService.updateTicket(selectedTicket.id, {
+        estado: 'Finalizada',
+        avance_proceso: 100,
+        observaciones: cierreObs,
+        tecnico_id: editTechId > 0 ? editTechId : user?.id,
+      });
+
+      setSelectedTicket(null);
+      fetchTicketsData();
+      showAlert('Ticket cerrado y finalizado exitosamente.');
+    } catch (err: any) {
+      showAlert('Error al finalizar el ticket: ' + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleUpdateTicket = async (e: React.FormEvent) => {
@@ -289,12 +328,9 @@ export const Tickets: React.FC = () => {
                 <div className="form-group half">
                   <label className="form-label">CATEGORÍA</label>
                   <select className="form-control" value={newCat} onChange={(e) => setNewCat(e.target.value)}>
-                    <option value="Sistemas">Sistemas</option>
-                    <option value="Redes">Redes & Internet</option>
-                    <option value="Hardware">Hardware / Equipos</option>
-                    <option value="Software">Software / Apps</option>
-                    <option value="Cámaras">Cámaras Seguridad</option>
-                    <option value="Impresoras">Impresoras / Tinta</option>
+                    {categoriesList.map(c => (
+                      <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -396,6 +432,54 @@ export const Tickets: React.FC = () => {
               {user?.rol === 'ADMIN' || user?.rol === 'TECNICO' ? (
                 <div className="admin-editable-section">
                   <h4 className="section-title gradient-text mt-3 mb-2">Administrar Operación TI</h4>
+
+                  {selectedTicket.estado !== 'Finalizada' && (
+                    <div className="cierre-rapido-container mb-3" style={{ border: '1px solid rgba(16,185,129,0.2)', background: 'rgba(16,185,129,0.04)', padding: '16px', borderRadius: '12px' }}>
+                      {!showCierrePanel ? (
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#10b981', border: 'none', color: 'white', fontWeight: '600', padding: '10px' }}
+                          onClick={() => setShowCierrePanel(true)}
+                        >
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          Finalizar / Cerrar Ticket con Solución
+                        </button>
+                      ) : (
+                        <div className="cierre-rapido-panel animate-fade">
+                          <label className="form-label" style={{ color: '#047857', fontWeight: '600', marginBottom: '8px', display: 'block' }}>OBSERVACIONES DE LA SOLUCIÓN (OBLIGATORIO)</label>
+                          <textarea
+                            className="form-control textarea-field"
+                            placeholder="Escribe la solución detallada aplicada para poder cerrar el ticket..."
+                            rows={3}
+                            value={cierreObs}
+                            onChange={(e) => setCierreObs(e.target.value)}
+                            required
+                            style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', marginBottom: '12px' }}
+                          />
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <button
+                              type="button"
+                              className="btn btn-success"
+                              onClick={handleCerrarTicketConfirmado}
+                              disabled={isUpdating}
+                              style={{ flex: 1, background: '#10b981', border: 'none', color: 'white', fontWeight: '600', padding: '8px' }}
+                            >
+                              {isUpdating ? 'Cerrando...' : 'Confirmar Cierre (Finalizado)'}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              onClick={() => { setShowCierrePanel(false); setCierreObs(''); }}
+                              style={{ flex: 0.5, padding: '8px' }}
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="form-row">
                     <div className="form-group half">

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { ticketService, Ticket } from '../services/ticket.service';
 import { inventoryService, Activo, Consumible } from '../services/inventory.service';
 import { guardService, GuardiaFeriado } from '../services/guard.service';
+import { projectService, Proyecto } from '../services/project.service';
 import './Dashboard.css';
 
 import { apiClient } from '../services/api';
@@ -13,18 +14,20 @@ export const Dashboard: React.FC = () => {
   const [activos, setActivos] = useState<Activo[]>([]);
   const [consumibles, setConsumibles] = useState<Consumible[]>([]);
   const [guardias, setGuardias] = useState<GuardiaFeriado[]>([]);
+  const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [ticketsList, activosList, consumiblesList, guardiasList, usersList, personasList] = await Promise.all([
+      const [ticketsList, activosList, consumiblesList, guardiasList, usersList, personasList, proyectosList] = await Promise.all([
         ticketService.getTickets().catch(() => [] as Ticket[]),
         inventoryService.getActivos().catch(() => [] as Activo[]),
         inventoryService.getConsumibles().catch(() => [] as Consumible[]),
         guardService.getGuardias().catch(() => [] as GuardiaFeriado[]),
         apiClient.get<any[]>('/usuarios').catch(() => []),
         apiClient.get<any[]>('/personas').catch(() => []),
+        projectService.getProyectos().catch(() => [] as Proyecto[]),
       ]);
 
       if (user?.rol === 'TECNICO') {
@@ -51,6 +54,7 @@ export const Dashboard: React.FC = () => {
 
       setConsumibles(consumiblesList);
       setGuardias(guardiasList);
+      setProyectos(proyectosList);
     } catch (e) {
       console.error('Error fetching dashboard metrics', e);
     } finally {
@@ -63,10 +67,14 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   // 1. Ticket computations
+  const totalTicketsCount = tickets.length;
+  const resolvedTicketsCount = tickets.filter(t => t.estado === 'Finalizada').length;
+  const resolutionRate = totalTicketsCount > 0 ? Math.round((resolvedTicketsCount / totalTicketsCount) * 100) : 100;
+
   const openTickets = tickets.filter(t => t.estado !== 'Finalizada');
   const criticalCount = openTickets.filter(t => t.prioridad === 'Critica').length;
   const altaCount = openTickets.filter(t => t.prioridad === 'Alta').length;
-  const processCount = openTickets.filter(t => t.estado === 'En Proceso' || t.estado === 'Pruebas').length;
+
 
   // 2. Inventory computations
   const totalAssets = activos.length;
@@ -75,6 +83,10 @@ export const Dashboard: React.FC = () => {
 
   // 3. Low stock consumables
   const lowStockConsumibles = consumibles.filter(c => c.stock_actual <= c.stock_minimo);
+
+  // 4. Project computations
+  const activeProjects = proyectos.filter(p => p.estado !== 'Finalizado');
+  const finishedProjects = proyectos.filter(p => p.estado === 'Finalizado');
 
   // 4. Today's on-duty technician
   const getTodayGuardTechName = () => {
@@ -131,20 +143,21 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Metric 2: Process Advance */}
+        {/* Metric 2: Resolution Rate */}
         <div className="metric-card glass-panel glass-panel-interactive">
           <div className="metric-header">
-            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: '#fff7ed' }}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: '#ecfdf5' }}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
             </span>
-            <span className="metric-badge process-badge">Avance</span>
+            <span className="metric-badge process-badge" style={{ background: 'rgba(16, 185, 129, 0.08)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.15)' }}>Efectividad</span>
           </div>
           <div className="metric-body">
-            <h2 className="metric-value">{processCount}</h2>
-            <p className="metric-title">En Proceso o Pruebas</p>
+            <h2 className="metric-value">{resolutionRate}%</h2>
+            <p className="metric-title">Tasa de Resolución</p>
           </div>
           <div className="metric-footer">
-            <span className="sub-metric text-muted">Alineando resoluciones semanales</span>
+            <span className="sub-metric text-muted"><strong>{resolvedTicketsCount}</strong> resueltos</span>
+            <span className="sub-metric text-muted"><strong>{totalTicketsCount}</strong> totales</span>
           </div>
         </div>
 
@@ -163,6 +176,23 @@ export const Dashboard: React.FC = () => {
           <div className="metric-footer">
             <span className="sub-metric text-muted"><strong>{assignedAssets}</strong> Asignados</span>
             <span className="sub-metric text-muted"><strong>{stockAssets}</strong> en Bodega</span>
+          </div>
+        </div>
+        {/* Metric 4: Projects TI */}
+        <div className="metric-card glass-panel glass-panel-interactive">
+          <div className="metric-header">
+            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: '#f5f3ff' }}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+            </span>
+            <span className="metric-badge process-badge" style={{ background: 'rgba(124, 58, 237, 0.08)', color: '#8b5cf6', border: '1px solid rgba(124, 58, 237, 0.15)' }}>Proyectos</span>
+          </div>
+          <div className="metric-body">
+            <h2 className="metric-value">{activeProjects.length}</h2>
+            <p className="metric-title">Proyectos Activos</p>
+          </div>
+          <div className="metric-footer">
+            <span className="sub-metric text-muted"><strong>{finishedProjects.length}</strong> Finalizados</span>
+            <span className="sub-metric text-muted"><strong>{proyectos.length}</strong> Totales</span>
           </div>
         </div>
       </div>
@@ -231,6 +261,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
     </div>
   );
 };
