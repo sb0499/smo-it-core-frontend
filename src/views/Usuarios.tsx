@@ -11,6 +11,8 @@ interface Usuario {
   rol_id: number;
   rol_nombre: string;
   must_change_password: number | boolean;
+  nivel_soporte?: 'N1' | 'N2';
+  grupo_n2?: 'Infraestructura' | 'Desarrollo';
   empresa_ids: number[];
   empresa_nombres: string[];
 }
@@ -39,6 +41,8 @@ export const Usuarios: React.FC = () => {
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [rolId, setRolId] = useState<number>(2); // Default to TECNICO
+  const [nivelSoporte, setNivelSoporte] = useState<'N1' | 'N2'>('N1');
+  const [grupoN2, setGrupoN2] = useState<'Infraestructura' | 'Desarrollo' | ''>('');
   const [selectedEmpresas, setSelectedEmpresas] = useState<number[]>([]);
   const [mustChangePassword, setMustChangePassword] = useState(true);
 
@@ -84,6 +88,8 @@ export const Usuarios: React.FC = () => {
     setNombreCompleto('');
     setIsActive(true);
     setRolId(2); // Default to TECNICO
+    setNivelSoporte('N1');
+    setGrupoN2('');
     setSelectedEmpresas([]);
     setMustChangePassword(true);
     setGeneratedPassword(null);
@@ -99,6 +105,8 @@ export const Usuarios: React.FC = () => {
     setNombreCompleto(u.nombre_completo);
     setIsActive(!!u.is_active);
     setRolId(u.rol_id);
+    setNivelSoporte(u.nivel_soporte || 'N1');
+    setGrupoN2(u.grupo_n2 || '');
     setSelectedEmpresas(u.empresa_ids || []);
     setMustChangePassword(!!u.must_change_password);
     setGeneratedPassword(null);
@@ -132,6 +140,8 @@ export const Usuarios: React.FC = () => {
       nombre_completo: nombreCompleto,
       is_active: isActive,
       rol_id: Number(rolId),
+      nivel_soporte: Number(rolId) === 2 ? nivelSoporte : undefined,
+      grupo_n2: (Number(rolId) === 2 && nivelSoporte === 'N2') ? (grupoN2 || null) : null,
       empresa_ids: selectedEmpresas,
       must_change_password: mustChangePassword
     };
@@ -231,9 +241,16 @@ export const Usuarios: React.FC = () => {
                     <td style={{ fontWeight: '600' }}>{u.nombre_completo}</td>
                     <td>{u.email}</td>
                     <td>
-                      <span className={`badge ${u.rol_nombre === 'ADMIN' ? 'badge-critica' : u.rol_nombre === 'TECNICO' ? 'badge-alta' : 'badge-baja'}`} style={{ fontSize: '10px' }}>
-                        {u.rol_nombre}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span className={`badge ${u.rol_nombre === 'ADMIN' ? 'badge-critica' : u.rol_nombre === 'TECNICO' ? 'badge-alta' : 'badge-baja'}`} style={{ fontSize: '10px' }}>
+                          {u.rol_nombre}
+                        </span>
+                        {u.rol_nombre === 'TECNICO' && (
+                          <span className="badge badge-process" style={{ fontSize: '9px', background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                            Soporte {u.nivel_soporte || 'N1'} {u.grupo_n2 ? `(${u.grupo_n2})` : ''}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '300px' }}>
@@ -368,6 +385,43 @@ export const Usuarios: React.FC = () => {
                   <option value={3}>USUARIO (Acceso básico de solicitud y lectura)</option>
                 </select>
               </div>
+
+              {Number(rolId) === 2 && (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">NIVEL DE SOPORTE (ITIL)</label>
+                    <select
+                      className="form-control"
+                      value={nivelSoporte}
+                      onChange={(e) => {
+                        setNivelSoporte(e.target.value as any);
+                        if (e.target.value === 'N1') setGrupoN2('');
+                      }}
+                      disabled={submitting}
+                    >
+                      <option value="N1">Nivel 1 (Helpdesk / Presencial en CC)</option>
+                      <option value="N2">Nivel 2 (Especialista / Infraestructura y Desarrollo)</option>
+                    </select>
+                  </div>
+
+                  {nivelSoporte === 'N2' && (
+                    <div className="form-group">
+                      <label className="form-label">GRUPO N2 (ESPECIALIDAD)</label>
+                      <select
+                        className="form-control"
+                        value={grupoN2}
+                        onChange={(e) => setGrupoN2(e.target.value as any)}
+                        disabled={submitting}
+                        required
+                      >
+                        <option value="">Seleccione Especialidad...</option>
+                        <option value="Infraestructura">Infraestructura</option>
+                        <option value="Desarrollo">Desarrollo</option>
+                      </select>
+                    </div>
+                  )}
+                </>
+              )}
 
               <div className="form-group">
                 <label className="form-label">SEDES FÍSICAS BAJO SUPERVISIÓN</label>

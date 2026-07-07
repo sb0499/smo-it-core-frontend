@@ -12,7 +12,7 @@ import { Guardias } from './views/Guardias';
 import { Chats } from './views/Chats';
 import { Personas } from './views/Personas';
 import { Proveedores } from './views/Proveedores';
-import { Plantillas } from './views/Plantillas';
+import { SoportesRecurrentes } from './views/SoportesRecurrentes';
 import { Usuarios } from './views/Usuarios';
 import { MovimientosInventario } from './views/MovimientosInventario';
 import { Reportes } from './views/Reportes';
@@ -65,7 +65,7 @@ function AppContent() {
       case 'proveedores':
         return <Proveedores key={refreshKey} />;
       case 'plantillas':
-        return <Plantillas key={refreshKey} />;
+        return <SoportesRecurrentes key={refreshKey} />;
       case 'usuarios':
         return <Usuarios key={refreshKey} />;
       case 'movimientos':

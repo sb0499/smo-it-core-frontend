@@ -199,7 +199,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className={`sub-nav-item ${activeView === 'plantillas' ? 'active' : ''}`}
                     onClick={() => handleNav('plantillas')}
                   >
-                    <span>• Plantillas Tareas</span>
+                    <span>• Soportes Recurrentes</span>
                   </button>
                 </div>
               </div>

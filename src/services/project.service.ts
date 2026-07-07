@@ -89,6 +89,8 @@ export interface User {
   email: string;
   nombre_completo: string;
   rol: 'ADMIN' | 'TECNICO' | 'USUARIO';
+  nivel_soporte?: 'N1' | 'N2';
+  grupo_n2?: 'Infraestructura' | 'Desarrollo';
 }
 
 export const projectService = {

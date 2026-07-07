@@ -17,6 +17,9 @@ export const Tickets: React.FC = () => {
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [showEscalarModal, setShowEscalarModal] = useState(false);
+  const [escalarGrupo, setEscalarGrupo] = useState<'Infraestructura' | 'Desarrollo'>('Infraestructura');
+  const [escalarTechId, setEscalarTechId] = useState<number>(0);
 
   // New ticket state
   const [newTitle, setNewTitle] = useState('');
@@ -142,6 +145,27 @@ export const Tickets: React.FC = () => {
     }
   };
 
+  const handleEscalarN2Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicket) return;
+
+    try {
+      setIsUpdating(true);
+      await ticketService.escalarTicketAN2(selectedTicket.id, {
+        grupo_n2: escalarGrupo,
+        tecnico_id: escalarTechId > 0 ? escalarTechId : null
+      });
+      setShowEscalarModal(false);
+      setSelectedTicket(null);
+      fetchTicketsData();
+      showAlert('Ticket escalado a Nivel 2 exitosamente.');
+    } catch (err: any) {
+      showAlert('Error al escalar el ticket: ' + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleUpdateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTicket) return;
@@ -210,6 +234,7 @@ export const Tickets: React.FC = () => {
             <option value="Pruebas">Pruebas</option>
             <option value="Finalizada">Finalizada</option>
             <option value="Escalado a Proyecto">Escalado a Proyecto</option>
+            <option value="Escalado a Proveedor">Escalado a Proveedor</option>
           </select>
         </div>
  
@@ -260,7 +285,10 @@ export const Tickets: React.FC = () => {
                 <span className={`badge badge-priority-${ticket.prioridad.toLowerCase()}`}>
                   {ticket.prioridad}
                 </span>
-                <span className={`badge badge-${ticket.estado.toLowerCase().replace(' ', '')}`}>
+                <span className={`badge badge-level-${ticket.nivel_soporte?.toLowerCase() || 'n1'}`}>
+                  Nivel {ticket.nivel_soporte || 'N1'} {ticket.nivel_soporte === 'N2' && ticket.grupo_n2 ? `(${ticket.grupo_n2})` : ''}
+                </span>
+                <span className={`badge badge-${ticket.estado.toLowerCase().replace(/\s+/g, '')}`}>
                   {ticket.estado}
                 </span>
               </div>
@@ -414,6 +442,10 @@ export const Tickets: React.FC = () => {
                   <span>Sede: <strong>{selectedTicket.empresa_nombre || 'CONDADO'}</strong></span>
                   <span>Categoría: <strong>{selectedTicket.categoria}</strong></span>
                   <span>Prioridad: <strong>{selectedTicket.prioridad}</strong></span>
+                  <span>Nivel: <strong className={`badge badge-level-${selectedTicket.nivel_soporte?.toLowerCase() || 'n1'}`} style={{ display: 'inline-block', padding: '2px 6px', fontSize: '10px', verticalAlign: 'middle', marginLeft: '4px' }}>{selectedTicket.nivel_soporte || 'N1'} {selectedTicket.nivel_soporte === 'N2' && selectedTicket.grupo_n2 ? `(${selectedTicket.grupo_n2})` : ''}</strong></span>
+                  {selectedTicket.sla_paused_at && (
+                    <span style={{ color: '#ec4899', fontWeight: 600 }}>[SLA PAUSADO]</span>
+                  )}
                   <span>Fecha: {new Date(selectedTicket.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -485,6 +517,7 @@ export const Tickets: React.FC = () => {
                         <option value="Pruebas">Pruebas</option>
                         <option value="Finalizada">Finalizada</option>
                         <option value="Escalado a Proyecto">Escalado a Proyecto</option>
+                        <option value="Escalado a Proveedor">Escalado a Proveedor (SLA Pausado)</option>
                       </select>
                     </div>
                   </div>
@@ -500,7 +533,9 @@ export const Tickets: React.FC = () => {
                         >
                           <option value="0">Seleccionar Técnico...</option>
                           {technicians.map(t => (
-                            <option key={t.id} value={t.id}>{t.nombre_completo}</option>
+                            <option key={t.id} value={t.id}>
+                              {t.nombre_completo} {t.nivel_soporte ? `(${t.nivel_soporte})` : ''}
+                            </option>
                           ))}
                         </select>
                       ) : (
@@ -548,11 +583,82 @@ export const Tickets: React.FC = () => {
 
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setSelectedTicket(null)}>Cerrar</button>
+                {selectedTicket.nivel_soporte === 'N1' && (user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && selectedTicket.estado !== 'Finalizada' && (
+                  <button
+                    type="button"
+                    className="btn btn-warning"
+                    style={{ background: '#8b5cf6', borderColor: '#8b5cf6', color: 'white' }}
+                    onClick={() => {
+                      setEscalarGrupo('Infraestructura');
+                      setEscalarTechId(0);
+                      setShowEscalarModal(true);
+                    }}
+                    disabled={isUpdating}
+                  >
+                    Escalar a N2 (Especialista)
+                  </button>
+                )}
                 {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
                   <button type="submit" className="btn btn-primary" disabled={isUpdating}>
                     {isUpdating ? 'Guardando...' : 'Actualizar Estado'}
                   </button>
                 )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {showEscalarModal && (
+        <div className="modal-backdrop animate-fade" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+          <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '420px', padding: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '16px' }}>Escalar Ticket a Nivel 2</h4>
+              <button type="button" onClick={() => setShowEscalarModal(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '20px', cursor: 'pointer' }}>×</button>
+            </div>
+            
+            <form onSubmit={handleEscalarN2Submit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">SELECCIONE GRUPO N2</label>
+                <select
+                  className="form-control"
+                  value={escalarGrupo}
+                  onChange={(e) => {
+                    setEscalarGrupo(e.target.value as any);
+                    setEscalarTechId(0);
+                  }}
+                  disabled={isUpdating}
+                  required
+                >
+                  <option value="Infraestructura">Infraestructura</option>
+                  <option value="Desarrollo">Desarrollo</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">ASIGNAR A TÉCNICO ESPECÍFICO</label>
+                <select
+                  className="form-control"
+                  value={escalarTechId}
+                  onChange={(e) => setEscalarTechId(Number(e.target.value))}
+                  disabled={isUpdating}
+                >
+                  <option value="0">Auto-asignación (Balanceo de Carga)</option>
+                  {technicians
+                    .filter(t => t.nivel_soporte === 'N2' && t.grupo_n2 === escalarGrupo)
+                    .map(t => (
+                      <option key={t.id} value={t.id}>{t.nombre_completo}</option>
+                    ))
+                  }
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowEscalarModal(false)} disabled={isUpdating}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#8b5cf6', borderColor: '#8b5cf6', color: 'white' }} disabled={isUpdating}>
+                  {isUpdating ? 'Escalando...' : 'Confirmar Escalación'}
+                </button>
               </div>
             </form>
           </div>
