@@ -22,6 +22,29 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const [notifList, setNotifList] = useState<Notificacion[]>([]);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
+  const [ecuadorTime, setEcuadorTime] = useState('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const date = new Date();
+      const dateStr = date.toLocaleDateString('es-EC', {
+        timeZone: 'America/Guayaquil',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      const timeStr = date.toLocaleTimeString('es-EC', {
+        timeZone: 'America/Guayaquil',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      setEcuadorTime(`${dateStr} ${timeStr}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchNotifs = async () => {
     try {
@@ -194,9 +217,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
         </button>
 
-        <div className="system-status">
-          <span className="status-dot"></span>
-          <span className="status-text">Online</span>
+        <div className="system-status" style={{ border: '1px solid #f1f5f9', background: '#f8fafc', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontWeight: 'bold' }}>
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#2563eb' }}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span style={{ fontFamily: 'monospace' }}>{ecuadorTime}</span>
         </div>
       </div>
     </header>

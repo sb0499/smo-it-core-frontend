@@ -33,6 +33,22 @@ export const Proyectos: React.FC = () => {
   const [newProjDate, setNewProjDate] = useState('');
   const [newProjType, setNewProjType] = useState('Infraestructura');
 
+  // Add task / subtask models trigger
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDesc, setTaskDesc] = useState('');
+  const [taskDate, setTaskDate] = useState('');
+  const [taskResponsableId, setTaskResponsableId] = useState<number>(0);
+
+  const [showAddSubtaskModal, setShowAddSubtaskModal] = useState(false);
+  const [selectedTaskForSubtask, setSelectedTaskForSubtask] = useState<Tarea | null>(null);
+  const [subtaskTitle, setSubtaskTitle] = useState('');
+  const [subtaskDate, setSubtaskDate] = useState('');
+  const [subtaskResponsableId, setSubtaskResponsableId] = useState<number>(0);
+
+  // New Project Member state
+  const [selectedMiembros, setSelectedMiembros] = useState<number[]>([]);
+
   const fetchProjects = async () => {
     try {
       setLoading(true);
@@ -74,12 +90,14 @@ export const Proyectos: React.FC = () => {
         descripcion: newProjDesc || null,
         fecha_fin_estimada: new Date(newProjDate).toISOString(),
         tipo_proyecto: newProjType,
+        miembros: selectedMiembros.length > 0 ? JSON.stringify(selectedMiembros) : undefined,
       });
 
       setShowAddProjectModal(false);
       setNewProjName('');
       setNewProjDesc('');
       setNewProjDate('');
+      setSelectedMiembros([]);
       
       fetchProjects();
     } catch (err: any) {
@@ -87,12 +105,65 @@ export const Proyectos: React.FC = () => {
     }
   };
 
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeProyecto || !taskTitle || !taskDate || !taskResponsableId) return;
+
+    try {
+      await projectService.createTarea({
+        proyecto_id: activeProyecto.id,
+        titulo: taskTitle,
+        descripcion: taskDesc || undefined,
+        fecha_fin: new Date(taskDate).toISOString(),
+        responsable_id: Number(taskResponsableId),
+      });
+
+      showAlert('Tarea creada exitosamente.');
+      setShowAddTaskModal(false);
+      setTaskTitle('');
+      setTaskDesc('');
+      setTaskDate('');
+      setTaskResponsableId(0);
+
+      await handleSelectProyecto(activeProyecto.id);
+    } catch (err: any) {
+      showAlert('Error al crear tarea: ' + err.message);
+    }
+  };
+
+  const handleCreateSubtask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTaskForSubtask || !subtaskTitle || !subtaskDate || !subtaskResponsableId) return;
+
+    try {
+      await projectService.createSubtarea({
+        tarea_id: selectedTaskForSubtask.id,
+        titulo: subtaskTitle,
+        fecha_fin: new Date(subtaskDate).toISOString(),
+        responsable_id: Number(subtaskResponsableId),
+      });
+
+      showAlert('Subtarea creada exitosamente.');
+      setShowAddSubtaskModal(false);
+      setSubtaskTitle('');
+      setSubtaskDate('');
+      setSubtaskResponsableId(0);
+      setSelectedTaskForSubtask(null);
+
+      if (activeProyecto) {
+        await handleSelectProyecto(activeProyecto.id);
+      }
+    } catch (err: any) {
+      showAlert('Error al crear subtarea: ' + err.message);
+    }
+  };
+
   const handleSubtaskToggle = async (sub: Subtarea, isChecked: boolean) => {
     if (!activeProyecto) return;
 
     try {
-      const nextEstado = isChecked ? 'Finalizado' : 'En Proceso';
-      const nextAvance = isChecked ? 100 : 30;
+      const nextEstado = isChecked ? 'Finalizado' : 'Sin Iniciar';
+      const nextAvance = isChecked ? 100 : 0;
       
       await projectService.updateSubtarea(sub.id, {
         estado: nextEstado,
@@ -173,6 +244,12 @@ export const Proyectos: React.FC = () => {
       showAlert('Error al finalizar tarea: ' + e.message);
     }
   };
+  // Parse project members for initials avatars display
+  let memberIds: number[] = [];
+  try {
+    memberIds = activeProyecto && activeProyecto.miembros ? JSON.parse(activeProyecto.miembros) : [];
+  } catch (err) {}
+  const projectMembers = technicians.filter(t => memberIds.includes(t.id));
 
   return (
     <div className="proyectos-container animate-fade">
@@ -180,9 +257,10 @@ export const Proyectos: React.FC = () => {
       {!activeProyecto ? (
         /* PROJECTS LIST OVERVIEW */
         <>
-          <div className="projects-header-controls glass-panel">
-            <h3>Portafolio de Proyectos Activos</h3>
-            <button className="btn btn-primary" onClick={() => setShowAddProjectModal(true)}>
+          <div className="projects-header-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '0 4px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'var(--color-text-main)' }}>Portafolio de Proyectos Activos</h2>
+            <button className="btn btn-primary" onClick={() => setShowAddProjectModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Crear Proyecto
             </button>
           </div>
@@ -244,14 +322,30 @@ export const Proyectos: React.FC = () => {
       ) : (
         /* PROJECT DETAIL VIEW */
         <div className="project-detail-layout animate-fade">
-          <div className="detail-header glass-panel">
+          {/* Unified Clean Header */}
+          <div className="detail-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', padding: '0 4px', background: 'transparent', border: 'none', boxShadow: 'none' }}>
             <div className="header-left">
               <button className="back-btn-trigger" onClick={handleCloseProject} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Volver a Proyectos
               </button>
-              <h2 className="project-name mt-2">{activeProyecto.nombre}</h2>
-              <span className="project-tag mt-1">Categoría: {activeProyecto.tipo_proyecto} • Estado: {activeProyecto.estado}</span>
+              <h2 className="project-name mt-2" style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: '8px 0 4px 0' }}>{activeProyecto.nombre}</h2>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span className="badge" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', fontSize: '10px', textTransform: 'uppercase', fontWeight: '600' }}>Categoría: {activeProyecto.tipo_proyecto}</span>
+                <span className={`badge badge-state-${activeProyecto.estado.toLowerCase().replace(' ', '')}`} style={{ fontSize: '10px' }}>{activeProyecto.estado}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
+                <span style={{ fontSize: '10.5px', color: '#64748b', marginRight: '4px', fontWeight: '500' }}>Equipo:</span>
+                {projectMembers.map(m => {
+                  const initials = m.nombre_completo.split(' ').map(n => n[0] || '').join('').slice(0, 2).toUpperCase();
+                  return (
+                    <div key={m.id} className="comment-avatar" style={{ width: '22px', height: '22px', fontSize: '9px', background: '#eff6ff', border: '1px solid #dbeafe' }} title={m.nombre_completo}>
+                      {initials}
+                    </div>
+                  );
+                })}
+                {projectMembers.length === 0 && <span style={{ fontSize: '10.5px', color: '#94a3b8', fontStyle: 'italic' }}>Sin miembros asignados</span>}
+              </div>
             </div>
             <div className="header-right" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
               {(!activeProyecto.tareas || activeProyecto.tareas.length === 0) && activeProyecto.estado !== 'Finalizado' && (
@@ -266,19 +360,32 @@ export const Proyectos: React.FC = () => {
             </div>
           </div>
 
-          <div className="project-grid-columns mt-4">
+          <div className="project-grid-columns">
             {/* Column 1: Tasks & Subtasks (Kanban accordion) */}
-            <div className="project-column-left glass-panel">
-              <h3 className="column-title mb-4">Lista de Tareas y Subtareas</h3>
+            <div className="project-column-left" style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 className="column-title" style={{ fontSize: '14px', fontWeight: '600', color: '#334155', border: 'none', padding: 0, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#2563eb' }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                  Lista de Tareas y Subtareas
+                </h3>
+                {activeProyecto.estado !== 'Finalizado' && (
+                  <button className="btn btn-primary" onClick={() => { setTaskDate(new Date(activeProyecto.fecha_fin_estimada).toISOString().split('T')[0]); setShowAddTaskModal(true); }} style={{ padding: '4px 10px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Agregar Tarea
+                  </button>
+                )}
+              </div>
 
               {loadingDetail ? (
                 <div className="loader-detail"></div>
               ) : !activeProyecto.tareas || activeProyecto.tareas.length === 0 ? (
-                <p className="text-muted text-center py-5">No hay tareas programadas para este proyecto.</p>
+                <div className="glass-panel text-center py-5">
+                  <p className="text-muted">No hay tareas programadas para este proyecto.</p>
+                </div>
               ) : (
                 <div className="project-tasks-list">
                   {activeProyecto.tareas.map((task) => (
-                    <div key={task.id} className="task-block glass-panel">
+                    <div key={task.id} className={`task-block glass-panel task-block-${task.estado.toLowerCase().replace(' ', '')}`}>
                       <div className="task-header">
                         <div className="task-title-group">
                           <span className="task-title">{task.titulo}</span>
@@ -288,16 +395,26 @@ export const Proyectos: React.FC = () => {
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {task.estado !== 'Finalizado' && (
+                            <button 
+                              className="btn btn-secondary" 
+                              style={{ padding: '3px 6px', fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                              onClick={() => { setSelectedTaskForSubtask(task); setSubtaskDate(new Date(task.fecha_fin || activeProyecto.fecha_fin_estimada).toISOString().split('T')[0]); setShowAddSubtaskModal(true); }}
+                            >
+                              <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                              + Subtarea
+                            </button>
+                          )}
                           {(!task.subtareas || task.subtareas.length === 0) && task.estado !== 'Finalizado' && (
                             <button 
                               className="btn btn-secondary" 
-                              style={{ padding: '4px 8px', fontSize: '11px' }}
+                              style={{ padding: '3px 6px', fontSize: '10px' }}
                               onClick={() => handleFinishTask(task)}
                             >
                               Terminar
                             </button>
                           )}
-                          <span className={`badge badge-state-${task.estado.toLowerCase().replace(' ', '')}`}>
+                          <span className={`badge badge-state-${task.estado.toLowerCase().replace(' ', '')}`} style={{ fontSize: '10.5px' }}>
                             {task.estado} ({task.avance_porcentaje}%)
                           </span>
                         </div>
@@ -306,8 +423,8 @@ export const Proyectos: React.FC = () => {
                       {task.descripcion && <p className="task-desc-text text-muted">{task.descripcion}</p>}
 
                       {/* Subtasks listing */}
-                      <div className="subtasks-container mt-3">
-                        <span className="subtasks-title font-xs text-dim">SUBTAREAS COMPLEMENTARIAS:</span>
+                      <div className="subtasks-container">
+                        <span className="subtasks-title">Subtareas</span>
                         {!task.subtareas || task.subtareas.length === 0 ? (
                           <p className="font-xs text-muted italic mt-1">Sin subtareas.</p>
                         ) : (
@@ -344,21 +461,34 @@ export const Proyectos: React.FC = () => {
             <div className="project-column-right">
               {/* Discuss comments */}
               <div className="discuss-section glass-panel">
-                <h3 className="column-title mb-3">Mesa de Discusión</h3>
+                <h3 className="column-title mb-3">Comentarios</h3>
                 
                 <div className="comments-timeline">
                   {!activeProyecto.comentarios || activeProyecto.comentarios.length === 0 ? (
                     <p className="text-muted text-center py-4 font-xs">No hay comentarios en este proyecto. Comparte tus notas abajo.</p>
                   ) : (
-                    activeProyecto.comentarios.map((c) => (
-                      <div key={c.id} className="comment-bubble">
-                        <div className="comment-meta">
-                          <span className="comment-author">{c.autor_nombre}</span>
-                          <span className="comment-date text-dim">{new Date(c.created_at).toLocaleTimeString()}</span>
+                    activeProyecto.comentarios.map((c) => {
+                      const initials = (c.autor_nombre || 'Sin Nombre')
+                        .split(' ')
+                        .map((n: string) => n[0] || '')
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase();
+                      return (
+                        <div key={c.id} className="comment-bubble">
+                          <div className="comment-avatar" title={c.autor_nombre || 'Sin Nombre'}>
+                            {initials}
+                          </div>
+                          <div className="comment-body">
+                            <div className="comment-meta">
+                              <span className="comment-author">{c.autor_nombre || 'Sin Nombre'}</span>
+                              <span className="comment-date text-dim">{new Date(c.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            <p className="comment-content">{c.contenido}</p>
+                          </div>
                         </div>
-                        <p className="comment-content">{c.contenido}</p>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 
@@ -376,7 +506,7 @@ export const Proyectos: React.FC = () => {
 
               {/* Uploaded Documents */}
               <div className="files-section glass-panel mt-4">
-                <h3 className="column-title mb-3">Documentos y Planos</h3>
+                <h3 className="column-title mb-3">Documentos Adjuntos</h3>
                 
                 <div className="files-list">
                   {!activeProyecto.archivos || activeProyecto.archivos.length === 0 ? (
@@ -506,9 +636,164 @@ export const Proyectos: React.FC = () => {
                 />
               </div>
 
+              <div className="form-group">
+                <label className="form-label">ASIGNAR EQUIPO (MIEMBROS)</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', maxHeight: '120px', overflowY: 'auto', border: '1px solid #e2e8f0', padding: '8px', borderRadius: '8px', background: '#f8fafc' }}>
+                  {technicians.map((t) => (
+                    <label key={t.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', cursor: 'pointer', margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedMiembros.includes(t.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedMiembros([...selectedMiembros, t.id]);
+                          } else {
+                            setSelectedMiembros(selectedMiembros.filter(id => id !== t.id));
+                          }
+                        }}
+                      />
+                      {t.nombre_completo}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowAddProjectModal(false)}>Cancelar</button>
                 <button type="submit" className="btn btn-primary">Iniciar Proyecto</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD TASK MODAL */}
+      {showAddTaskModal && (
+        <div className="modal-overlay animate-fade">
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '450px' }}>
+            <div className="modal-header">
+              <h2>Agregar Nueva Tarea</h2>
+              <button className="modal-close-btn" onClick={() => setShowAddTaskModal(false)}>×</button>
+            </div>
+
+            <form onSubmit={handleCreateTask} className="modal-form">
+              <div className="form-group">
+                <label className="form-label">TÍTULO DE LA TAREA</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ej: Instalar Firewall Fortinet"
+                  value={taskTitle}
+                  onChange={(e) => setTaskTitle(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">DESCRIPCIÓN</label>
+                <textarea
+                  className="form-control textarea-field"
+                  placeholder="Instrucciones adicionales para la tarea..."
+                  rows={2}
+                  value={taskDesc}
+                  onChange={(e) => setTaskDesc(e.target.value)}
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group half">
+                  <label className="form-label">RESPONSABLE</label>
+                  <select
+                    className="form-control"
+                    value={taskResponsableId || ''}
+                    onChange={(e) => setTaskResponsableId(Number(e.target.value))}
+                    required
+                  >
+                    <option value="">Seleccionar...</option>
+                    {(projectMembers.length > 0 ? projectMembers : technicians).map((t) => (
+                      <option key={t.id} value={t.id}>{t.nombre_completo}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group half">
+                  <label className="form-label">FECHA LÍMITE</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={taskDate}
+                    onChange={(e) => setTaskDate(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions mt-3">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowAddTaskModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary">Guardar Tarea</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD SUBTASK MODAL */}
+      {showAddSubtaskModal && selectedTaskForSubtask && (
+        <div className="modal-overlay animate-fade">
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h2>Agregar Subtarea</h2>
+              <button className="modal-close-btn" onClick={() => { setShowAddSubtaskModal(false); setSelectedTaskForSubtask(null); }}>×</button>
+            </div>
+
+            <form onSubmit={handleCreateSubtask} className="modal-form">
+              <div style={{ marginBottom: '14px', fontSize: '11px', color: '#64748b' }}>
+                Tarea principal: <strong>{selectedTaskForSubtask.titulo}</strong>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">TÍTULO DE LA SUBTAREA</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ej: Respaldar configuración anterior"
+                  value={subtaskTitle}
+                  onChange={(e) => setSubtaskTitle(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group half">
+                  <label className="form-label">RESPONSABLE</label>
+                  <select
+                    className="form-control"
+                    value={subtaskResponsableId || ''}
+                    onChange={(e) => setSubtaskResponsableId(Number(e.target.value))}
+                    required
+                  >
+                    <option value="">Seleccionar...</option>
+                    {(projectMembers.length > 0 ? projectMembers : technicians).map((t) => (
+                      <option key={t.id} value={t.id}>{t.nombre_completo}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group half">
+                  <label className="form-label">FECHA LÍMITE</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={subtaskDate}
+                    onChange={(e) => setSubtaskDate(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions mt-3">
+                <button type="button" className="btn btn-secondary" onClick={() => { setShowAddSubtaskModal(false); setSelectedTaskForSubtask(null); }}>Cancelar</button>
+                <button type="submit" className="btn btn-primary">Guardar Subtarea</button>
               </div>
             </form>
           </div>

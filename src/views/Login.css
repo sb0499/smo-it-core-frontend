@@ -1,4 +1,4 @@
-/* Login Screen CSS for SMO IT CORE - Professional Redesign */
+/* Sleek Premium Login Screen CSS for SMO IT CORE */
 
 .login-wrapper {
   position: relative;
@@ -7,177 +7,214 @@
   justify-content: center;
   width: 100vw;
   height: 100vh;
-  background-color: #f1f5f9;
-  background-image: 
-    radial-gradient(at 0% 0%, #e2e8f0 0px, transparent 50%),
-    radial-gradient(at 100% 100%, #cbd5e1 0px, transparent 50%);
+  background-color: #f8fafc;
   overflow: hidden;
+  font-family: var(--font-sans);
 }
 
-/* Container */
+/* Background Blobs for Gradient Blur Effect */
+.bg-blob {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.blob-primary {
+  background: #bfdbfe;
+  top: -10%;
+  left: -5%;
+  animation: floatSlow 15s infinite alternate;
+}
+
+.blob-secondary {
+  background: #dbeafe;
+  bottom: -10%;
+  right: -5%;
+  animation: floatSlow 12s infinite alternate-reverse;
+}
+
+@keyframes floatSlow {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(40px, 30px) scale(1.1); }
+}
+
+/* Login Container */
 .login-container {
   position: relative;
   width: 100%;
-  max-width: 440px;
-  padding: 40px;
-  z-index: 1;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 400px;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.05);
+  z-index: 10;
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .logo-brand {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: #0f172a;
-}
-
-.logo-brand .gradient-text {
-  background: linear-gradient(135deg, #1e3a8a, #4f46e5);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
 }
 
 .logo-tagline {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #64748b;
 }
 
+/* Form Styles */
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon-svg {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.input-with-icon .form-control {
+  width: 100%;
+  padding-left: 36px; /* Space for the icon */
+  height: 40px;
+  font-size: 13px;
+  border-color: #e2e8f0;
+}
+
+.input-with-icon .form-control:focus {
+  border-color: #2563eb;
+  background: #ffffff;
 }
 
 .btn-submit {
   width: 100%;
-  padding: 14px;
-  font-size: 15px;
-  margin-top: 10px;
-  background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+  height: 40px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #2563eb;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.15);
+  border-radius: 6px;
+  margin-top: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
-  box-shadow: 0 6px 15px rgba(30, 58, 138, 0.25);
+  background: #1d4ed8;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
-.spinner-auth {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+.btn-submit:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-.spinner-auth svg {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  100% { transform: rotate(360deg); }
-}
-
-/* Error alert */
+/* Alerts */
 .login-error-alert {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #fef2f2;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fff5f5;
   border: 1px solid #fee2e2;
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin-bottom: 24px;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
 }
 
 .alert-icon-svg {
   color: #ef4444;
+  margin-top: 1.5px;
   flex-shrink: 0;
 }
 
 .alert-text {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 500;
   color: #b91c1c;
+  line-height: 1.4;
 }
 
 /* Quick Access Section */
 .quick-access-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 36px;
-  padding-top: 24px;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 20px;
   border-top: 1px solid #f1f5f9;
 }
 
 .quick-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-size: 10.5px;
+  font-weight: 600;
   color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   text-align: center;
 }
 
 .quick-buttons-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 
 .quick-btn {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 5px;
   color: #475569;
-  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 600;
-  padding: 8px 4px;
+  padding: 6px 2px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   text-align: center;
 }
 
 .quick-btn:hover {
   background: #f1f5f9;
-  color: #0f172a;
   border-color: #cbd5e1;
-  transform: translateY(-1px);
+  color: #1e293b;
 }
 
-.quick-btn.role-badge-admin:hover {
-  border-color: #c084fc;
-  background: #faf5ff;
-  color: #7e22ce;
+.role-badge-admin:hover {
+  color: #2563eb;
+  background: #eff6ff;
+  border-color: #dbeafe;
 }
 
-.quick-btn.role-badge-tech:hover {
-  border-color: #38bdf8;
-  background: #f0f9ff;
-  color: #0369a1;
+.role-badge-tech:hover {
+  color: #166534;
+  background: #f0fdf4;
+  border-color: #dcfce7;
 }
 
-.quick-btn.role-badge-user:hover {
-  border-color: #94a3b8;
-  background: #f8fafc;
-  color: #334155;
-}
-
-@media (max-width: 480px) {
-  .login-container {
-    padding: 30px 20px;
-    max-width: 90%;
-  }
+.role-badge-user:hover {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fef3c7;
 }

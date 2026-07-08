@@ -82,6 +82,7 @@ export interface Proyecto {
   comentarios?: ProyectoComentario[];
   archivos?: ProyectoArchivo[];
   historial?: ProyectoHistorial[];
+  miembros?: string;
 }
 
 export interface User {
@@ -91,6 +92,8 @@ export interface User {
   rol: 'ADMIN' | 'TECNICO' | 'USUARIO';
   nivel_soporte?: 'N1' | 'N2';
   grupo_n2?: 'Infraestructura' | 'Desarrollo';
+  empresa_ids?: number[];
+  empresa_nombres?: string[];
 }
 
 export const projectService = {

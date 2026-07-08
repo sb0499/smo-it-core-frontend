@@ -204,11 +204,9 @@ export const Personas: React.FC = () => {
                     </td>
                     <td>{p.departamento || 'N/A'}</td>
                     <td className="text-dim">{p.cargo || 'N/A'}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => openEditModal(p)}>
-                        Editar
+                      <button className="btn btn-secondary" style={{ padding: '5px 7px' }} onClick={() => openEditModal(p)} title="Editar">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg>
                       </button>
-                    </td>
                   </tr>
                 ))
               )}

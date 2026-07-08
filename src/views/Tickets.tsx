@@ -41,6 +41,9 @@ export const Tickets: React.FC = () => {
   const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
   const [categoriesList, setCategoriesList] = useState<{ id: number; nombre: string }[]>([]);
 
+  const loggedInTech = technicians.find(t => t.id === user?.id);
+  const isN2 = loggedInTech?.nivel_soporte === 'N2';
+
   const fetchTicketsData = async () => {
     try {
       setLoading(true);
@@ -516,8 +519,12 @@ export const Tickets: React.FC = () => {
                         <option value="Pendiente">Pendiente</option>
                         <option value="Pruebas">Pruebas</option>
                         <option value="Finalizada">Finalizada</option>
-                        <option value="Escalado a Proyecto">Escalado a Proyecto</option>
-                        <option value="Escalado a Proveedor">Escalado a Proveedor (SLA Pausado)</option>
+                        {(user?.rol === 'ADMIN' || isN2) && (
+                          <>
+                            <option value="Escalado a Proyecto">Escalado a Proyecto</option>
+                            <option value="Escalado a Proveedor">Escalado a Proveedor (SLA Pausado)</option>
+                          </>
+                        )}
                       </select>
                     </div>
                   </div>
