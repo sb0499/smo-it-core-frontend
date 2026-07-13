@@ -33,7 +33,7 @@ export const Reportes: React.FC = () => {
     setLoadingStats(true);
     Promise.all([
       ticketService.getTickets().catch(() => []),
-      inventoryService.getActivos().catch(() => []),
+      inventoryService.getActivos(1, 999999).then(res => res.data).catch(() => []),
       projectService.getProyectos().catch(() => []),
     ]).then(([ticketsList, activosList, proyectosList]) => {
       setTicketsCount(ticketsList.length);

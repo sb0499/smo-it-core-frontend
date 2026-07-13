@@ -23,8 +23,8 @@ export const Dashboard: React.FC = () => {
       setLoading(true);
       const [ticketsList, activosList, consumiblesList, guardiasList, usersList, personasList, proyectosList, companiesList] = await Promise.all([
         ticketService.getTickets().catch(() => [] as Ticket[]),
-        inventoryService.getActivos().catch(() => [] as Activo[]),
-        inventoryService.getConsumibles().catch(() => [] as Consumible[]),
+        inventoryService.getActivos(1, 999999).then(res => res.data).catch(() => [] as Activo[]),
+        inventoryService.getConsumibles(1, 999999).then(res => res.data).catch(() => [] as Consumible[]),
         guardService.getGuardias().catch(() => [] as GuardiaFeriado[]),
         apiClient.get<any[]>('/usuarios').catch(() => []),
         apiClient.get<any[]>('/personas').catch(() => []),
