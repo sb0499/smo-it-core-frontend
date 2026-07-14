@@ -8,7 +8,8 @@ import {
   Persona, 
   Proveedor, 
   MovimientoInventario,
-  HistorialCambio
+  HistorialCambio,
+  Bodega
 } from '../services/inventory.service';
 import { apiClient } from '../services/api';
 import './Inventario.css';
@@ -28,6 +29,7 @@ export const Inventario: React.FC = () => {
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
+  const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [tipoEquipos, setTipoEquipos] = useState<TipoEquipo[]>([]);
   
   const [loading, setLoading] = useState(true);
@@ -84,6 +86,7 @@ export const Inventario: React.FC = () => {
   const [assetFechaCompra, setAssetFechaCompra] = useState('');
   const [assetEmpresaId, setAssetEmpresaId] = useState<number>(0);
   const [assetTipoEquipoId, setAssetTipoEquipoId] = useState<number>(0);
+  const [assetBodegaId, setAssetBodegaId] = useState<number>(0);
 
   // Asset Edit fields
   const [isEditingAsset, setIsEditingAsset] = useState(false);
@@ -95,6 +98,7 @@ export const Inventario: React.FC = () => {
   const [editAssetFechaCompra, setEditAssetFechaCompra] = useState('');
   const [editAssetEmpresaId, setEditAssetEmpresaId] = useState<number>(0);
   const [editAssetTipoEquipoId, setEditAssetTipoEquipoId] = useState<number>(0);
+  const [editAssetBodegaId, setEditAssetBodegaId] = useState<number>(0);
 
   // Consumable Create fields
   const [consNombre, setConsNombre] = useState('');
@@ -119,6 +123,37 @@ export const Inventario: React.FC = () => {
     }
   }, [assetEmpresaId, assetTipoEquipoId, showCreateAssetModal]);
 
+  // Pre-select bodega when Sede changes in Create Asset
+  useEffect(() => {
+    if (assetEmpresaId > 0) {
+      const sedeBodegas = bodegas.filter(b => b.empresa_id === assetEmpresaId);
+      if (sedeBodegas.length > 0) {
+        setAssetBodegaId(sedeBodegas[0].id);
+      } else {
+        setAssetBodegaId(0);
+      }
+    } else {
+      setAssetBodegaId(0);
+    }
+  }, [assetEmpresaId, bodegas]);
+
+  // Pre-select bodega when Sede changes in Edit Asset
+  useEffect(() => {
+    if (editAssetEmpresaId > 0) {
+      const sedeBodegas = bodegas.filter(b => b.empresa_id === editAssetEmpresaId);
+      const currentBelongs = sedeBodegas.some(b => b.id === editAssetBodegaId);
+      if (!currentBelongs) {
+        if (sedeBodegas.length > 0) {
+          setEditAssetBodegaId(sedeBodegas[0].id);
+        } else {
+          setEditAssetBodegaId(0);
+        }
+      }
+    } else {
+      setEditAssetBodegaId(0);
+    }
+  }, [editAssetEmpresaId, bodegas, editAssetBodegaId]);
+
   const handleCreateAsset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assetSerial || !assetMarca || !assetModelo || assetEmpresaId <= 0 || assetTipoEquipoId <= 0) {
@@ -137,7 +172,8 @@ export const Inventario: React.FC = () => {
         proveedor_id: assetProveedorId > 0 ? assetProveedorId : undefined,
         fecha_compra: assetFechaCompra || undefined,
         empresa_id: assetEmpresaId,
-        tipo_equipo_id: assetTipoEquipoId
+        tipo_equipo_id: assetTipoEquipoId,
+        bodega_id: assetBodegaId > 0 ? assetBodegaId : undefined
       });
 
       setShowCreateAssetModal(false);
@@ -151,6 +187,7 @@ export const Inventario: React.FC = () => {
       setAssetFechaCompra('');
       setAssetEmpresaId(0);
       setAssetTipoEquipoId(0);
+      setAssetBodegaId(0);
 
       fetchInventoryData();
     } catch (err: any) {
@@ -316,12 +353,13 @@ export const Inventario: React.FC = () => {
   const fetchInventoryData = async () => {
     try {
       setLoading(true);
-      const [personasList, proveedoresList, empresaList, tipoEquiposList, tipoInventariosList] = await Promise.all([
+      const [personasList, proveedoresList, empresaList, tipoEquiposList, tipoInventariosList, bodegasList] = await Promise.all([
         inventoryService.getPersonas().catch(() => []),
         inventoryService.getProveedores().catch(() => []),
         apiClient.get<any[]>('/empresas').catch(() => []),
         inventoryService.getTipoEquipos().catch(() => []),
         inventoryService.getTipoInventarios().catch(() => []),
+        inventoryService.getBodegas().catch(() => []),
       ]);
 
       setPersonas(personasList);
@@ -329,6 +367,7 @@ export const Inventario: React.FC = () => {
       setEmpresas(empresaList);
       setTipoEquipos(tipoEquiposList);
       setImportTypes(tipoInventariosList);
+      setBodegas(bodegasList);
       if (tipoInventariosList.length > 0) {
         setImportType(prev => prev === 0 ? tipoInventariosList[0].id : prev);
       }
@@ -410,6 +449,7 @@ export const Inventario: React.FC = () => {
     setEditAssetProveedorId(selectedActivo?.proveedor_id || 0);
     setEditAssetFechaCompra(selectedActivo?.fecha_compra ? selectedActivo.fecha_compra.split('T')[0] : '');
     setEditAssetEspecificaciones(selectedActivo?.especificaciones || '');
+    setEditAssetBodegaId(selectedActivo?.bodega_id || 0);
     setIsEditingAsset(true);
   };
 
@@ -431,7 +471,8 @@ export const Inventario: React.FC = () => {
         tipo_equipo_id: editAssetTipoEquipoId,
         proveedor_id: editAssetProveedorId > 0 ? editAssetProveedorId : null,
         fecha_compra: editAssetFechaCompra || null,
-        especificaciones: editAssetEspecificaciones || null
+        especificaciones: editAssetEspecificaciones || null,
+        bodega_id: editAssetBodegaId > 0 ? editAssetBodegaId : null
       });
 
       setSelectedActivo(updated);
@@ -751,7 +792,10 @@ export const Inventario: React.FC = () => {
                           {a.persona_nombre}
                         </span>
                       ) : (
-                        <span className="holder-empty">Bodega Central</span>
+                        <span className="holder-badge-bodega" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>
+                          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                          {a.bodega_nombre || 'Bodega Central'}
+                        </span>
                       )}
                     </td>
                     <td>
@@ -1074,9 +1118,9 @@ export const Inventario: React.FC = () => {
                     </div>
                     <div className="form-group half">
                       <label className="form-label font-bold text-xs" style={{ color: '#475569' }}>SEDE / EMPRESA *</label>
-                      <select
-                        className="form-control"
-                        value={editAssetEmpresaId}
+                      <select 
+                        className="form-control" 
+                        value={editAssetEmpresaId} 
                         onChange={(e) => setEditAssetEmpresaId(Number(e.target.value))}
                         required
                       >
@@ -1086,6 +1130,25 @@ export const Inventario: React.FC = () => {
                         ))}
                       </select>
                     </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label font-bold text-xs" style={{ color: '#475569' }}>BODEGA *</label>
+                    <select
+                      className="form-control"
+                      value={editAssetBodegaId}
+                      onChange={(e) => setEditAssetBodegaId(Number(e.target.value))}
+                      required
+                      disabled={editAssetEmpresaId === 0}
+                    >
+                      <option value="0">Seleccionar bodega...</option>
+                      {bodegas
+                        .filter(b => b.empresa_id === editAssetEmpresaId)
+                        .map(b => (
+                          <option key={b.id} value={b.id}>{b.nombre}</option>
+                        ))
+                      }
+                    </select>
                   </div>
 
                   <div className="form-row">
@@ -1187,6 +1250,12 @@ export const Inventario: React.FC = () => {
                         <span style={{ color: '#64748b' }}>Sede (Ubicación):</span>
                         <strong>{selectedActivo.empresa_nombre || 'N/A'}</strong>
                       </div>
+                      {selectedActivo.bodega_nombre && (
+                        <div className="spec-item" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
+                          <span style={{ color: '#64748b' }}>Bodega:</span>
+                          <strong>{selectedActivo.bodega_nombre}</strong>
+                        </div>
+                      )}
                       <div className="spec-item" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
                         <span style={{ color: '#64748b' }}>Marca:</span>
                         <strong>{selectedActivo.marca}</strong>
@@ -1451,6 +1520,27 @@ export const Inventario: React.FC = () => {
                     {tipoEquipos.map(te => (
                       <option key={te.id} value={te.id}>{te.nombre}</option>
                     ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group" style={{ width: '100%' }}>
+                  <label className="form-label">BODEGA DE ALMACENAMIENTO *</label>
+                  <select
+                    className="form-control"
+                    value={assetBodegaId}
+                    onChange={(e) => setAssetBodegaId(Number(e.target.value))}
+                    required
+                    disabled={assetEmpresaId === 0}
+                  >
+                    <option value="0">Seleccionar bodega...</option>
+                    {bodegas
+                      .filter(b => b.empresa_id === assetEmpresaId)
+                      .map(b => (
+                        <option key={b.id} value={b.id}>{b.nombre}</option>
+                      ))
+                    }
                   </select>
                 </div>
               </div>

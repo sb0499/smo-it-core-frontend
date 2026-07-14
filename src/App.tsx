@@ -16,6 +16,7 @@ import { SoportesRecurrentes } from './views/SoportesRecurrentes';
 import { Usuarios } from './views/Usuarios';
 import { MovimientosInventario } from './views/MovimientosInventario';
 import { Reportes } from './views/Reportes';
+import { Bodegas } from './views/Bodegas';
 import { AlertContainer } from './components/AlertContainer';
 import './App.css';
 
@@ -72,6 +73,8 @@ function AppContent() {
         return <MovimientosInventario key={refreshKey} />;
       case 'reportes':
         return <Reportes key={refreshKey} />;
+      case 'bodegas':
+        return <Bodegas key={refreshKey} />;
       default:
         return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
     }

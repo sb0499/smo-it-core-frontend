@@ -25,7 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (['tickets', 'plantillas'].includes(activeView)) {
       setTicketsOpen(true);
     }
-    if (['inventario', 'movimientos'].includes(activeView)) {
+    if (['inventario', 'movimientos', 'bodegas'].includes(activeView)) {
       setInventarioOpen(true);
     }
     if (['personas', 'proveedores', 'usuarios'].includes(activeView)) {
@@ -207,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* Accordion 2: Inventarios */}
               <div className={`accordion-group ${inventarioOpen ? 'open' : ''}`}>
                 <button
-                  className={`accordion-header ${['inventario', 'movimientos'].includes(activeView) ? 'active' : ''}`}
+                  className={`accordion-header ${['inventario', 'movimientos', 'bodegas'].includes(activeView) ? 'active' : ''}`}
                   onClick={() => setInventarioOpen(!inventarioOpen)}
                 >
                   <div className="accordion-header-left">
@@ -228,6 +228,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => handleNav('movimientos')}
                   >
                     <span>• Historial Movs</span>
+                  </button>
+                  <button
+                    className={`sub-nav-item ${activeView === 'bodegas' ? 'active' : ''}`}
+                    onClick={() => handleNav('bodegas')}
+                  >
+                    <span>• Bodegas</span>
                   </button>
                 </div>
               </div>

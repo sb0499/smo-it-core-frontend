@@ -7,7 +7,7 @@ export interface Activo {
   marca: string;
   modelo: string;
   especificaciones: string | null;
-  estado: 'Stock' | 'Asignado' | 'Mantenimiento' | 'Baja';
+  estado: 'Stock' | 'Asignado' | 'Mantenimiento' | 'Baja' | 'Reciclaje';
   persona_id: number | null;
   persona_nombre?: string;
   proveedor_id: number | null;
@@ -16,8 +16,19 @@ export interface Activo {
   tipo_equipo_nombre?: string;
   empresa_id?: number | null;
   empresa_nombre?: string;
+  bodega_id?: number | null;
+  bodega_nombre?: string;
   fecha_compra: string | null;
   created_at: string;
+}
+
+export interface Bodega {
+  id: number;
+  nombre: string;
+  empresa_id: number;
+  empresa_nombre?: string;
+  descripcion: string | null;
+  created_at?: string;
 }
 
 export interface Consumible {
@@ -176,5 +187,19 @@ export const inventoryService = {
   exportarInventarioUrl(): string {
     const token = localStorage.getItem('smo_token');
     return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/exportar?token=${token}`;
+  },
+
+  // Bodegas CRUD
+  async getBodegas(): Promise<Bodega[]> {
+    return apiClient.get<Bodega[]>('/bodegas');
+  },
+  async createBodega(payload: Partial<Bodega>): Promise<Bodega> {
+    return apiClient.post<Bodega>('/bodegas', payload);
+  },
+  async updateBodega(id: number, payload: Partial<Bodega>): Promise<Bodega> {
+    return apiClient.put<Bodega>(`/bodegas/${id}`, payload);
+  },
+  async deleteBodega(id: number): Promise<any> {
+    return apiClient.delete(`/bodegas/${id}`);
   }
 };
