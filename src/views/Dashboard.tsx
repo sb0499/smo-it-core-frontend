@@ -206,8 +206,8 @@ export const Dashboard: React.FC = () => {
         {/* Metric 1: Active Support Tickets */}
         <div className="metric-card glass-panel glass-panel-interactive animate-slide-up">
           <div className="metric-header">
-            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', background: '#eff6ff' }}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path><line x1="13" y1="5" x2="13" y2="19"></line></svg>
+            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.08)' }}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path><line x1="13" y1="5" x2="13" y2="19"></line></svg>
             </span>
             <span className="metric-badge active-badge">En Curso</span>
           </div>
@@ -224,7 +224,7 @@ export const Dashboard: React.FC = () => {
         {/* Metric 2: Resolution Rate */}
         <div className="metric-card glass-panel glass-panel-interactive animate-slide-up">
           <div className="metric-header">
-            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', background: '#f0fdf4' }}>
+            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: '#f0fdf4' }}>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#166534" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
             </span>
             <span className="metric-badge" style={{ background: '#f0fdf4', color: '#166534' }}>Efectividad</span>
@@ -242,8 +242,8 @@ export const Dashboard: React.FC = () => {
         {/* Metric 3: Assets Stock */}
         <div className="metric-card glass-panel glass-panel-interactive animate-slide-up">
           <div className="metric-header">
-            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', background: '#eff6ff' }}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.08)' }}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
             </span>
             <span className="metric-badge stock-badge">Hardware</span>
           </div>
@@ -260,7 +260,7 @@ export const Dashboard: React.FC = () => {
         {/* Metric 4: Projects TI */}
         <div className="metric-card glass-panel glass-panel-interactive animate-slide-up">
           <div className="metric-header">
-            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', background: '#f8fafc' }}>
+            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: '#f8fafc' }}>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#64748b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
             </span>
             <span className="metric-badge process-badge">Proyectos</span>

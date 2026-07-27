@@ -34,95 +34,124 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="login-wrapper">
-      {/* Decorative Background Aura Blobs */}
-      <div className="bg-blob blob-primary"></div>
-      <div className="bg-blob blob-secondary"></div>
-
-      <div className="login-container glass-panel animate-slide-up">
-        <div className="login-header">
-          <h1 className="logo-brand">SMO <span className="gradient-text">IT CORE</span></h1>
-          <p className="logo-tagline text-muted">Gestión Central de Tecnologías y Soportes</p>
+    <div className="login-wrapper-split">
+      {/* Left side: Premium gradient & abstract decorative art */}
+      <div className="login-decor-side">
+        <div className="decor-shapes-container">
+          <div className="decor-circle circle-1"></div>
+          <div className="decor-circle circle-2"></div>
+          <div className="decor-capsule capsule-1"></div>
+          <div className="decor-capsule capsule-2"></div>
+          <div className="decor-capsule capsule-3"></div>
+          <div className="decor-capsule capsule-4"></div>
+          <div className="decor-capsule capsule-5"></div>
         </div>
+        <div className="decor-content">
+          <h1 className="decor-title">
+            Bienvenido a <br/>
+            <span className="decor-brand">SMO IT CORE</span>
+          </h1>
+          <p className="decor-subtitle">
+            Gestión Central de TI para SMO.
+          </p>
+        </div>
+      </div>
 
-        {error && (
-          <div className="login-error-alert animate-fade">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="alert-icon-svg"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            <span className="alert-text">{error}</span>
+      {/* Right side: Login Form */}
+      <div className="login-form-side">
+        <div className="login-form-container">
+          <div className="login-form-header">
+            <h2 className="login-form-title">INICIAR SESIÓN</h2>
           </div>
-        )}
 
-        <form className="login-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label" htmlFor="email">CORREO ELECTRÓNICO</label>
-            <div className="input-with-icon">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="input-icon-svg"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-              <input
-                type="email"
-                id="email"
-                className="form-control"
-                placeholder="nombre@smo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                required
-              />
+          {error && (
+            <div className="login-error-alert animate-fade">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="alert-icon-svg"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <span className="alert-text">{error}</span>
             </div>
-          </div>
+          )}
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="password">CONTRASEÑA</label>
-            <div className="input-with-icon">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="input-icon-svg"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-              <input
-                type="password"
-                id="password"
-                className="form-control"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                required
-              />
+          <form className="login-form-element" onSubmit={handleSubmit}>
+            <div className="form-group-custom">
+              <div className="input-pill-wrapper">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pill-icon-svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <input
+                  type="email"
+                  id="email"
+                  className="pill-control"
+                  placeholder="Correo electrónico"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
             </div>
-          </div>
 
-          <button type="submit" className="btn btn-primary btn-submit" disabled={loading}>
-            {loading ? (
-              <span className="spinner-auth">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path></svg>
-                Iniciando...
-              </span>
-            ) : (
-              <span>Acceder al Sistema</span>
-            )}
-          </button>
-        </form>
+            <div className="form-group-custom">
+              <div className="input-pill-wrapper">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pill-icon-svg"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <input
+                  type="password"
+                  id="password"
+                  className="pill-control"
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
+            </div>
 
-        <div className="quick-access-section">
-          <span className="quick-label text-dim">ACCESO RÁPIDO PARA PRUEBAS:</span>
-          <div className="quick-buttons-grid">
-            <button 
-              className="quick-btn role-badge-admin"
-              onClick={() => handleQuickLogin('admin@smo.com', 'admin123')}
-              disabled={loading}
-            >
-              Admin
+            <div className="form-options-row">
+              <label className="checkbox-container">
+                <input type="checkbox" defaultChecked />
+                <span className="checkmark"></span>
+                <span className="checkbox-label">Recordarme</span>
+              </label>
+              <a href="#forgot" className="forgot-link" onClick={(e) => e.preventDefault()}>
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
+
+            <button type="submit" className="btn-gradient-submit" disabled={loading}>
+              {loading ? (
+                <span className="spinner-auth-custom">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path></svg>
+                  Iniciando...
+                </span>
+              ) : (
+                <span>INGRESAR</span>
+              )}
             </button>
-            <button 
-              className="quick-btn role-badge-tech"
-              onClick={() => handleQuickLogin('santi@smo.com', 'tech123')}
-              disabled={loading}
-            >
-              Técnico
-            </button>
-            <button 
-              className="quick-btn role-badge-user"
-              onClick={() => handleQuickLogin('user@smo.com', 'user123')}
-              disabled={loading}
-            >
-              Usuario
-            </button>
+          </form>
+
+          <div className="quick-access-section-custom">
+            <span className="quick-label-custom">Acceso rápido para pruebas</span>
+            <div className="quick-buttons-grid-custom">
+              <button 
+                className="quick-badge admin-badge"
+                onClick={() => handleQuickLogin('admin@smo.com', 'admin123')}
+                disabled={loading}
+              >
+                Admin
+              </button>
+              <button 
+                className="quick-badge tech-badge"
+                onClick={() => handleQuickLogin('santi@smo.com', 'tech123')}
+                disabled={loading}
+              >
+                Técnico
+              </button>
+              <button 
+                className="quick-badge user-badge"
+                onClick={() => handleQuickLogin('user@smo.com', 'user123')}
+                disabled={loading}
+              >
+                Usuario
+              </button>
+            </div>
           </div>
         </div>
       </div>

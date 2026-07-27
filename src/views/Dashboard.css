@@ -1,9 +1,9 @@
-/* Dashboard CSS for SMO IT CORE - Minimalist Thin Styles */
+/* Dashboard CSS for SMO IT CORE - Premium Design */
 
 .dashboard-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   width: 100%;
 }
 
@@ -13,15 +13,15 @@
   align-items: center;
   justify-content: center;
   height: 60vh;
-  gap: 12px;
+  gap: 16px;
 }
 
 .loader {
-  border: 3px solid #f1f5f9;
-  border-top: 3px solid #2563eb;
+  border: 3px solid #eef2f6;
+  border-top: 3px solid var(--color-primary);
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   animation: spin 1s linear infinite;
 }
 
@@ -30,15 +30,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 24px 28px;
   background: #ffffff;
-  border: 1px solid #f1f5f9;
-  border-radius: 8px;
+  border: var(--border-glass);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
 }
 
 .welcome-left h1 {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   margin-bottom: 4px;
 }
 
@@ -49,37 +50,39 @@
 .guard-bubble {
   display: flex;
   flex-direction: column;
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
-  padding: 8px 14px;
-  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  padding: 10px 16px;
+  border-radius: 8px;
 }
 
 .guard-label {
-  font-size: 9.5px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   text-transform: uppercase;
   color: #64748b;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 
 .guard-value {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
-  color: #2563eb;
+  color: var(--color-primary);
   margin-top: 2px;
 }
 
 /* Metric Cards */
 .metric-card {
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 150px; /* Thinner height */
+  min-height: 160px; /* Let contents breathe */
+  height: auto;
   background: #ffffff;
-  border: 1px solid #f1f5f9;
-  border-radius: 8px;
+  border: var(--border-glass);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
 }
 
 .metric-header {
@@ -89,22 +92,23 @@
 }
 
 .metric-icon-wrap {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
 }
 
 .metric-badge {
-  font-size: 9.5px;
-  font-weight: 600;
-  padding: 1.5px 5px;
-  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2.5px 7px;
+  border-radius: 6px;
   text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .active-badge {
-  background: #eff6ff;
-  color: #2563eb;
+  background: rgba(99, 102, 241, 0.08);
+  color: #4f46e5;
 }
 
 .process-badge {
@@ -114,34 +118,35 @@
 }
 
 .stock-badge {
-  background: #eff6ff;
-  color: #2563eb;
+  background: rgba(99, 102, 241, 0.08);
+  color: #4f46e5;
 }
 
 .metric-body {
-  margin-top: 10px;
+  margin-top: 14px;
 }
 
 .metric-value {
-  font-size: 28px;
-  font-weight: 600;
-  line-height: 1;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #0f172a;
 }
 
 .metric-title {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-text-muted);
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .metric-footer {
   display: flex;
-  gap: 10px;
-  margin-top: auto;
-  font-size: 11.5px;
-  border-top: 1px solid #f1f5f9;
-  padding-top: 8px;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 12px;
+  border-top: 1px solid #eef2f6;
+  padding-top: 10px;
   color: #64748b;
 }
 
@@ -149,35 +154,37 @@
 .operations-grid {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
-  gap: 20px;
+  gap: 24px; /* More space between columns */
 }
 
 .operation-column {
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   background: #ffffff;
-  border: 1px solid #f1f5f9;
-  border-radius: 8px;
+  border: var(--border-glass);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
 }
 
 .column-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eef2f6;
+  padding-bottom: 12px;
 }
 
 .column-header h3 {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .pulse-green {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   background: #16a34a;
   border-radius: 50%;
 }
@@ -186,9 +193,9 @@
   background: #fef2f2;
   border: 1px solid #fee2e2;
   color: #b91c1c;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1.5px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
   border-radius: 12px;
 }
 
@@ -196,61 +203,63 @@
 .recent-tickets-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .mini-ticket-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
-  border-radius: 6px;
-  padding: 10px 14px;
+  background: #fafbfe;
+  border: 1px solid #eef2f6;
+  border-radius: 8px;
+  padding: 12px 16px;
   transition: var(--transition-smooth);
 }
 
 .mini-ticket-row:hover {
-  border-color: #cbd5e1;
-  transform: translateX(2px);
+  border-color: rgba(99, 102, 241, 0.2);
+  background: #ffffff;
+  transform: translateX(3px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.03);
 }
 
 .mini-ticket-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .mini-priority-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.priority-critica { background: #ef4444; }
-.priority-alta { background: #f43f5e; }
+.priority-critica { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+.priority-alta { background: #f43f5e; box-shadow: 0 0 6px #f43f5e; }
 .priority-media { background: #f59e0b; }
 .priority-baja { background: #16a34a; }
 
 .mini-ticket-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
 .mini-ticket-title {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: #1e293b;
 }
 
 .mini-ticket-desc {
-  font-size: 11px;
+  font-size: 11.5px;
   color: #64748b;
 }
 
-/* Low Stock Consumables */
+/* Low Stock Consumibles */
 .low-stock-list {
   display: flex;
   flex-direction: column;
@@ -260,11 +269,18 @@
 .low-stock-row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  background: #fff5f5;
-  border: 1px solid #fee2e2;
-  padding: 10px 12px;
-  border-radius: 6px;
+  gap: 8px;
+  background: #fafbfe;
+  border: 1px solid #eef2f6;
+  padding: 12px 16px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.02);
+  transition: var(--transition-smooth);
+}
+
+.low-stock-row:hover {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: #fffdfd;
 }
 
 .low-stock-info {
@@ -274,28 +290,33 @@
 }
 
 .consumable-name {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: #1e293b;
 }
 
 .consumable-stock {
-  font-size: 11px;
+  font-size: 11.5px;
   color: #64748b;
+}
+
+.color-critical {
+  color: #ef4444 !important;
+  font-weight: 700;
 }
 
 .stock-progress-bar-container {
   width: 100%;
-  height: 5px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 4px;
+  height: 4px;
+  background: #eef2f6;
+  border-radius: 2px;
   overflow: hidden;
 }
 
 .stock-progress-fill {
   height: 100%;
-  background: #ef4444;
-  border-radius: 4px;
+  background: linear-gradient(90deg, #0ea5e9, #6366f1);
+  border-radius: 2px;
 }
 
 @keyframes spin {
@@ -306,6 +327,7 @@
 @media (max-width: 900px) {
   .operations-grid {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 }
 
@@ -313,7 +335,8 @@
   .welcome-banner {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 16px;
+    padding: 20px;
   }
 
   .guard-bubble {

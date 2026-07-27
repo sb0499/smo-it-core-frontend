@@ -23,7 +23,7 @@ interface TipoEquipo {
 
 export const Inventario: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'activos' | 'consumibles' | 'reciclaje' | 'tipos_equipo'>('activos');
+  const [activeTab, setActiveTab] = useState<'activos' | 'consumibles' | 'tipos_equipo'>('activos');
   const [activos, setActivos] = useState<Activo[]>([]);
   const [consumibles, setConsumibles] = useState<Consumible[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
@@ -62,6 +62,7 @@ export const Inventario: React.FC = () => {
   const [importType, setImportType] = useState<number>(0);
   const [importTypes, setImportTypes] = useState<{ id: number; nombre: string; descripcion: string | null }[]>([]);
   const [importBodegaName, setImportBodegaName] = useState('');
+  const [importEmpresaId, setImportEmpresaId] = useState<number>(0);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importProgress, setImportProgress] = useState(false);
   const [importSummary, setImportSummary] = useState<{ totalProcessed: number; totalInserted: number; errors: string[] } | null>(null);
@@ -71,9 +72,6 @@ export const Inventario: React.FC = () => {
   const [totalActivos, setTotalActivos] = useState(0);
   const [pageConsumibles, setPageConsumibles] = useState(1);
   const [totalConsumibles, setTotalConsumibles] = useState(0);
-  const [pageReciclaje, setPageReciclaje] = useState(1);
-  const [totalReciclaje, setTotalReciclaje] = useState(0);
-  const [reciclajeActivos, setReciclajeActivos] = useState<Activo[]>([]);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Asset Create fields
@@ -337,18 +335,7 @@ export const Inventario: React.FC = () => {
     }
   };
 
-  const fetchReciclajePage = async (page = pageReciclaje, search = debouncedSearch) => {
-    try {
-      setLoading(true);
-      const res = await inventoryService.getActivos(page, 10, search, 'Reciclaje');
-      setReciclajeActivos(res.data);
-      setTotalReciclaje(res.total);
-    } catch (err) {
-      console.error('Error fetching recycling assets page:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const fetchInventoryData = async () => {
     try {
@@ -374,8 +361,7 @@ export const Inventario: React.FC = () => {
 
       await Promise.all([
         fetchActivosPage(1, debouncedSearch, filterEstado),
-        fetchConsumiblesPage(1, debouncedSearch),
-        fetchReciclajePage(1, debouncedSearch)
+        fetchConsumiblesPage(1, debouncedSearch)
       ]);
     } catch (e) {
       console.error('Error fetching static inventory data', e);
@@ -401,9 +387,7 @@ export const Inventario: React.FC = () => {
     setPageConsumibles(1);
   }, [debouncedSearch]);
 
-  useEffect(() => {
-    setPageReciclaje(1);
-  }, [debouncedSearch]);
+
 
   // Main fetch useEffect for Activos
   useEffect(() => {
@@ -415,10 +399,7 @@ export const Inventario: React.FC = () => {
     fetchConsumiblesPage(pageConsumibles, debouncedSearch);
   }, [pageConsumibles, debouncedSearch]);
 
-  // Main fetch useEffect for Reciclaje
-  useEffect(() => {
-    fetchReciclajePage(pageReciclaje, debouncedSearch);
-  }, [pageReciclaje, debouncedSearch]);
+
 
   useEffect(() => {
     fetchInventoryData();
@@ -601,9 +582,6 @@ export const Inventario: React.FC = () => {
     if (activeTab === 'consumibles') {
       return importTypes.filter(t => t.nombre === 'Consumibles y Suministros');
     }
-    if (activeTab === 'reciclaje') {
-      return importTypes.filter(t => t.nombre === 'Reciclaje');
-    }
     return importTypes;
   };
 
@@ -622,12 +600,6 @@ export const Inventario: React.FC = () => {
           onClick={() => { setActiveTab('consumibles'); setSearchQuery(''); }}
         >
           Consumibles y Suministros
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'reciclaje' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('reciclaje'); setSearchQuery(''); }}
-        >
-          Reciclaje
         </button>
         {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
           <button 
@@ -649,9 +621,7 @@ export const Inventario: React.FC = () => {
               placeholder={
                 activeTab === 'activos' 
                   ? "Buscar activos por código, marca, serial, sede..." 
-                  : activeTab === 'reciclaje' 
-                    ? "Buscar reciclados por código, marca, serial..." 
-                    : "Buscar consumibles..."
+                  : "Buscar consumibles..."
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -682,6 +652,7 @@ export const Inventario: React.FC = () => {
                   setImportFile(null);
                   setImportSummary(null);
                   setImportBodegaName('');
+                  setImportEmpresaId(0);
                   const filtered = importTypes.filter(t => {
                     if (activeTab === 'activos') {
                       return t.nombre === 'Bodega' || t.nombre === 'Asignado a Usuarios' || t.nombre === 'Servidores e Infraestructura';
@@ -689,12 +660,9 @@ export const Inventario: React.FC = () => {
                     if (activeTab === 'consumibles') {
                       return t.nombre === 'Consumibles y Suministros';
                     }
-                    if (activeTab === 'reciclaje') {
-                      return t.nombre === 'Reciclaje';
-                    }
                     return true;
                   });
-                  if (activeTab === 'consumibles' || activeTab === 'reciclaje') {
+                  if (activeTab === 'consumibles') {
                     setImportType(filtered[0]?.id || 0);
                   } else {
                     setImportType(0);
@@ -831,63 +799,6 @@ export const Inventario: React.FC = () => {
               </tbody>
             </table>
             {renderPagination(pageActivos, totalActivos, 10, setPageActivos)}
-          </div>
-        )
-      ) : activeTab === 'reciclaje' ? (
-        /* TAB: RECICLAJE Y BAJAS */
-        reciclajeActivos.length === 0 ? (
-          <div className="empty-panel glass-panel text-center py-5">
-            <span className="empty-big-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-dim)' }}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-            </span>
-            <h3>No hay activos en reciclaje</h3>
-            <p className="text-muted font-xs">Los activos en estado de Reciclaje aparecerán listados aquí.</p>
-          </div>
-        ) : (
-          <div className="assets-table-container glass-panel">
-            <table className="assets-table">
-              <thead>
-                <tr>
-                  <th>CÓDIGO / MARCA</th>
-                  <th>TIPO / SEDE</th>
-                  <th>N/S SERIAL</th>
-                  <th>MODELO</th>
-                  <th>ESTADO</th>
-                  <th>ACCIONES</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reciclajeActivos.map((a) => (
-                  <tr key={a.id} className="asset-row animate-slide-up">
-                    <td>
-                      <div className="asset-code-group">
-                        <span className="asset-code">{a.codigo}</span>
-                        <span className="asset-brand text-muted">{a.marca}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="asset-code-group">
-                        <span className="asset-brand" style={{ fontWeight: '500' }}>{a.tipo_equipo_nombre || 'N/A'}</span>
-                        <span className="asset-brand text-muted">{a.empresa_nombre || 'N/A'}</span>
-                      </div>
-                    </td>
-                    <td className="asset-serial">{a.serial}</td>
-                    <td className="asset-model">{a.modelo}</td>
-                    <td>
-                      <span className="badge badge-state-baja" style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#b91c1c' }}>
-                        {a.estado}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => handleOpenDetail(a)}>
-                        Ver Ficha
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {renderPagination(pageReciclaje, totalReciclaje, 10, setPageReciclaje)}
           </div>
         )
       ) : activeTab === 'consumibles' ? (
@@ -1739,6 +1650,8 @@ export const Inventario: React.FC = () => {
                   setShowImportModal(false); 
                   setImportFile(null); 
                   setImportSummary(null); 
+                  setImportEmpresaId(0);
+                  setImportBodegaName('');
                 }}
               >
                 ×
@@ -1746,6 +1659,33 @@ export const Inventario: React.FC = () => {
             </div>
 
             <form onSubmit={handleImportExcel} className="modal-form">
+              <div className="form-group" style={{ background: 'rgba(99, 102, 241, 0.05)', border: '1px dashed rgba(99, 102, 241, 0.3)', padding: '14px', borderRadius: '8px', marginBottom: '16px' }}>
+                <span className="form-label" style={{ display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: 'bold', color: 'var(--color-primary)' }}>¿NO TIENES EL FORMATO CORRECTO?</span>
+                <p style={{ fontSize: '12px', color: 'var(--color-text-dim)', marginBottom: '10px', lineHeight: '1.4' }}>
+                  Descarga nuestra plantilla estándar con los campos fijos necesarios para la carga de inventario:
+                </p>
+                {activeTab === 'activos' ? (
+                  <a 
+                    href="/templates/plantilla_activos.xlsx" 
+                    className="btn btn-secondary" 
+                    style={{ display: 'inline-flex', width: '100%', textDecoration: 'none', justifyContent: 'center', gap: '6px', fontSize: '12.5px', fontWeight: '600' }}
+                    download
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Descargar Plantilla de Activos (.xlsx)
+                  </a>
+                ) : (
+                  <a 
+                    href="/templates/plantilla_consumibles.xlsx" 
+                    className="btn btn-secondary" 
+                    style={{ display: 'inline-flex', width: '100%', textDecoration: 'none', justifyContent: 'center', gap: '6px', fontSize: '12.5px', fontWeight: '600' }}
+                    download
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Descargar Plantilla de Consumibles (.xlsx)
+                  </a>
+                )}
+              </div>
               {activeTab === 'activos' ? (
                 <div className="form-group animate-fade">
                   <label className="form-label">TIPO DE INVENTARIO A CARGAR *</label>
@@ -1775,19 +1715,63 @@ export const Inventario: React.FC = () => {
               )}
 
               {importTypes.find(t => t.id === importType)?.nombre === 'Bodega' && (
-                <div className="form-group animate-fade">
-                  <label className="form-label">NOMBRE DE LA BODEGA DE DESTINO</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ej. Bodega Sistemas, Bodega Oficina (Opcional)"
-                    value={importBodegaName}
-                    onChange={(e) => setImportBodegaName(e.target.value)}
-                  />
-                  <small className="text-muted" style={{ fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                    Si se deja vacío se asignará "Bodega Central".
-                  </small>
-                </div>
+                <>
+                  <div className="form-group animate-fade">
+                    <label className="form-label">SEDE / EMPRESA DE DESTINO *</label>
+                    <select 
+                      className="form-control"
+                      value={importEmpresaId}
+                      onChange={(e) => {
+                        const empId = Number(e.target.value);
+                        setImportEmpresaId(empId);
+                        const matchingBodegas = bodegas.filter(b => b.empresa_id === empId);
+                        if (matchingBodegas.length > 0) {
+                          setImportBodegaName(matchingBodegas[0].nombre);
+                        } else {
+                          setImportBodegaName('');
+                        }
+                      }}
+                      required
+                    >
+                      <option value="0">Seleccionar sede...</option>
+                      {empresas.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {importEmpresaId > 0 && (
+                    <div className="form-group animate-fade">
+                      <label className="form-label">BODEGA DE DESTINO *</label>
+                      {bodegas.filter(b => b.empresa_id === importEmpresaId).length === 0 ? (
+                        <>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Ej. Bodega Central, Bodega Sistemas"
+                            value={importBodegaName}
+                            onChange={(e) => setImportBodegaName(e.target.value)}
+                            required
+                          />
+                          <small className="text-muted" style={{ fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                            Esta sede no tiene bodegas registradas. Escribe un nombre para crear una nueva bodega.
+                          </small>
+                        </>
+                      ) : (
+                        <select
+                          className="form-control"
+                          value={importBodegaName}
+                          onChange={(e) => setImportBodegaName(e.target.value)}
+                          required
+                        >
+                          {bodegas.filter(b => b.empresa_id === importEmpresaId).map(b => (
+                            <option key={b.id} value={b.nombre}>{b.nombre}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="form-group">
