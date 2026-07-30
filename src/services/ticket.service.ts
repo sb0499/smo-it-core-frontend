@@ -52,6 +52,12 @@ export const ticketService = {
     return apiClient.get<Ticket[]>('/tickets');
   },
 
+  async getTicketsPaginated(page = 1, limit = 10, excludeStatus?: string, estado?: string, search?: string): Promise<{ total: number; page: number; limit: number; data: Ticket[] }> {
+    return apiClient.get('/tickets/paginated', {
+      params: { page, limit, excludeStatus, estado, search }
+    });
+  },
+
   async createTicket(payload: CreateTicketPayload): Promise<Ticket> {
     return apiClient.post<Ticket>('/tickets', payload);
   },

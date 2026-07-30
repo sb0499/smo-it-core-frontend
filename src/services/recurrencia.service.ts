@@ -18,8 +18,10 @@ export interface SoporteRecurrente {
 }
 
 export const recurrenciaService = {
-  async getSoportesRecurrentes(): Promise<SoporteRecurrente[]> {
-    return apiClient.get<SoporteRecurrente[]>('/soportes-recurrentes');
+  async getSoportesRecurrentes(page = 1, limit = 10, search = ''): Promise<{ total: number; page: number; limit: number; data: SoporteRecurrente[] }> {
+    return apiClient.get('/soportes-recurrentes', {
+      params: { page, limit, search }
+    });
   },
 
   async createSoporteRecurrente(payload: Partial<SoporteRecurrente>): Promise<SoporteRecurrente> {

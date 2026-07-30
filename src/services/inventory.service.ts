@@ -116,9 +116,9 @@ export const inventoryService = {
   },
 
   // Consumibles
-  async getConsumibles(page = 1, limit = 10, search = ''): Promise<{ total: number; page: number; limit: number; data: Consumible[] }> {
+  async getConsumibles(page = 1, limit = 10, search = '', criticalOnly = false): Promise<{ total: number; page: number; limit: number; data: Consumible[] }> {
     return apiClient.get('/consumibles', {
-      params: { page, limit, search }
+      params: { page, limit, search, criticalOnly }
     });
   },
 
@@ -190,8 +190,10 @@ export const inventoryService = {
   },
 
   // Bodegas CRUD
-  async getBodegas(): Promise<Bodega[]> {
-    return apiClient.get<Bodega[]>('/bodegas');
+  async getBodegas(page?: number, limit?: number, search = '', empresaId?: number): Promise<any> {
+    return apiClient.get('/bodegas', {
+      params: { page, limit, search, empresa_id: empresaId }
+    });
   },
   async createBodega(payload: Partial<Bodega>): Promise<Bodega> {
     return apiClient.post<Bodega>('/bodegas', payload);

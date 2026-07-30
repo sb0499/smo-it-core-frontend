@@ -13,6 +13,11 @@ export const Tickets: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filterEstado, setFilterEstado] = useState<string>('todos');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [totalTickets, setTotalTickets] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -44,30 +49,13 @@ export const Tickets: React.FC = () => {
   const loggedInTech = technicians.find(t => t.id === user?.id);
   const isN2 = loggedInTech?.nivel_soporte === 'N2';
 
-  const fetchTicketsData = async () => {
+  const fetchTicketsData = async (pageNumber = page, searchVal = debouncedSearch, estadoVal = filterEstado) => {
     try {
       setLoading(true);
-      const list = await ticketService.getTickets();
-      setTickets(list);
-
-      // Load companies
-      const companiesList = await apiClient.get<{ id: number; nombre: string }[]>('/empresas');
-      setEmpresas(companiesList);
-      if (companiesList.length > 0 && newEmpresaId === 0) {
-        setNewEmpresaId(companiesList[0].id);
-      }
-
-      // Load categories
-      const cats = await ticketService.getCategorias().catch(() => []);
-      setCategoriesList(cats);
-      if (cats.length > 0) {
-        setNewCat(cats[0].nombre);
-      }
-
-      // Load techs for assignment
-      const usersList = await projectService.getUsuarios();
-      const techs = usersList.filter(u => u.rol === 'TECNICO' || u.rol === 'ADMIN');
-      setTechnicians(techs);
+      const res = await ticketService.getTicketsPaginated(pageNumber, 10, undefined, estadoVal, searchVal);
+      console.log('fetchTicketsData response:', res);
+      setTickets(res.data);
+      setTotalTickets(res.total);
     } catch (e) {
       console.error('Error fetching support tickets', e);
     } finally {
@@ -75,9 +63,52 @@ export const Tickets: React.FC = () => {
     }
   };
 
+  // Load static metadata once on mount
   useEffect(() => {
-    fetchTicketsData();
+    const loadMetadata = async () => {
+      try {
+        const [companiesList, cats, usersList] = await Promise.all([
+          apiClient.get<{ id: number; nombre: string }[]>('/empresas'),
+          ticketService.getCategorias().catch(() => []),
+          projectService.getUsuarios().catch(() => [])
+        ]);
+
+        setEmpresas(companiesList);
+        if (companiesList.length > 0 && newEmpresaId === 0) {
+          setNewEmpresaId(companiesList[0].id);
+        }
+
+        setCategoriesList(cats);
+        if (cats.length > 0) {
+          setNewCat(cats[0].nombre);
+        }
+
+        const techs = usersList.filter(u => u.rol === 'TECNICO' || u.rol === 'ADMIN');
+        setTechnicians(techs);
+      } catch (err) {
+        console.error('Error loading metadata', err);
+      }
+    };
+    loadMetadata();
   }, []);
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset page when search or status changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, filterEstado]);
+
+  // Fetch tickets when page, search, or status changes
+  useEffect(() => {
+    fetchTicketsData(page, debouncedSearch, filterEstado);
+  }, [page, debouncedSearch, filterEstado]);
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,13 +236,7 @@ export const Tickets: React.FC = () => {
     }
   };
 
-  const filteredTickets = tickets.filter(t => {
-    const matchEstado = filterEstado === 'todos' || t.estado === filterEstado;
-    const matchSearch = t.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        t.descripcion.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        t.categoria.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchEstado && matchSearch;
-  });
+  const filteredTickets = tickets;
 
   return (
     <div className="tickets-container animate-fade">
@@ -320,6 +345,33 @@ export const Tickets: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalTickets > 10 && (
+        <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '24px', padding: '12px 0' }}>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+          >
+            Anterior
+          </button>
+          <span style={{ fontSize: '13px', color: 'var(--color-text)', fontWeight: '500' }}>
+            Página {page} de {Math.ceil(totalTickets / 10)} ({totalTickets} registros)
+          </span>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === Math.ceil(totalTickets / 10)}
+            onClick={() => setPage(page + 1)}
+            style={{ cursor: page === Math.ceil(totalTickets / 10) ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+          >
+            Siguiente
+          </button>
         </div>
       )}
 

@@ -11,8 +11,10 @@ export interface GuardiaFeriado {
 }
 
 export const guardService = {
-  async getGuardias(): Promise<GuardiaFeriado[]> {
-    return apiClient.get<GuardiaFeriado[]>('/guardias');
+  async getGuardias(page?: number, limit?: number): Promise<any> {
+    return apiClient.get('/guardias', {
+      params: { page, limit }
+    });
   },
 
   async createGuardia(fecha: string, tecnicoId: number, observaciones?: string, empresaId?: number | null): Promise<GuardiaFeriado> {

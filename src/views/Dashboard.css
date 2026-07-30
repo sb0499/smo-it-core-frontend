@@ -343,3 +343,44 @@
     width: 100%;
   }
 }
+
+/* Dashboard Pagination */
+.dashboard-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.dashboard-pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dashboard-pagination-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  color: var(--color-primary);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.dashboard-pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dashboard-pagination-info {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}

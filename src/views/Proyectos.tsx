@@ -21,6 +21,13 @@ export const Proyectos: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  // Filters & Pagination
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+
   // New comments & uploads state
   const [newComment, setNewComment] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -49,24 +56,41 @@ export const Proyectos: React.FC = () => {
   // New Project Member state
   const [selectedMiembros, setSelectedMiembros] = useState<number[]>([]);
 
+  // Load technicians once on mount
+  useEffect(() => {
+    projectService.getUsuarios()
+      .then(res => {
+        setTechnicians(res.filter(u => u.rol === 'TECNICO' || u.rol === 'ADMIN' || u.rol_nombre === 'TECNICO' || u.rol_nombre === 'ADMIN'));
+      })
+      .catch(err => console.error('Error loading users:', err));
+  }, []);
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Fetch paginated projects whenever page, limit or search changes
+  useEffect(() => {
+    fetchProjects();
+  }, [page, limit, debouncedSearch]);
+
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const list = await projectService.getProyectos();
-      setProyectos(list);
-      
-      const usersList = await projectService.getUsuarios();
-      setTechnicians(usersList.filter(u => u.rol === 'TECNICO' || u.rol === 'ADMIN'));
+      const res = await projectService.getProyectos(page, limit, debouncedSearch);
+      setProyectos(res.data || []);
+      setTotal(res.total || 0);
     } catch (e) {
       console.error('Error fetching projects list', e);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
   const handleSelectProyecto = async (id: number) => {
     try {
@@ -251,6 +275,8 @@ export const Proyectos: React.FC = () => {
   } catch (err) {}
   const projectMembers = technicians.filter(t => memberIds.includes(t.id));
 
+  const totalPages = Math.ceil(total / limit) || 1;
+
   return (
     <div className="proyectos-container animate-fade">
       {/* Dynamic project overview or detail */}
@@ -262,6 +288,24 @@ export const Proyectos: React.FC = () => {
             <button className="btn btn-primary" onClick={() => setShowAddProjectModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Crear Proyecto
+            </button>
+          </div>
+
+          {/* Search bar */}
+          <div className="filters-card glass-panel" style={{ padding: '16px', marginBottom: '16px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Buscar por nombre, descripción del proyecto o ticket de origen..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ paddingLeft: '40px', width: '100%' }}
+              />
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', left: '14px', top: '15px', color: 'var(--color-text-dim)' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+            <button className="btn btn-secondary" onClick={fetchProjects}>
+              Actualizar
             </button>
           </div>
 
@@ -279,44 +323,73 @@ export const Proyectos: React.FC = () => {
               <p className="text-muted">Comienza creando tu primer proyecto colaborativo.</p>
             </div>
           ) : (
-            <div className="projects-grid mt-4">
-              {proyectos.map((p) => (
-                <div 
-                  key={p.id} 
-                  className="project-summary-card glass-panel glass-panel-interactive animate-slide-up"
-                  onClick={() => handleSelectProyecto(p.id)}
-                >
-                  <div className="proj-card-header">
-                    <span className="proj-tag">{p.tipo_proyecto}</span>
-                    <span className={`badge badge-state-${p.estado.toLowerCase().replace(' ', '')}`}>
-                      {p.estado}
-                    </span>
-                  </div>
-
-                  <div className="proj-card-body mt-2">
-                    <h3 className="proj-title">{p.nombre}</h3>
-                    <p className="proj-desc text-muted">{p.descripcion || 'Sin descripción'}</p>
-                  </div>
-
-                  <div className="proj-card-footer mt-4">
-                    <div className="progress-bar-labeled">
-                      <div className="prog-label">
-                        <span>Progreso</span>
-                        <span>{p.avance_porcentaje}%</span>
-                      </div>
-                      <div className="proj-track">
-                        <div className="proj-fill" style={{ width: `${p.avance_porcentaje}%` }}></div>
-                      </div>
+            <>
+              <div className="projects-grid mt-4">
+                {proyectos.map((p) => (
+                  <div 
+                    key={p.id} 
+                    className="project-summary-card glass-panel glass-panel-interactive animate-slide-up"
+                    onClick={() => handleSelectProyecto(p.id)}
+                  >
+                    <div className="proj-card-header">
+                      <span className="proj-tag">{p.tipo_proyecto}</span>
+                      <span className={`badge badge-state-${p.estado.toLowerCase().replace(' ', '')}`}>
+                        {p.estado}
+                      </span>
                     </div>
 
-                    <div className="proj-dates text-muted font-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                      Término: {new Date(p.fecha_fin_estimada).toLocaleDateString()}
+                    <div className="proj-card-body mt-2">
+                      <h3 className="proj-title">{p.nombre}</h3>
+                      <p className="proj-desc text-muted">{p.descripcion || 'Sin descripción'}</p>
+                    </div>
+
+                    <div className="proj-card-footer mt-4">
+                      <div className="progress-bar-labeled">
+                        <div className="prog-label">
+                          <span>Progreso</span>
+                          <span>{p.avance_porcentaje}%</span>
+                        </div>
+                        <div className="proj-track">
+                          <div className="proj-fill" style={{ width: `${p.avance_porcentaje}%` }}></div>
+                        </div>
+                      </div>
+
+                      <div className="proj-dates text-muted font-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        Término: {new Date(p.fecha_fin_estimada).toLocaleDateString()}
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {proyectos.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', padding: '0 4px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    disabled={page === 1}
+                    onClick={() => setPage(page - 1)}
+                    style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+                  >
+                    Anterior
+                  </button>
+                  <span style={{ fontSize: '13px', color: 'var(--color-text-main)', fontWeight: '500' }}>
+                    Página {page} de {totalPages} ({total} registros)
+                  </span>
+                  <button 
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(page + 1)}
+                    style={{ cursor: page >= totalPages ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+                  >
+                    Siguiente
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </>
       ) : (

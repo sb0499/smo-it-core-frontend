@@ -28,7 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (['inventario', 'movimientos', 'bodegas'].includes(activeView)) {
       setInventarioOpen(true);
     }
-    if (['personas', 'proveedores', 'usuarios'].includes(activeView)) {
+    if (['personas', 'proveedores', 'usuarios', 'credenciales'].includes(activeView)) {
       setAdminOpen(true);
     }
   }, [activeView]);
@@ -278,10 +278,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {activeView === 'reportes' && <div className="active-glow"></div>}
               </button>
 
-              {/* Accordion 3: Administration */}
               <div className={`accordion-group ${adminOpen ? 'open' : ''}`}>
                 <button
-                  className={`accordion-header ${['personas', 'proveedores', 'usuarios'].includes(activeView) ? 'active' : ''}`}
+                  className={`accordion-header ${['personas', 'proveedores', 'usuarios', 'credenciales'].includes(activeView) ? 'active' : ''}`}
                   onClick={() => setAdminOpen(!adminOpen)}
                 >
                   <div className="accordion-header-left">
@@ -302,6 +301,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => handleNav('proveedores')}
                   >
                     <span>• Proveedores TI</span>
+                  </button>
+                  <button
+                    className={`sub-nav-item ${activeView === 'credenciales' ? 'active' : ''}`}
+                    onClick={() => handleNav('credenciales')}
+                  >
+                    <span>• Entrega Credenciales</span>
                   </button>
                   {user?.rol === 'ADMIN' && (
                     <button

@@ -17,6 +17,7 @@ import { Usuarios } from './views/Usuarios';
 import { MovimientosInventario } from './views/MovimientosInventario';
 import { Reportes } from './views/Reportes';
 import { Bodegas } from './views/Bodegas';
+import { EntregaCredenciales } from './views/EntregaCredenciales';
 import { AlertContainer } from './components/AlertContainer';
 import './App.css';
 
@@ -75,6 +76,8 @@ function AppContent() {
         return <Reportes key={refreshKey} />;
       case 'bodegas':
         return <Bodegas key={refreshKey} />;
+      case 'credenciales':
+        return <EntregaCredenciales key={refreshKey} />;
       default:
         return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
     }

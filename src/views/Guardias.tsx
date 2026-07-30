@@ -9,9 +9,15 @@ import './Guardias.css';
 export const Guardias: React.FC = () => {
   const { user } = useAuth();
   const [guardias, setGuardias] = useState<GuardiaFeriado[]>([]);
+  const [allGuardias, setAllGuardias] = useState<GuardiaFeriado[]>([]);
   const [technicians, setTechnicians] = useState<User[]>([]);
   const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination States
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
 
   // New guard form state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -32,7 +38,7 @@ export const Guardias: React.FC = () => {
     const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
 
     // 1. Check if there's a registered weekend/holiday guard today for this Sede or globally
-    const activeGuard = guardias.find(g => 
+    const activeGuard = allGuardias.find(g => 
       g.fecha.split('T')[0] === todayStr && 
       (g.empresa_id === empresaId || g.empresa_id === null || g.empresa_id === undefined)
     );
@@ -93,21 +99,29 @@ export const Guardias: React.FC = () => {
     };
   };
 
-  const fetchGuardiasData = async () => {
-    try {
-      setLoading(true);
-      const [list, usersList, companyList] = await Promise.all([
-        guardService.getGuardias().catch(() => []),
-        projectService.getUsuarios().catch(() => []),
-        apiClient.get<any[]>('/empresas').catch(() => [])
-      ]);
-      setGuardias(list);
+  // Load initial companies and technicians once on mount
+  useEffect(() => {
+    Promise.all([
+      projectService.getUsuarios().catch(() => []),
+      apiClient.get<any[]>('/empresas').catch(() => [])
+    ]).then(([usersList, companyList]) => {
       setEmpresas(companyList);
-
-      // Load technicians robustly (excluding admins)
       setTechnicians(usersList.filter((u: any) => 
         (u.rol === 'TECNICO' || u.rol_nombre === 'TECNICO') && u.is_active
       ));
+    }).catch(err => console.error('Error loading initial options:', err));
+  }, []);
+
+  const fetchGuardiasData = async () => {
+    try {
+      setLoading(true);
+      const [paginatedRes, fullList] = await Promise.all([
+        guardService.getGuardias(page, limit).catch(() => ({ total: 0, page: 1, limit: 10, data: [] })),
+        guardService.getGuardias().catch(() => [])
+      ]);
+      setGuardias(paginatedRes.data || []);
+      setTotal(paginatedRes.total || 0);
+      setAllGuardias(fullList || []);
     } catch (e) {
       console.error('Error fetching guards schedule', e);
     } finally {
@@ -117,7 +131,7 @@ export const Guardias: React.FC = () => {
 
   useEffect(() => {
     fetchGuardiasData();
-  }, []);
+  }, [page, limit]);
 
   const handleRaffle = () => {
     if (technicians.length === 0) {
@@ -229,7 +243,7 @@ export const Guardias: React.FC = () => {
             const shift = getActiveTechForSede(emp.id, emp.nombre);
             // Show only first name to keep it compact and fine
             const shiftName = shift?.nombre || 'Equipo TI General';
-            const shortName = shiftName.split(' ')[0];
+            const shortName = (shiftName.startsWith('Equipo') || shiftName.startsWith('Sin')) ? shiftName : shiftName.split(' ')[0];
             return (
               <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '6px 10px', borderRadius: '4px', border: '1px solid #f1f5f9', fontSize: '11.5px' }}>
                 <span style={{ fontWeight: '700', color: '#2563eb', fontSize: '11px' }}>{emp.nombre}</span>
@@ -254,69 +268,98 @@ export const Guardias: React.FC = () => {
           <p className="text-muted">Todos los días operativos siguen el horario de oficina estándar.</p>
         </div>
       ) : (
-        <div className="assets-table-container glass-panel mt-2">
-          <table className="assets-table">
-            <thead>
-              <tr>
-                <th>FECHA DE GUARDIA</th>
-                <th>TIPO</th>
-                <th>SEDE</th>
-                <th>TÉCNICO DE TURNO</th>
-                <th>OBSERVACIONES / MOTIVO</th>
-                {user?.rol === 'ADMIN' && <th style={{ width: '80px', textAlign: 'center' }}>ACCIONES</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {guardias.map((g) => {
-                const dateObj = new Date(g.fecha);
-                const todayStr = new Date().toISOString().split('T')[0];
-                const isToday = g.fecha.split('T')[0] === todayStr;
-                const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-                const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
-                const fullDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-                
-                return (
-                  <tr key={g.id} className={isToday ? 'active-today' : ''} style={isToday ? { background: '#fdf4ff' } : undefined}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ textTransform: 'capitalize' }}>{dayName}</strong>
-                        <span className="text-muted">{fullDate}</span>
-                        {isToday && <span className="today-badge" style={{ background: '#fdf4ff', color: '#a21caf', border: '1px solid #f0abfc' }}>Hoy</span>}
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`badge`} style={isWeekend ? { background: '#eff6ff', color: '#1e40af' } : { background: '#fef2f2', color: '#b91c1c' }}>
-                        {isWeekend ? 'Fin de Semana' : 'Feriado'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="badge" style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '9px' }}>
-                        {g.empresa_nombre || 'Todas'}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: '600', color: '#1e293b' }}>
-                      {g.tecnico_nombre}
-                    </td>
-                    <td className="text-muted" style={{ fontStyle: 'italic', fontSize: '11.5px' }}>
-                      {g.observaciones || 'Guardia de soporte pasivo programada'}
-                    </td>
-                    {user?.rol === 'ADMIN' && (
-                      <td style={{ textAlign: 'center' }}>
-                        <button 
-                          className="btn-delete" 
-                          onClick={() => handleDeleteGuardia(g.id)}
-                          title="Eliminar guardia"
-                        >
-                          ×
-                        </button>
+        <>
+          <div className="assets-table-container glass-panel mt-2">
+            <table className="assets-table">
+              <thead>
+                <tr>
+                  <th>FECHA DE GUARDIA</th>
+                  <th>TIPO</th>
+                  <th>SEDE</th>
+                  <th>TÉCNICO DE TURNO</th>
+                  <th>OBSERVACIONES / MOTIVO</th>
+                  {user?.rol === 'ADMIN' && <th style={{ width: '80px', textAlign: 'center' }}>ACCIONES</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {guardias.map((g) => {
+                  const dateObj = new Date(g.fecha);
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  const isToday = g.fecha.split('T')[0] === todayStr;
+                  const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+                  const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
+                  const fullDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+                  
+                  return (
+                    <tr key={g.id} className={isToday ? 'active-today' : ''} style={isToday ? { background: '#fdf4ff' } : undefined}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <strong style={{ textTransform: 'capitalize' }}>{dayName}</strong>
+                          <span className="text-muted">{fullDate}</span>
+                          {isToday && <span className="today-badge" style={{ background: '#fdf4ff', color: '#a21caf', border: '1px solid #f0abfc' }}>Hoy</span>}
+                        </div>
                       </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      <td>
+                        <span className={`badge`} style={isWeekend ? { background: '#eff6ff', color: '#1e40af' } : { background: '#fef2f2', color: '#b91c1c' }}>
+                          {isWeekend ? 'Fin de Semana' : 'Feriado'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="badge" style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '9px' }}>
+                          {g.empresa_nombre || 'Todas'}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: '600', color: '#1e293b' }}>
+                        {g.tecnico_nombre}
+                      </td>
+                      <td className="text-muted" style={{ fontStyle: 'italic', fontSize: '11.5px' }}>
+                        {g.observaciones || 'Guardia de soporte pasivo programada'}
+                      </td>
+                      {user?.rol === 'ADMIN' && (
+                        <td style={{ textAlign: 'center' }}>
+                          <button 
+                            className="btn-delete" 
+                            onClick={() => handleDeleteGuardia(g.id)}
+                            title="Eliminar guardia"
+                          >
+                            ×
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Controls */}
+          {guardias.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', padding: '0 4px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+              >
+                Anterior
+              </button>
+              <span style={{ fontSize: '13px', color: 'var(--color-text-main)', fontWeight: '500' }}>
+                Página {page} de {Math.ceil(total / limit) || 1} ({total} registros)
+              </span>
+              <button 
+                type="button"
+                className="btn btn-secondary btn-sm"
+                disabled={page >= (Math.ceil(total / limit) || 1)}
+                onClick={() => setPage(page + 1)}
+                style={{ cursor: page >= (Math.ceil(total / limit) || 1) ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* SCHEDULE GUARD MODAL */}

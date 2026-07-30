@@ -15,6 +15,8 @@ interface Usuario {
   grupo_n2?: 'Infraestructura' | 'Desarrollo';
   empresa_ids: number[];
   empresa_nombres: string[];
+  empresa_inventario_ids: number[];
+  empresa_inventario_nombres: string[];
 }
 
 interface Empresa {
@@ -44,6 +46,7 @@ export const Usuarios: React.FC = () => {
   const [nivelSoporte, setNivelSoporte] = useState<'N1' | 'N2'>('N1');
   const [grupoN2, setGrupoN2] = useState<'Infraestructura' | 'Desarrollo' | ''>('');
   const [selectedEmpresas, setSelectedEmpresas] = useState<number[]>([]);
+  const [selectedEmpresasInventario, setSelectedEmpresasInventario] = useState<number[]>([]);
   const [mustChangePassword, setMustChangePassword] = useState(true);
 
   const [submitting, setSubmitting] = useState(false);
@@ -91,6 +94,7 @@ export const Usuarios: React.FC = () => {
     setNivelSoporte('N1');
     setGrupoN2('');
     setSelectedEmpresas([]);
+    setSelectedEmpresasInventario([]);
     setMustChangePassword(true);
     setGeneratedPassword(null);
     setError(null);
@@ -108,6 +112,7 @@ export const Usuarios: React.FC = () => {
     setNivelSoporte(u.nivel_soporte || 'N1');
     setGrupoN2(u.grupo_n2 || '');
     setSelectedEmpresas(u.empresa_ids || []);
+    setSelectedEmpresasInventario(u.empresa_inventario_ids || []);
     setMustChangePassword(!!u.must_change_password);
     setGeneratedPassword(null);
     setError(null);
@@ -119,6 +124,14 @@ export const Usuarios: React.FC = () => {
       setSelectedEmpresas(selectedEmpresas.filter(id => id !== empId));
     } else {
       setSelectedEmpresas([...selectedEmpresas, empId]);
+    }
+  };
+
+  const handleEmpresaInventarioToggle = (empId: number) => {
+    if (selectedEmpresasInventario.includes(empId)) {
+      setSelectedEmpresasInventario(selectedEmpresasInventario.filter(id => id !== empId));
+    } else {
+      setSelectedEmpresasInventario([...selectedEmpresasInventario, empId]);
     }
   };
 
@@ -143,6 +156,7 @@ export const Usuarios: React.FC = () => {
       nivel_soporte: Number(rolId) === 2 ? nivelSoporte : undefined,
       grupo_n2: (Number(rolId) === 2 && nivelSoporte === 'N2') ? (grupoN2 || null) : null,
       empresa_ids: selectedEmpresas,
+      empresa_inventario_ids: selectedEmpresasInventario,
       must_change_password: mustChangePassword
     };
 
@@ -165,32 +179,31 @@ export const Usuarios: React.FC = () => {
     }
   };
 
-  const filteredUsuarios = usuarios.filter(u => 
-    u.nombre_completo.toLowerCase().includes(search.toLowerCase()) || 
-    u.email.toLowerCase().includes(search.toLowerCase()) ||
-    u.rol_nombre.toLowerCase().includes(search.toLowerCase())
+  const filteredUsuarios = usuarios.filter(u =>
+    u.nombre_completo.toLowerCase().includes(search.toLowerCase()) ||
+    u.email.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="inventario-view animate-fade">
       <div className="view-header">
         <div>
-          <h1 className="gradient-text">Cuentas de Usuario</h1>
-          <p className="text-muted">Administración de accesos a la plataforma, asignación de roles y permisos</p>
+          <h1 className="gradient-text">Cuentas y Accesos TI</h1>
+          <p className="text-muted">Administra los técnicos de planta, directores y administradores de la plataforma</p>
         </div>
         <button className="btn btn-primary" onClick={openCreateModal}>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: '6px' }}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Crear Usuario
+          Registrar Usuario
         </button>
       </div>
 
-      {/* Filter and Search Section */}
-      <div className="filters-card glass-panel" style={{ padding: '16px', marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+      {/* Filter Card */}
+      <div className="filters-card glass-panel" style={{ padding: '16px', marginBottom: '8px', display: 'flex', gap: '16px', alignItems: 'center' }}>
         <div style={{ flex: 1, position: 'relative' }}>
           <input
             type="text"
             className="form-control"
-            placeholder="Buscar por nombre, correo o rol..."
+            placeholder="Buscar por nombre o correo de la cuenta..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ paddingLeft: '40px', width: '100%' }}
@@ -207,7 +220,7 @@ export const Usuarios: React.FC = () => {
           <div className="spinner" style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" stroke="rgba(0,0,0,0.1)"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path></svg>
           </div>
-          <p className="text-muted" style={{ marginTop: '12px' }}>Cargando usuarios...</p>
+          <p className="text-muted" style={{ marginTop: '12px' }}>Cargando usuarios y accesos...</p>
         </div>
       ) : error && !showModal ? (
         <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
@@ -219,12 +232,12 @@ export const Usuarios: React.FC = () => {
           <table className="inventario-table">
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Correo Electrónico</th>
-                <th>Rol</th>
-                <th>Sedes Asignadas</th>
+                <th>Usuario</th>
+                <th>Rol / Soporte</th>
+                <th>Sedes Soporte</th>
+                <th>Sedes Inventario</th>
                 <th>Estado</th>
-                <th>Clave Temp.</th>
+                <th>Contraseña</th>
                 <th style={{ textAlign: 'right' }}>Acciones</th>
               </tr>
             </thead>
@@ -232,28 +245,30 @@ export const Usuarios: React.FC = () => {
               {filteredUsuarios.length === 0 ? (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-dim)' }}>
-                    No se encontraron usuarios registrados.
+                    No se encontraron usuarios que coincidan con la búsqueda.
                   </td>
                 </tr>
               ) : (
                 filteredUsuarios.map((u) => (
-                  <tr key={u.id} className="table-row-hover">
-                    <td style={{ fontWeight: '600' }}>{u.nombre_completo}</td>
-                    <td>{u.email}</td>
+                  <tr key={u.id} className="table-row-hover animate-slide-up">
                     <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span className={`badge ${u.rol_nombre === 'ADMIN' ? 'badge-critica' : u.rol_nombre === 'TECNICO' ? 'badge-alta' : 'badge-baja'}`} style={{ fontSize: '10px' }}>
-                          {u.rol_nombre}
-                        </span>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontWeight: '600' }}>{u.nombre_completo}</span>
+                        <span className="text-muted" style={{ fontSize: '12px' }}>{u.email}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontWeight: '500' }}>{u.rol_nombre}</span>
                         {u.rol_nombre === 'TECNICO' && (
-                          <span className="badge badge-process" style={{ fontSize: '9px', background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                          <span className="text-muted" style={{ fontSize: '11px' }}>
                             Soporte {u.nivel_soporte || 'N1'} {u.grupo_n2 ? `(${u.grupo_n2})` : ''}
                           </span>
                         )}
                       </div>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '300px' }}>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '200px' }}>
                         {u.empresa_nombres && u.empresa_nombres.length > 0 ? (
                           u.empresa_nombres.map((name, idx) => (
                             <span key={idx} className="badge badge-process" style={{ fontSize: '9px', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)' }}>
@@ -261,7 +276,20 @@ export const Usuarios: React.FC = () => {
                             </span>
                           ))
                         ) : (
-                          <span className="text-dim" style={{ fontSize: '11px' }}>Todas las sedes (ADMIN)</span>
+                          <span className="text-dim" style={{ fontSize: '11px' }}>—</span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '200px' }}>
+                        {u.empresa_inventario_nombres && u.empresa_inventario_nombres.length > 0 ? (
+                          u.empresa_inventario_nombres.map((name, idx) => (
+                            <span key={idx} className="badge badge-process" style={{ fontSize: '9px', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
+                              {name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-dim" style={{ fontSize: '11px' }}>—</span>
                         )}
                       </div>
                     </td>
@@ -293,7 +321,7 @@ export const Usuarios: React.FC = () => {
       {/* Modal Overlay */}
       {showModal && (
         <div className="modal-backdrop animate-fade" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '520px', padding: '28px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '540px', padding: '28px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3>{isEditing ? 'Configurar Cuenta de Usuario' : 'Registrar Nuevo Acceso'}</h3>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '20px', cursor: 'pointer' }}>×</button>
@@ -331,7 +359,6 @@ export const Usuarios: React.FC = () => {
                 />
               </div>
 
-              {/* Password section with temp generator */}
               <div className="form-group">
                 <label className="form-label">
                   CONTRASEÑA {isEditing && <span className="text-dim">(Dejar en blanco para conservar actual)</span>}
@@ -423,18 +450,40 @@ export const Usuarios: React.FC = () => {
                 </>
               )}
 
+              {/* Support Sedes Checklist */}
               <div className="form-group">
-                <label className="form-label">SEDES FÍSICAS BAJO SUPERVISIÓN</label>
+                <label className="form-label">SEDES FÍSICAS DE SOPORTE (ASIGNACIÓN DE TICKETS)</label>
                 <p className="text-dim" style={{ fontSize: '11px', marginTop: '-4px', marginBottom: '8px' }}>
-                  El técnico solo recibirá y visualizará tickets correspondientes a las sedes seleccionadas.
+                  Sedes bajo la guardia y asignación automática de tickets de soporte técnico.
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', maxHeight: '120px', overflowY: 'auto', padding: '10px', background: 'var(--overlay-05)', borderRadius: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', maxHeight: '110px', overflowY: 'auto', padding: '10px', background: 'var(--overlay-05)', borderRadius: '6px' }}>
                   {empresas.map(emp => (
                     <label key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: 'pointer', userSelect: 'none' }}>
                       <input
                         type="checkbox"
                         checked={selectedEmpresas.includes(emp.id)}
                         onChange={() => handleEmpresaToggle(emp.id)}
+                        disabled={submitting}
+                      />
+                      {emp.nombre}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Inventario Sedes Checklist */}
+              <div className="form-group">
+                <label className="form-label">SEDES FÍSICAS DE INVENTARIO (CONTROL DE ACTIVOS)</label>
+                <p className="text-dim" style={{ fontSize: '11px', marginTop: '-4px', marginBottom: '8px' }}>
+                  Sedes donde se permite el control de activos, consumibles y bodegas físicas.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', maxHeight: '110px', overflowY: 'auto', padding: '10px', background: 'var(--overlay-05)', borderRadius: '6px' }}>
+                  {empresas.map(emp => (
+                    <label key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: 'pointer', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedEmpresasInventario.includes(emp.id)}
+                        onChange={() => handleEmpresaInventarioToggle(emp.id)}
                         disabled={submitting}
                       />
                       {emp.nombre}

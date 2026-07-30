@@ -11,30 +11,41 @@ export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [activos, setActivos] = useState<Activo[]>([]);
-  const [consumibles, setConsumibles] = useState<Consumible[]>([]);
   const [guardias, setGuardias] = useState<GuardiaFeriado[]>([]);
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [empresas, setEmpresas] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // New States for Backend Pagination
+  const [paginatedTickets, setPaginatedTickets] = useState<Ticket[]>([]);
+  const [ticketsPage, setTicketsPage] = useState(1);
+  const [ticketsTotal, setTicketsTotal] = useState(0);
+  const [loadingTicketsPage, setLoadingTicketsPage] = useState(false);
+
+  const [paginatedConsumibles, setPaginatedConsumibles] = useState<Consumible[]>([]);
+  const [consumiblesPage, setConsumiblesPage] = useState(1);
+  const [consumiblesTotal, setConsumiblesTotal] = useState(0);
+  const [loadingConsumiblesPage, setLoadingConsumiblesPage] = useState(false);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [ticketsList, activosList, consumiblesList, guardiasList, usersList, personasList, proyectosList, companiesList] = await Promise.all([
+      const [ticketsList, activosList, guardiasList, usersList, personasList, proyectosList, companiesList, paginatedTicketsRes, paginatedConsumiblesRes] = await Promise.all([
         ticketService.getTickets().catch(() => [] as Ticket[]),
         inventoryService.getActivos(1, 999999).then(res => res.data).catch(() => [] as Activo[]),
-        inventoryService.getConsumibles(1, 999999).then(res => res.data).catch(() => [] as Consumible[]),
         guardService.getGuardias().catch(() => [] as GuardiaFeriado[]),
         apiClient.get<any[]>('/usuarios').catch(() => []),
         apiClient.get<any[]>('/personas').catch(() => []),
         projectService.getProyectos().catch(() => [] as Proyecto[]),
         apiClient.get<any[]>('/empresas').catch(() => []),
+        ticketService.getTicketsPaginated(1, 4, 'Finalizada').catch(() => ({ total: 0, page: 1, limit: 4, data: [] as Ticket[] })),
+        inventoryService.getConsumibles(1, 4, '', true).catch(() => ({ total: 0, page: 1, limit: 4, data: [] as Consumible[] })),
       ]);
 
       if (user?.rol === 'TECNICO') {
         const me = usersList.find((u: any) => u.id === user.id);
-        const myEmpresaIds = me?.empresa_ids || [];
+        const myInventarioIds = me?.empresa_inventario_ids || [];
 
         // Filter tickets
         const filteredTickets = ticketsList.filter((t: Ticket) => t.tecnico_id === user.id);
@@ -42,9 +53,10 @@ export const Dashboard: React.FC = () => {
         // Filter assets
         const personaToEmpresaMap = new Map(personasList.map((p: any) => [p.id, p.empresa_id]));
         const filteredActivos = activosList.filter((a: Activo) => {
+          if (a.empresa_id) return myInventarioIds.includes(a.empresa_id);
           if (!a.persona_id) return false;
           const empId = personaToEmpresaMap.get(a.persona_id);
-          return empId ? myEmpresaIds.includes(empId) : false;
+          return empId ? myInventarioIds.includes(empId) : false;
         });
 
         setTickets(filteredTickets);
@@ -54,7 +66,14 @@ export const Dashboard: React.FC = () => {
         setActivos(activosList);
       }
 
-      setConsumibles(consumiblesList);
+      setPaginatedTickets(paginatedTicketsRes.data);
+      setTicketsTotal(paginatedTicketsRes.total);
+      setTicketsPage(1);
+
+      setPaginatedConsumibles(paginatedConsumiblesRes.data);
+      setConsumiblesTotal(paginatedConsumiblesRes.total);
+      setConsumiblesPage(1);
+
       setGuardias(guardiasList);
       setProyectos(proyectosList);
       setEmpresas(companiesList);
@@ -65,6 +84,34 @@ export const Dashboard: React.FC = () => {
       console.error('Error fetching dashboard metrics', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFetchTicketsPage = async (page: number) => {
+    try {
+      setLoadingTicketsPage(true);
+      const res = await ticketService.getTicketsPaginated(page, 4, 'Finalizada');
+      setPaginatedTickets(res.data);
+      setTicketsTotal(res.total);
+      setTicketsPage(page);
+    } catch (err) {
+      console.error('Error paginating tickets', err);
+    } finally {
+      setLoadingTicketsPage(false);
+    }
+  };
+
+  const handleFetchConsumiblesPage = async (page: number) => {
+    try {
+      setLoadingConsumiblesPage(true);
+      const res = await inventoryService.getConsumibles(page, 4, '', true);
+      setPaginatedConsumibles(res.data);
+      setConsumiblesTotal(res.total);
+      setConsumiblesPage(page);
+    } catch (err) {
+      console.error('Error paginating consumibles', err);
+    } finally {
+      setLoadingConsumiblesPage(false);
     }
   };
 
@@ -85,9 +132,6 @@ export const Dashboard: React.FC = () => {
   const totalAssets = activos.length;
   const assignedAssets = activos.filter(a => a.estado === 'Asignado').length;
   const stockAssets = activos.filter(a => a.estado === 'Stock').length;
-
-  // 3. Low stock consumables
-  const lowStockConsumibles = consumibles.filter(c => c.stock_actual <= c.stock_minimo);
 
   // 4. Project computations
   const activeProjects = proyectos.filter(p => p.estado !== 'Finalizado');
@@ -284,13 +328,13 @@ export const Dashboard: React.FC = () => {
             <h3>Actividades Recientes y Alertas</h3>
             <div className="pulse-green"></div>
           </div>
-          <div className="recent-tickets-list">
-            {openTickets.length === 0 ? (
+          <div className="recent-tickets-list" style={{ opacity: loadingTicketsPage ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+            {paginatedTickets.length === 0 ? (
               <div className="empty-operation text-center py-4">
                 <p className="text-muted mt-2">¡Todo al día! No hay tickets pendientes de soporte.</p>
               </div>
             ) : (
-              openTickets.slice(0, 4).map((ticket) => (
+              paginatedTickets.map((ticket) => (
                 <div key={ticket.id} className="mini-ticket-row">
                   <div className="mini-ticket-left">
                     <span className={`mini-priority-dot priority-${ticket.prioridad.toLowerCase()}`} title={ticket.prioridad}></span>
@@ -308,21 +352,45 @@ export const Dashboard: React.FC = () => {
               ))
             )}
           </div>
+          {/* Pagination Controls */}
+          {ticketsTotal > 4 && (
+            <div className="dashboard-pagination">
+              <button 
+                className="dashboard-pagination-btn" 
+                onClick={() => handleFetchTicketsPage(ticketsPage - 1)}
+                disabled={ticketsPage === 1 || loadingTicketsPage}
+                title="Anterior"
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <span className="dashboard-pagination-info">
+                Pág. {ticketsPage} de {Math.ceil(ticketsTotal / 4) || 1}
+              </span>
+              <button 
+                className="dashboard-pagination-btn" 
+                onClick={() => handleFetchTicketsPage(ticketsPage + 1)}
+                disabled={ticketsPage === (Math.ceil(ticketsTotal / 4) || 1) || loadingTicketsPage}
+                title="Siguiente"
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Low Stock Consumibles */}
         <div className="operation-column glass-panel">
           <div className="column-header">
             <h3>Alertas de Consumibles Críticos</h3>
-            {lowStockConsumibles.length > 0 && <span className="warning-count-badge">{lowStockConsumibles.length}</span>}
+            {consumiblesTotal > 0 && <span className="warning-count-badge">{consumiblesTotal}</span>}
           </div>
-          <div className="low-stock-list">
-            {lowStockConsumibles.length === 0 ? (
+          <div className="low-stock-list" style={{ opacity: loadingConsumiblesPage ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+            {paginatedConsumibles.length === 0 ? (
               <div className="empty-operation text-center py-4">
                 <p className="text-muted mt-2">Stock robusto. Todos los consumibles por encima del mínimo.</p>
               </div>
             ) : (
-              lowStockConsumibles.map((c) => (
+              paginatedConsumibles.map((c) => (
                 <div key={c.id} className="low-stock-row animate-fade">
                   <div className="low-stock-info">
                     <span className="consumable-name">{c.nombre}</span>
@@ -338,6 +406,30 @@ export const Dashboard: React.FC = () => {
               ))
             )}
           </div>
+          {/* Pagination Controls */}
+          {consumiblesTotal > 4 && (
+            <div className="dashboard-pagination">
+              <button 
+                className="dashboard-pagination-btn" 
+                onClick={() => handleFetchConsumiblesPage(consumiblesPage - 1)}
+                disabled={consumiblesPage === 1 || loadingConsumiblesPage}
+                title="Anterior"
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <span className="dashboard-pagination-info">
+                Pág. {consumiblesPage} de {Math.ceil(consumiblesTotal / 4) || 1}
+              </span>
+              <button 
+                className="dashboard-pagination-btn" 
+                onClick={() => handleFetchConsumiblesPage(consumiblesPage + 1)}
+                disabled={consumiblesPage === (Math.ceil(consumiblesTotal / 4) || 1) || loadingConsumiblesPage}
+                title="Siguiente"
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

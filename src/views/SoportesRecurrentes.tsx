@@ -38,35 +38,69 @@ export const SoportesRecurrentes: React.FC = () => {
 
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [totalSoportes, setTotalSoportes] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const fetchData = async () => {
+  const fetchSoportes = async (pageNumber = page, searchVal = debouncedSearch) => {
     setLoading(true);
     setError(null);
     try {
-      const [soportesData, empresasData, catsData] = await Promise.all([
-        recurrenciaService.getSoportesRecurrentes(),
-        apiClient.get<Empresa[]>('/empresas'),
-        ticketService.getCategorias().catch(() => [])
-      ]);
-      setSoportes(soportesData);
-      setEmpresas(empresasData);
-      setCategoriesList(catsData);
-      
-      if (empresasData.length > 0 && !empresaId) {
-        setEmpresaId(empresasData[0].id);
-      }
-      if (catsData.length > 0 && !categoria) {
-        setCategoria(catsData[0].nombre);
-      }
+      const res = await recurrenciaService.getSoportesRecurrentes(pageNumber, 10, searchVal);
+      setSoportes(res.data);
+      setTotalSoportes(res.total);
     } catch (err: any) {
       setError(err.message || 'Error al cargar los soportes recurrentes.');
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchData = () => {
+    fetchSoportes(page, debouncedSearch);
+  };
+
+  // Load static metadata once on mount
+  useEffect(() => {
+    const loadMetadata = async () => {
+      try {
+        const [empresasData, catsData] = await Promise.all([
+          apiClient.get<Empresa[]>('/empresas'),
+          ticketService.getCategorias().catch(() => [])
+        ]);
+        setEmpresas(empresasData);
+        setCategoriesList(catsData);
+        if (empresasData.length > 0 && !empresaId) {
+          setEmpresaId(empresasData[0].id);
+        }
+        if (catsData.length > 0 && !categoria) {
+          setCategoria(catsData[0].nombre);
+        }
+      } catch (err: any) {
+        console.error('Error loading metadata', err);
+      }
+    };
+    loadMetadata();
+  }, []);
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // Fetch when page or search changes
+  useEffect(() => {
+    fetchSoportes(page, debouncedSearch);
+  }, [page, debouncedSearch]);
 
   const openCreateModal = () => {
     setIsEditing(false);
@@ -154,11 +188,7 @@ export const SoportesRecurrentes: React.FC = () => {
     }
   };
 
-  const filteredSoportes = soportes.filter(s =>
-    s.titulo.toLowerCase().includes(search.toLowerCase()) ||
-    s.descripcion.toLowerCase().includes(search.toLowerCase()) ||
-    s.categoria.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredSoportes = soportes;
 
   return (
     <div className="inventario-view animate-fade">
@@ -204,72 +234,100 @@ export const SoportesRecurrentes: React.FC = () => {
           <button className="btn btn-secondary" onClick={fetchData} style={{ marginTop: '12px' }}>Reintentar</button>
         </div>
       ) : (
-        <div className="table-wrapper glass-panel">
-          <table className="inventario-table">
-            <thead>
-              <tr>
-                <th>Título Tarea</th>
-                <th>CC / Centro Comercial</th>
-                <th>Área / Solicitante</th>
-                <th>Frecuencia</th>
-                <th>Próxima Ejecución</th>
-                <th>Última Ejecución</th>
-                <th>Estado</th>
-                <th style={{ textAlign: 'right' }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSoportes.length === 0 ? (
+        <>
+          <div className="table-wrapper glass-panel">
+            <table className="inventario-table">
+              <thead>
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-dim)' }}>
-                    No se encontraron soportes recurrentes programados.
-                  </td>
+                  <th>Título Tarea</th>
+                  <th>CC / Centro Comercial</th>
+                  <th>Área / Solicitante</th>
+                  <th>Frecuencia</th>
+                  <th>Próxima Ejecución</th>
+                  <th>Última Ejecución</th>
+                  <th>Estado</th>
+                  <th style={{ textAlign: 'right' }}>Acciones</th>
                 </tr>
-              ) : (
-                filteredSoportes.map((s) => (
-                  <tr key={s.id} className="table-row-hover">
-                    <td>
-                      <div style={{ fontWeight: '600' }}>{s.titulo}</div>
-                      <div className="text-muted" style={{ fontSize: '11px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.descripcion}</div>
-                    </td>
-                    <td>
-                      <span className="badge badge-process" style={{ fontSize: '10px', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)' }}>
-                        {s.empresa_nombre || 'Todas las Sedes'}
-                      </span>
-                    </td>
-                    <td>{s.area_solicitante || 'TI'}</td>
-                    <td>
-                      <span className="badge badge-media" style={{ fontSize: '10px' }}>
-                        {s.frecuencia}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: '600', color: 'var(--color-primary)' }}>
-                      {new Date(s.siguiente_ejecucion).toLocaleDateString()}
-                    </td>
-                    <td>
-                      {s.ultima_ejecucion ? new Date(s.ultima_ejecucion).toLocaleDateString() : 'Nunca'}
-                    </td>
-                    <td>
-                      <span className={`badge ${s.is_active ? 'badge-done' : 'badge-baja'}`} style={{ fontSize: '10px' }}>
-                        {s.is_active ? 'Activo' : 'Pausado'}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button className="btn btn-secondary" style={{ padding: '5px 7px' }} onClick={() => openEditModal(s)} title="Editar">
-                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg>
-                        </button>
-                        <button className="btn btn-danger" style={{ padding: '5px 7px', border: '1px solid #fee2e2', color: '#c53030' }} onClick={() => handleDelete(s.id)} title="Eliminar">
-                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {filteredSoportes.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-dim)' }}>
+                      No se encontraron soportes recurrentes programados.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  filteredSoportes.map((s) => (
+                    <tr key={s.id} className="table-row-hover">
+                      <td>
+                        <div style={{ fontWeight: '600' }}>{s.titulo}</div>
+                        <div className="text-muted" style={{ fontSize: '11px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.descripcion}</div>
+                      </td>
+                      <td>
+                        <span className="badge badge-process" style={{ fontSize: '10px', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)' }}>
+                          {s.empresa_nombre || 'Todas las Sedes'}
+                        </span>
+                      </td>
+                      <td>{s.area_solicitante || 'TI'}</td>
+                      <td>
+                        <span className="badge badge-media" style={{ fontSize: '10px' }}>
+                          {s.frecuencia}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: '600', color: 'var(--color-primary)' }}>
+                        {new Date(s.siguiente_ejecucion).toLocaleDateString()}
+                      </td>
+                      <td>
+                        {s.ultima_ejecucion ? new Date(s.ultima_ejecucion).toLocaleDateString() : 'Nunca'}
+                      </td>
+                      <td>
+                        <span className={`badge ${s.is_active ? 'badge-done' : 'badge-baja'}`} style={{ fontSize: '10px' }}>
+                          {s.is_active ? 'Activo' : 'Pausado'}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button className="btn btn-secondary" style={{ padding: '5px 7px' }} onClick={() => openEditModal(s)} title="Editar">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg>
+                          </button>
+                          <button className="btn btn-danger" style={{ padding: '5px 7px', border: '1px solid #fee2e2', color: '#c53030' }} onClick={() => handleDelete(s.id)} title="Eliminar">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* Pagination Controls */}
+          {totalSoportes > 10 && (
+            <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '20px', padding: '10px 0' }}>
+              <button 
+                type="button"
+                className="btn btn-secondary btn-sm"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+              >
+                Anterior
+              </button>
+              <span style={{ fontSize: '13px', color: 'var(--color-text)', fontWeight: '500' }}>
+                Página {page} de {Math.ceil(totalSoportes / 10)} ({totalSoportes} registros)
+              </span>
+              <button 
+                type="button"
+                className="btn btn-secondary btn-sm"
+                disabled={page === Math.ceil(totalSoportes / 10)}
+                onClick={() => setPage(page + 1)}
+                style={{ cursor: page === Math.ceil(totalSoportes / 10) ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal de Creación / Edición */}

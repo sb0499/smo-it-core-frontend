@@ -26,13 +26,6 @@ export const Login: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const handleQuickLogin = (quickEmail: string, quickPass: string) => {
-    setEmail(quickEmail);
-    setPassword(quickPass);
-    setError(null);
-  };
-
   return (
     <div className="login-wrapper-split">
       {/* Left side: Premium gradient & abstract decorative art */}
@@ -126,33 +119,6 @@ export const Login: React.FC = () => {
               )}
             </button>
           </form>
-
-          <div className="quick-access-section-custom">
-            <span className="quick-label-custom">Acceso rápido para pruebas</span>
-            <div className="quick-buttons-grid-custom">
-              <button 
-                className="quick-badge admin-badge"
-                onClick={() => handleQuickLogin('admin@smo.com', 'admin123')}
-                disabled={loading}
-              >
-                Admin
-              </button>
-              <button 
-                className="quick-badge tech-badge"
-                onClick={() => handleQuickLogin('santi@smo.com', 'tech123')}
-                disabled={loading}
-              >
-                Técnico
-              </button>
-              <button 
-                className="quick-badge user-badge"
-                onClick={() => handleQuickLogin('user@smo.com', 'user123')}
-                disabled={loading}
-              >
-                Usuario
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -94,12 +94,16 @@ export interface User {
   grupo_n2?: 'Infraestructura' | 'Desarrollo';
   empresa_ids?: number[];
   empresa_nombres?: string[];
+  empresa_inventario_ids?: number[];
+  empresa_inventario_nombres?: string[];
 }
 
 export const projectService = {
   // Projects
-  async getProyectos(): Promise<Proyecto[]> {
-    return apiClient.get<Proyecto[]>('/proyectos');
+  async getProyectos(page?: number, limit?: number, search = ''): Promise<any> {
+    return apiClient.get('/proyectos', {
+      params: { page, limit, search }
+    });
   },
 
   async getProyectoById(id: number): Promise<Proyecto> {
