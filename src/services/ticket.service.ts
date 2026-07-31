@@ -37,6 +37,7 @@ export interface CreateTicketPayload {
   fecha_final_tentativa?: string | null;
   prioridad?: 'Baja' | 'Media' | 'Alta' | 'Critica';
   tecnico_id?: number | null;
+  nivel_soporte?: 'N1' | 'N2';
 }
 
 export interface UpdateTicketPayload {
@@ -53,9 +54,11 @@ export const ticketService = {
   },
 
   async getTicketsPaginated(page = 1, limit = 10, excludeStatus?: string, estado?: string, search?: string): Promise<{ total: number; page: number; limit: number; data: Ticket[] }> {
-    return apiClient.get('/tickets/paginated', {
-      params: { page, limit, excludeStatus, estado, search }
-    });
+    const params: any = { page, limit };
+    if (excludeStatus !== undefined) params.excludeStatus = excludeStatus;
+    if (estado !== undefined) params.estado = estado;
+    if (search !== undefined) params.search = search;
+    return apiClient.get('/tickets/paginated', { params });
   },
 
   async createTicket(payload: CreateTicketPayload): Promise<Ticket> {

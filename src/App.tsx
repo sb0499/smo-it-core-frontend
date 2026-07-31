@@ -27,10 +27,14 @@ function AppContent() {
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
   const [refreshKey, setRefreshKey] = useState<number>(0);
 
-  // Sync activeView for Sede user
+  // Reset activeView to default dashboard or role-based default view on user change (login/logout)
   useEffect(() => {
-    if (user?.rol === 'USUARIO') {
-      setActiveView('tickets');
+    if (user) {
+      if (user.rol === 'USUARIO') {
+        setActiveView('tickets');
+      } else {
+        setActiveView('dashboard');
+      }
     }
   }, [user]);
 
@@ -55,7 +59,10 @@ function AppContent() {
       case 'tickets':
         return <Tickets key={refreshKey} />;
       case 'inventario':
-        return <Inventario key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
+          return <Inventario key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'proyectos':
         return <Proyectos key={refreshKey} />;
       case 'guardias':
@@ -71,11 +78,17 @@ function AppContent() {
       case 'usuarios':
         return <Usuarios key={refreshKey} />;
       case 'movimientos':
-        return <MovimientosInventario key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
+          return <MovimientosInventario key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'reportes':
         return <Reportes key={refreshKey} />;
       case 'bodegas':
-        return <Bodegas key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
+          return <Bodegas key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'credenciales':
         return <EntregaCredenciales key={refreshKey} />;
       default:

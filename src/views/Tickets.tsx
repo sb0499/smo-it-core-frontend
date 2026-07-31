@@ -34,6 +34,7 @@ export const Tickets: React.FC = () => {
   const [newEmpresaId, setNewEmpresaId] = useState<number>(0);
   const [newPersonaSol, setNewPersonaSol] = useState('');
   const [newAreaSol, setNewAreaSol] = useState('');
+  const [newNivelSoporte, setNewNivelSoporte] = useState<'N1' | 'N2'>('N1');
 
   // Ticket edit state
   const [editEstado, setEditEstado] = useState<string>('');
@@ -83,7 +84,7 @@ export const Tickets: React.FC = () => {
           setNewCat(cats[0].nombre);
         }
 
-        const techs = usersList.filter(u => u.rol === 'TECNICO' || u.rol === 'ADMIN');
+        const techs = usersList.filter(u => u.rol === 'TECNICO' || u.rol === 'SUPERVISOR');
         setTechnicians(techs);
       } catch (err) {
         console.error('Error loading metadata', err);
@@ -127,6 +128,7 @@ export const Tickets: React.FC = () => {
         persona_solicitante: newPersonaSol || undefined,
         area_solicitante: newAreaSol || undefined,
         medio_solicitud: 'Plataforma',
+        nivel_soporte: isN2 ? newNivelSoporte : undefined,
       };
 
       await ticketService.createTicket(payload);
@@ -137,6 +139,7 @@ export const Tickets: React.FC = () => {
       setNewDesc('');
       setNewPersonaSol('');
       setNewAreaSol('');
+      setNewNivelSoporte('N1');
       
       fetchTicketsData();
     } catch (err: any) {
@@ -267,7 +270,7 @@ export const Tickets: React.FC = () => {
         </div>
  
         <div className="controls-right-buttons">
-          {user?.rol === 'ADMIN' && (
+          {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && (
             <>
               <button 
                 className="btn btn-secondary" 
@@ -459,6 +462,20 @@ export const Tickets: React.FC = () => {
                 />
               </div>
 
+              {isN2 && (
+                <div className="form-group">
+                  <label className="form-label">NIVEL DE SOPORTE</label>
+                  <select 
+                    className="form-control" 
+                    value={newNivelSoporte} 
+                    onChange={(e) => setNewNivelSoporte(e.target.value as 'N1' | 'N2')}
+                  >
+                    <option value="N1">Nivel 1 (N1) - Asignar a Centro Comercial</option>
+                    <option value="N2">Nivel 2 (N2) - Mi nivel (Asignado a mí)</option>
+                  </select>
+                </div>
+              )}
+
               <div className="form-group">
                 <label className="form-label">DESCRIPCIÓN DE LA FALLA O SOLICITUD</label>
                 <textarea
@@ -506,7 +523,7 @@ export const Tickets: React.FC = () => {
               </div>
 
               {/* Editable Fields for Admin / Technical Staff */}
-              {user?.rol === 'ADMIN' || user?.rol === 'TECNICO' ? (
+              {user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO' ? (
                 <div className="admin-editable-section">
                   <h4 className="section-title gradient-text mt-3 mb-2">Administrar Operación TI</h4>
 
@@ -571,7 +588,7 @@ export const Tickets: React.FC = () => {
                         <option value="Pendiente">Pendiente</option>
                         <option value="Pruebas">Pruebas</option>
                         <option value="Finalizada">Finalizada</option>
-                        {(user?.rol === 'ADMIN' || isN2) && (
+                        {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || isN2) && (
                           <>
                             <option value="Escalado a Proyecto">Escalado a Proyecto</option>
                             <option value="Escalado a Proveedor">Escalado a Proveedor (SLA Pausado)</option>
@@ -584,7 +601,7 @@ export const Tickets: React.FC = () => {
                   <div className="form-row">
                     <div className="form-group half">
                       <label className="form-label">TÉCNICO TI ASIGNADO</label>
-                      {user.rol === 'ADMIN' ? (
+                      {user.rol === 'ADMIN' || user.rol === 'SUPERVISOR' ? (
                         <select 
                           className="form-control" 
                           value={editTechId} 
@@ -642,7 +659,7 @@ export const Tickets: React.FC = () => {
 
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setSelectedTicket(null)}>Cerrar</button>
-                {selectedTicket.nivel_soporte === 'N1' && (user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && selectedTicket.estado !== 'Finalizada' && (
+                {selectedTicket.nivel_soporte === 'N1' && (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && selectedTicket.estado !== 'Finalizada' && (
                   <button
                     type="button"
                     className="btn btn-warning"
@@ -657,7 +674,7 @@ export const Tickets: React.FC = () => {
                     Escalar a N2 (Especialista)
                   </button>
                 )}
-                {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
+                {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && (
                   <button type="submit" className="btn btn-primary" disabled={isUpdating}>
                     {isUpdating ? 'Guardando...' : 'Actualizar Estado'}
                   </button>

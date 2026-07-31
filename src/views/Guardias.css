@@ -261,3 +261,30 @@
 .guardia-card.guardia-holiday {
   border-left: 4px solid #ef4444 !important;
 }
+
+/* Calendar Styling Extensions */
+.calendar-month-header {
+  margin-top: 10px;
+}
+
+.calendar-day-cell {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.calendar-day-cell:hover:not(.blank) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.calendar-day-cell.today {
+  border-color: #f0abfc !important;
+  background: #fdf4ff !important;
+}
+
+.calendar-day-cell.weekend {
+  background: #f8fafc;
+}
+
+.calendar-day-cell.blank {
+  pointer-events: none;
+}

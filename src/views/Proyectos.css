@@ -173,7 +173,7 @@
 .project-grid-columns {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
-  gap: 16px;
+  gap: 24px;
 }
 
 .project-column-left {
@@ -182,14 +182,14 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 20px;
+  padding: 24px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
 }
 
 .project-column-right {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
 .column-title {
@@ -213,11 +213,11 @@
 .project-tasks-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .task-block {
-  padding: 16px;
+  padding: 20px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -327,7 +327,7 @@
   width: 15px;
   height: 15px;
   border: 1.5px solid #cbd5e1;
-  border-radius: 50%;
+  border-radius: 4px;
   outline: none;
   display: inline-flex;
   align-items: center;
@@ -344,7 +344,7 @@
 .subtask-checkbox:checked::after {
   content: "✓";
   color: #ffffff;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: bold;
   display: block;
   line-height: 1;
@@ -357,32 +357,49 @@
 
 /* DISCUSSION PANEL */
 .discuss-section {
-  padding: 16px;
+  padding: 20px;
 }
 
 .comments-timeline {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-height: 220px;
+  gap: 12px;
+  max-height: 250px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 6px;
+}
+
+/* Custom scrollbars for clean timeline panels */
+.comments-timeline::-webkit-scrollbar,
+.files-list::-webkit-scrollbar,
+.logs-timeline-list::-webkit-scrollbar {
+  width: 4px;
+}
+.comments-timeline::-webkit-scrollbar-track,
+.files-list::-webkit-scrollbar-track,
+.logs-timeline-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.comments-timeline::-webkit-scrollbar-thumb,
+.files-list::-webkit-scrollbar-thumb,
+.logs-timeline-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 
 .comment-bubble {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: flex-start;
-  padding: 8px 0;
-  border-bottom: 1px dashed #f1f5f9;
-}
-.comment-bubble:last-child {
-  border-bottom: none;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
 }
 
 .comment-avatar {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #eff6ff;
   color: #2563eb;
@@ -393,6 +410,49 @@
   justify-content: center;
   flex-shrink: 0;
   border: 1px solid #dbeafe;
+}
+
+/* Unified task action buttons */
+.task-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+.task-action-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.task-action-btn-primary {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+.task-action-btn-primary:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.task-action-btn-success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+.task-action-btn-success:hover {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
 }
 
 .comment-body {
@@ -429,11 +489,20 @@
 .comment-input {
   flex: 1;
   font-size: 12px;
-  padding: 8px 12px;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.comment-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
 }
 
 .btn-comment-send {
-  padding: 8px 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
 }
 
 /* FILES LIST PANEL */

@@ -686,7 +686,7 @@ export const EntregaCredenciales: React.FC = () => {
                   <div className="acta-preview-signatures">
                     <div className="acta-preview-sig-line">
                       ENTREGA CONFORME
-                      <div className="acta-preview-sig-sub">{user?.nombre_completo || 'Administrador Sistema'}</div>
+                      <div className="acta-preview-sig-sub">{user?.nombre || 'Administrador Sistema'}</div>
                       <div className="acta-preview-sig-sub">TI</div>
                     </div>
                     <div className="acta-preview-sig-line">

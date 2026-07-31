@@ -284,22 +284,24 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Metric 3: Assets Stock */}
-        <div className="metric-card glass-panel glass-panel-interactive animate-slide-up">
-          <div className="metric-header">
-            <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.08)' }}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-            </span>
-            <span className="metric-badge stock-badge">Hardware</span>
+        {(user?.rol === 'ADMIN' || user?.has_inventory_access) && (
+          <div className="metric-card glass-panel glass-panel-interactive animate-slide-up">
+            <div className="metric-header">
+              <span className="metric-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.08)' }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              </span>
+              <span className="metric-badge stock-badge">Hardware</span>
+            </div>
+            <div className="metric-body">
+              <h2 className="metric-value">{totalAssets}</h2>
+              <p className="metric-title">Activos Registrados</p>
+            </div>
+            <div className="metric-footer">
+              <span className="sub-metric"><strong>{assignedAssets}</strong> Asignados</span>
+              <span className="sub-metric"><strong>{stockAssets}</strong> Bodega</span>
+            </div>
           </div>
-          <div className="metric-body">
-            <h2 className="metric-value">{totalAssets}</h2>
-            <p className="metric-title">Activos Registrados</p>
-          </div>
-          <div className="metric-footer">
-            <span className="sub-metric"><strong>{assignedAssets}</strong> Asignados</span>
-            <span className="sub-metric"><strong>{stockAssets}</strong> Bodega</span>
-          </div>
-        </div>
+        )}
 
         {/* Metric 4: Projects TI */}
         <div className="metric-card glass-panel glass-panel-interactive animate-slide-up">
@@ -321,7 +323,10 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Detailed Operations Area */}
-      <div className="operations-grid">
+      <div 
+        className="operations-grid"
+        style={!(user?.rol === 'ADMIN' || user?.has_inventory_access) ? { gridTemplateColumns: '1fr' } : undefined}
+      >
         {/* Support Overview */}
         <div className="operation-column glass-panel">
           <div className="column-header">
@@ -379,58 +384,60 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Low Stock Consumibles */}
-        <div className="operation-column glass-panel">
-          <div className="column-header">
-            <h3>Alertas de Consumibles Críticos</h3>
-            {consumiblesTotal > 0 && <span className="warning-count-badge">{consumiblesTotal}</span>}
-          </div>
-          <div className="low-stock-list" style={{ opacity: loadingConsumiblesPage ? 0.6 : 1, transition: 'opacity 0.2s' }}>
-            {paginatedConsumibles.length === 0 ? (
-              <div className="empty-operation text-center py-4">
-                <p className="text-muted mt-2">Stock robusto. Todos los consumibles por encima del mínimo.</p>
-              </div>
-            ) : (
-              paginatedConsumibles.map((c) => (
-                <div key={c.id} className="low-stock-row animate-fade">
-                  <div className="low-stock-info">
-                    <span className="consumable-name">{c.nombre}</span>
-                    <span className="consumable-stock text-muted">Stock: <strong className="color-critical">{c.stock_actual}</strong> / Mínimo: {c.stock_minimo} {c.unidad_medida}</span>
-                  </div>
-                  <div className="stock-progress-bar-container">
-                    <div 
-                      className="stock-progress-fill" 
-                      style={{ width: `${Math.max(5, Math.min(100, (c.stock_actual / c.stock_minimo) * 100))}%` }}
-                    ></div>
-                  </div>
+        {(user?.rol === 'ADMIN' || user?.has_inventory_access) && (
+          <div className="operation-column glass-panel">
+            <div className="column-header">
+              <h3>Alertas de Consumibles Críticos</h3>
+              {consumiblesTotal > 0 && <span className="warning-count-badge">{consumiblesTotal}</span>}
+            </div>
+            <div className="low-stock-list" style={{ opacity: loadingConsumiblesPage ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+              {paginatedConsumibles.length === 0 ? (
+                <div className="empty-operation text-center py-4">
+                  <p className="text-muted mt-2">Stock robusto. Todos los consumibles por encima del mínimo.</p>
                 </div>
-              ))
+              ) : (
+                paginatedConsumibles.map((c) => (
+                  <div key={c.id} className="low-stock-row animate-fade">
+                    <div className="low-stock-info">
+                      <span className="consumable-name">{c.nombre}</span>
+                      <span className="consumable-stock text-muted">Stock: <strong className="color-critical">{c.stock_actual}</strong> / Mínimo: {c.stock_minimo} {c.unidad_medida}</span>
+                    </div>
+                    <div className="stock-progress-bar-container">
+                      <div 
+                        className="stock-progress-fill" 
+                        style={{ width: `${Math.max(5, Math.min(100, (c.stock_actual / c.stock_minimo) * 100))}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            {/* Pagination Controls */}
+            {consumiblesTotal > 4 && (
+              <div className="dashboard-pagination">
+                <button 
+                  className="dashboard-pagination-btn" 
+                  onClick={() => handleFetchConsumiblesPage(consumiblesPage - 1)}
+                  disabled={consumiblesPage === 1 || loadingConsumiblesPage}
+                  title="Anterior"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <span className="dashboard-pagination-info">
+                  Pág. {consumiblesPage} de {Math.ceil(consumiblesTotal / 4) || 1}
+                </span>
+                <button 
+                  className="dashboard-pagination-btn" 
+                  onClick={() => handleFetchConsumiblesPage(consumiblesPage + 1)}
+                  disabled={consumiblesPage === (Math.ceil(consumiblesTotal / 4) || 1) || loadingConsumiblesPage}
+                  title="Siguiente"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
             )}
           </div>
-          {/* Pagination Controls */}
-          {consumiblesTotal > 4 && (
-            <div className="dashboard-pagination">
-              <button 
-                className="dashboard-pagination-btn" 
-                onClick={() => handleFetchConsumiblesPage(consumiblesPage - 1)}
-                disabled={consumiblesPage === 1 || loadingConsumiblesPage}
-                title="Anterior"
-              >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-              </button>
-              <span className="dashboard-pagination-info">
-                Pág. {consumiblesPage} de {Math.ceil(consumiblesTotal / 4) || 1}
-              </span>
-              <button 
-                className="dashboard-pagination-btn" 
-                onClick={() => handleFetchConsumiblesPage(consumiblesPage + 1)}
-                disabled={consumiblesPage === (Math.ceil(consumiblesTotal / 4) || 1) || loadingConsumiblesPage}
-                title="Siguiente"
-              >
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
     </div>

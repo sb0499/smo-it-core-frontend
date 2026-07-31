@@ -12,9 +12,10 @@ export interface GuardiaFeriado {
 
 export const guardService = {
   async getGuardias(page?: number, limit?: number): Promise<any> {
-    return apiClient.get('/guardias', {
-      params: { page, limit }
-    });
+    const params: any = {};
+    if (page !== undefined) params.page = page;
+    if (limit !== undefined) params.limit = limit;
+    return apiClient.get('/guardias', { params });
   },
 
   async createGuardia(fecha: string, tecnicoId: number, observaciones?: string, empresaId?: number | null): Promise<GuardiaFeriado> {

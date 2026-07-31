@@ -4,7 +4,13 @@ import './Login.css';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem('smo_remember_me') === 'true';
+  });
+  const [email, setEmail] = useState(() => {
+    const saved = localStorage.getItem('smo_remembered_email');
+    return saved || '';
+  });
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -19,6 +25,13 @@ export const Login: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
+      if (rememberMe) {
+        localStorage.setItem('smo_remembered_email', email);
+        localStorage.setItem('smo_remember_me', 'true');
+      } else {
+        localStorage.removeItem('smo_remembered_email');
+        localStorage.setItem('smo_remember_me', 'false');
+      }
       await login(email, password);
     } catch (err: any) {
       setError(err.message || 'Error de autenticación. Verifica tus credenciales.');
@@ -99,19 +112,20 @@ export const Login: React.FC = () => {
 
             <div className="form-options-row">
               <label className="checkbox-container">
-                <input type="checkbox" defaultChecked />
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
                 <span className="checkmark"></span>
                 <span className="checkbox-label">Recordarme</span>
               </label>
-              <a href="#forgot" className="forgot-link" onClick={(e) => e.preventDefault()}>
-                ¿Olvidaste tu contraseña?
-              </a>
             </div>
 
             <button type="submit" className="btn-gradient-submit" disabled={loading}>
               {loading ? (
                 <span className="spinner-auth-custom">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path></svg>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path></svg>
                   Iniciando...
                 </span>
               ) : (

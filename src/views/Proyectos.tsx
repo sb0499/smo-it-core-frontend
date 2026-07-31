@@ -50,8 +50,13 @@ export const Proyectos: React.FC = () => {
   const [showAddSubtaskModal, setShowAddSubtaskModal] = useState(false);
   const [selectedTaskForSubtask, setSelectedTaskForSubtask] = useState<Tarea | null>(null);
   const [subtaskTitle, setSubtaskTitle] = useState('');
+  const [subtaskDesc, setSubtaskDesc] = useState('');
   const [subtaskDate, setSubtaskDate] = useState('');
   const [subtaskResponsableId, setSubtaskResponsableId] = useState<number>(0);
+
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [commentsModalData, setCommentsModalData] = useState<{ type: 'task' | 'subtask'; id: number; title: string; comments: ProyectoComentario[]; responsableId: number } | null>(null);
+  const [newTaskSubComment, setNewTaskSubComment] = useState('');
 
   // New Project Member state
   const [selectedMiembros, setSelectedMiembros] = useState<number[]>([]);
@@ -60,7 +65,7 @@ export const Proyectos: React.FC = () => {
   useEffect(() => {
     projectService.getUsuarios()
       .then(res => {
-        setTechnicians(res.filter(u => u.rol === 'TECNICO' || u.rol === 'ADMIN' || u.rol_nombre === 'TECNICO' || u.rol_nombre === 'ADMIN'));
+        setTechnicians(res.filter(u => u.rol === 'TECNICO' || u.rol === 'ADMIN' || u.rol === 'SUPERVISOR'));
       })
       .catch(err => console.error('Error loading users:', err));
   }, []);
@@ -163,6 +168,7 @@ export const Proyectos: React.FC = () => {
       await projectService.createSubtarea({
         tarea_id: selectedTaskForSubtask.id,
         titulo: subtaskTitle,
+        descripcion: subtaskDesc || undefined,
         fecha_fin: new Date(subtaskDate).toISOString(),
         responsable_id: Number(subtaskResponsableId),
       });
@@ -170,6 +176,7 @@ export const Proyectos: React.FC = () => {
       showAlert('Subtarea creada exitosamente.');
       setShowAddSubtaskModal(false);
       setSubtaskTitle('');
+      setSubtaskDesc('');
       setSubtaskDate('');
       setSubtaskResponsableId(0);
       setSelectedTaskForSubtask(null);
@@ -179,6 +186,47 @@ export const Proyectos: React.FC = () => {
       }
     } catch (err: any) {
       showAlert('Error al crear subtarea: ' + err.message);
+    }
+  };
+
+  const handleOpenCommentsModal = (data: { type: 'task' | 'subtask'; id: number; title: string; comments: ProyectoComentario[]; responsableId: number }) => {
+    setCommentsModalData(data);
+    setShowCommentsModal(true);
+  };
+
+  const handleAddTaskSubComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentsModalData || !newTaskSubComment || !activeProyecto) return;
+
+    try {
+      const payload: any = {
+        contenido: newTaskSubComment
+      };
+      if (commentsModalData.type === 'task') {
+        payload.tarea_id = commentsModalData.id;
+      } else {
+        payload.subtarea_id = commentsModalData.id;
+      }
+
+      await projectService.addComentario(payload);
+      setNewTaskSubComment('');
+      
+      const detail = await projectService.getProyectoById(activeProyecto.id);
+      setActiveProyecto(detail);
+      
+      const updatedTaskOrSub = commentsModalData.type === 'task'
+        ? detail.tareas?.find((t: any) => t.id === commentsModalData.id)
+        : detail.tareas?.flatMap((t: any) => t.subtareas || []).find((s: any) => s.id === commentsModalData.id);
+        
+      if (updatedTaskOrSub) {
+        setCommentsModalData({
+          ...commentsModalData,
+          comments: updatedTaskOrSub.comentarios || []
+        });
+      }
+      showAlert('Comentario agregado exitosamente.');
+    } catch (err: any) {
+      showAlert(err.response?.data?.detail || 'Error al agregar comentario.');
     }
   };
 
@@ -274,6 +322,11 @@ export const Proyectos: React.FC = () => {
     memberIds = activeProyecto && activeProyecto.miembros ? JSON.parse(activeProyecto.miembros) : [];
   } catch (err) {}
   const projectMembers = technicians.filter(t => memberIds.includes(t.id));
+  
+  const isUserProjectMember = projectMembers.some(m => m.id === user?.id);
+  const isUserProjectCreator = activeProyecto?.creador_id === user?.id;
+  const isUserAdmin = user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR';
+  const isUserAuthorized = isUserAdmin || isUserProjectCreator || isUserProjectMember;
 
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -441,7 +494,7 @@ export const Proyectos: React.FC = () => {
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#2563eb' }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
                   Lista de Tareas y Subtareas
                 </h3>
-                {activeProyecto.estado !== 'Finalizado' && (
+                {activeProyecto.estado !== 'Finalizado' && isUserAuthorized && (
                   <button className="btn btn-primary" onClick={() => { setTaskDate(new Date(activeProyecto.fecha_fin_estimada).toISOString().split('T')[0]); setShowAddTaskModal(true); }} style={{ padding: '4px 10px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     Agregar Tarea
@@ -468,10 +521,19 @@ export const Proyectos: React.FC = () => {
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {task.estado !== 'Finalizado' && (
+                          <button 
+                            type="button"
+                            className="task-action-btn" 
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                            onClick={() => handleOpenCommentsModal({ type: 'task', id: task.id, title: task.titulo, comments: task.comentarios || [], responsableId: task.responsable_id })}
+                            title="Comentarios de la tarea"
+                          >
+                            💬 {task.comentarios?.length || 0}
+                          </button>
+                          {task.estado !== 'Finalizado' && (isUserAuthorized || task.responsable_id === user?.id) && (
                             <button 
-                              className="btn btn-secondary" 
-                              style={{ padding: '3px 6px', fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                              className="task-action-btn task-action-btn-primary" 
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}
                               onClick={() => { setSelectedTaskForSubtask(task); setSubtaskDate(new Date(task.fecha_fin || activeProyecto.fecha_fin_estimada).toISOString().split('T')[0]); setShowAddSubtaskModal(true); }}
                             >
                               <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -480,8 +542,7 @@ export const Proyectos: React.FC = () => {
                           )}
                           {(!task.subtareas || task.subtareas.length === 0) && task.estado !== 'Finalizado' && (
                             <button 
-                              className="btn btn-secondary" 
-                              style={{ padding: '3px 6px', fontSize: '10px' }}
+                              className="task-action-btn task-action-btn-success" 
                               onClick={() => handleFinishTask(task)}
                             >
                               Terminar
@@ -503,22 +564,40 @@ export const Proyectos: React.FC = () => {
                         ) : (
                           <div className="subtasks-list mt-2">
                             {task.subtareas.map((sub) => (
-                              <div key={sub.id} className="subtask-row">
-                                <label className="subtask-checkbox-label">
-                                  <input
-                                    type="checkbox"
-                                    className="subtask-checkbox"
-                                    checked={sub.estado === 'Finalizado' || sub.avance_porcentaje === 100}
-                                    onChange={(e) => handleSubtaskToggle(sub, e.target.checked)}
-                                  />
-                                  <span className={`subtask-title-text ${sub.estado === 'Finalizado' ? 'crossed' : ''}`}>
-                                    {sub.titulo}
-                                  </span>
-                                </label>
-                                <span className="subtask-owner text-muted font-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                  {sub.responsable_nombre}
-                                </span>
+                              <div key={sub.id} className="subtask-row" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px', marginBottom: '6px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                                  <label className="subtask-checkbox-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                    <input
+                                      type="checkbox"
+                                      className="subtask-checkbox"
+                                      checked={sub.estado === 'Finalizado' || sub.avance_porcentaje === 100}
+                                      onChange={(e) => handleSubtaskToggle(sub, e.target.checked)}
+                                    />
+                                    <span className={`subtask-title-text ${sub.estado === 'Finalizado' ? 'crossed' : ''}`}>
+                                      {sub.titulo}
+                                    </span>
+                                  </label>
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                    <button 
+                                      type="button"
+                                      className="task-action-btn"
+                                      style={{ padding: '2px 6px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                                      onClick={() => handleOpenCommentsModal({ type: 'subtask', id: sub.id, title: sub.titulo, comments: sub.comentarios || [], responsableId: sub.responsable_id })}
+                                      title="Comentarios de la subtarea"
+                                    >
+                                      💬 {sub.comentarios?.length || 0}
+                                    </button>
+                                    <span className="subtask-owner text-muted font-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                      <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                      {sub.responsable_nombre}
+                                    </span>
+                                  </div>
+                                </div>
+                                {sub.descripcion && (
+                                  <p className="font-xs text-muted" style={{ margin: '2px 0 2px 22px', fontSize: '11px', fontStyle: 'italic' }}>
+                                    {sub.descripcion}
+                                  </p>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -611,15 +690,42 @@ export const Proyectos: React.FC = () => {
                   )}
                 </div>
 
-                <form onSubmit={handleFileUpload} className="file-upload-form mt-3">
+                <form onSubmit={handleFileUpload} className="file-upload-form mt-3" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <label 
+                    htmlFor="project-file-input" 
+                    className="btn btn-secondary" 
+                    style={{ 
+                      flex: 1, 
+                      textAlign: 'center', 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '6px', 
+                      cursor: 'pointer',
+                      padding: '8px 12px',
+                      fontSize: '11.5px',
+                      border: '1px dashed #cbd5e1',
+                      background: '#f8fafc',
+                      color: '#475569',
+                      borderRadius: '6px',
+                      transition: 'all 0.2s',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      fontWeight: 'normal'
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    {selectedFile ? selectedFile.name : 'Seleccionar archivo...'}
+                  </label>
                   <input
                     type="file"
                     id="project-file-input"
-                    className="form-control file-input"
+                    style={{ display: 'none' }}
                     onChange={(e) => setSelectedFile(e.target.files ? e.target.files[0] : null)}
                   />
-                  <button type="submit" className="btn btn-secondary btn-upload" disabled={isUploading || !selectedFile}>
-                    {isUploading ? 'Subiendo...' : 'Subir Adjunto'}
+                  <button type="submit" className="btn btn-primary" style={{ padding: '8px 14px', fontSize: '11.5px' }} disabled={isUploading || !selectedFile}>
+                    {isUploading ? 'Subiendo...' : 'Subir'}
                   </button>
                 </form>
               </div>
@@ -836,6 +942,17 @@ export const Proyectos: React.FC = () => {
                 />
               </div>
 
+              <div className="form-group">
+                <label className="form-label">DESCRIPCIÓN DE LA SUBTAREA</label>
+                <textarea
+                  className="form-control"
+                  placeholder="Detalles de la subtarea (opcional)..."
+                  rows={2}
+                  value={subtaskDesc}
+                  onChange={(e) => setSubtaskDesc(e.target.value)}
+                />
+              </div>
+
               <div className="form-row">
                 <div className="form-group half">
                   <label className="form-label">RESPONSABLE</label>
@@ -869,6 +986,71 @@ export const Proyectos: React.FC = () => {
                 <button type="submit" className="btn btn-primary">Guardar Subtarea</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* TASK & SUBTASK COMMENTS MODAL */}
+      {showCommentsModal && commentsModalData && (
+        <div className="modal-overlay animate-fade">
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '500px', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: '15px', textTransform: 'capitalize' }}>Comentarios de la {commentsModalData.type === 'task' ? 'Tarea' : 'Subtarea'}</h2>
+              <button className="modal-close-btn" onClick={() => { setShowCommentsModal(false); setCommentsModalData(null); setNewTaskSubComment(''); }}>×</button>
+            </div>
+
+            <div style={{ padding: '0 0 10px 0', borderBottom: '1px solid #f1f5f9', marginBottom: '12px' }}>
+              <span className="text-muted font-xs">Elemento:</span> <strong style={{ fontSize: '13px', color: 'var(--color-primary)' }}>{commentsModalData.title}</strong>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '4px', minHeight: '150px' }}>
+              {commentsModalData.comments.length === 0 ? (
+                <p className="text-muted font-xs italic text-center py-4">No hay comentarios en este elemento aún.</p>
+              ) : (
+                commentsModalData.comments.map((c) => {
+                  const initials = (c.autor_nombre || 'Sin Nombre')
+                    .split(' ')
+                    .map((n: string) => n[0] || '')
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase();
+                  return (
+                    <div key={c.id} className="comment-bubble" style={{ display: 'flex', gap: '10px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                      <div className="comment-avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#2563eb', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10.5px', fontWeight: 'bold', flexShrink: 0 }}>
+                        {initials}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#1e293b' }}>{c.autor_nombre}</span>
+                          <span style={{ fontSize: '9.5px', color: '#94a3b8' }}>{new Date(c.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#475569', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{c.contenido}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Comment Input Form */}
+            {user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || activeProyecto?.creador_id === user?.id || commentsModalData.responsableId === user?.id ? (
+              <form onSubmit={handleAddTaskSubComment} style={{ marginTop: '16px', display: 'flex', gap: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '14px' }}>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Escribe un comentario..."
+                  value={newTaskSubComment}
+                  onChange={(e) => setNewTaskSubComment(e.target.value)}
+                  required
+                  style={{ flex: 1 }}
+                />
+                <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '12px' }}>Enviar</button>
+              </form>
+            ) : (
+              <p className="text-muted font-xs italic mt-3 text-center" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+                Solo el creador de la {commentsModalData.type === 'task' ? 'tarea' : 'subtarea'} o el responsable asignado pueden agregar comentarios.
+              </p>
+            )}
           </div>
         </div>
       )}

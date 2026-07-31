@@ -137,7 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       <div className="navbar-right">
         {/* Quick Admin Action */}
-        {user?.rol === 'ADMIN' && (
+        {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && (
           <button 
             className={`admin-cierre-btn ${alertSuccess ? 'success' : ''}`}
             onClick={handleCierreDiarioAlert}

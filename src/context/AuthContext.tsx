@@ -6,8 +6,9 @@ interface UserSession {
   id: number;
   nombre: string;
   email: string;
-  rol: 'ADMIN' | 'TECNICO' | 'USUARIO';
+  rol: 'ADMIN' | 'SUPERVISOR' | 'TECNICO' | 'USUARIO';
   must_change_password: boolean;
+  has_inventory_access: boolean;
 }
 
 interface AuthContextType {
@@ -99,7 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         nombre: data.nombre,
         email: email,
         rol: data.rol,
-        must_change_password: data.must_change_password
+        must_change_password: data.must_change_password,
+        has_inventory_access: data.has_inventory_access
       };
       
       localStorage.setItem('smo_token', data.access_token);

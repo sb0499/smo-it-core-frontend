@@ -273,6 +273,7 @@ export const Chats: React.FC = () => {
   const getRoleLabel = (role?: string) => {
     if (!role) return '';
     if (role === 'ADMIN') return 'Admin';
+    if (role === 'SUPERVISOR') return 'Supervisor';
     if (role === 'TECNICO') return 'Técnico';
     return 'Sede';
   };
@@ -425,7 +426,7 @@ export const Chats: React.FC = () => {
                     {activeCanal.is_dm ? (activeCanal.dm_destinatario_nombre || 'Tú mismo') : activeCanal.nombre}
                   </span>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {!activeCanal.is_dm && activeCanal.is_private && (user?.rol === 'ADMIN' || activeCanal.creador_id === user?.id) && (
+                    {!activeCanal.is_dm && activeCanal.is_private && (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || activeCanal.creador_id === user?.id) && (
                       <button className="refresh-chat-btn" onClick={() => setShowMembersModal(true)} title="Gestionar Miembros" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                       </button>

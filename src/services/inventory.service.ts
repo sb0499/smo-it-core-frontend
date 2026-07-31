@@ -191,9 +191,12 @@ export const inventoryService = {
 
   // Bodegas CRUD
   async getBodegas(page?: number, limit?: number, search = '', empresaId?: number): Promise<any> {
-    return apiClient.get('/bodegas', {
-      params: { page, limit, search, empresa_id: empresaId }
-    });
+    const params: any = {};
+    if (page !== undefined) params.page = page;
+    if (limit !== undefined) params.limit = limit;
+    if (search !== undefined) params.search = search;
+    if (empresaId !== undefined) params.empresa_id = empresaId;
+    return apiClient.get('/bodegas', { params });
   },
   async createBodega(payload: Partial<Bodega>): Promise<Bodega> {
     return apiClient.post<Bodega>('/bodegas', payload);

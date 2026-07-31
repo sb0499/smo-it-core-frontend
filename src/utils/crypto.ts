@@ -143,7 +143,7 @@ export async function decryptChannelKey(encryptedChannelKeyBase64: string, priva
   const decryptedBytes = await window.crypto.subtle.decrypt(
     { name: 'RSA-OAEP' },
     privateKey,
-    encryptedBytes
+    encryptedBytes as any
   );
 
   return window.crypto.subtle.importKey(
@@ -182,7 +182,7 @@ export async function decryptMessage(encryptedMessageBase64: string, channelKey:
   const decryptedBytes = await window.crypto.subtle.decrypt(
     { name: 'AES-GCM', iv },
     channelKey,
-    cipher
+    cipher as any
   );
 
   return new TextDecoder().decode(decryptedBytes);

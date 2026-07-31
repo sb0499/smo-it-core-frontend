@@ -32,6 +32,36 @@ export const Guardias: React.FC = () => {
   const [isRaffling, setIsRaffling] = useState(false);
   const [currentRaffleName, setCurrentRaffleName] = useState('');
 
+  // Calendar States
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+
+  const monthsEs = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  const prevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(prev => prev - 1);
+    } else {
+      setCurrentMonth(prev => prev - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(prev => prev + 1);
+    } else {
+      setCurrentMonth(prev => prev + 1);
+    }
+  };
+
   const getActiveTechForSede = (empresaId: number, empresaNombre: string) => {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
@@ -107,7 +137,7 @@ export const Guardias: React.FC = () => {
     ]).then(([usersList, companyList]) => {
       setEmpresas(companyList);
       setTechnicians(usersList.filter((u: any) => 
-        (u.rol === 'TECNICO' || u.rol_nombre === 'TECNICO') && u.is_active
+        (u.rol === 'TECNICO' || u.rol_nombre === 'TECNICO' || u.rol === 'SUPERVISOR' || u.rol_nombre === 'SUPERVISOR') && u.is_active
       ));
     }).catch(err => console.error('Error loading initial options:', err));
   }, []);
@@ -131,7 +161,7 @@ export const Guardias: React.FC = () => {
 
   useEffect(() => {
     fetchGuardiasData();
-  }, [page, limit]);
+  }, []);
 
   const handleRaffle = () => {
     if (technicians.length === 0) {
@@ -226,7 +256,7 @@ export const Guardias: React.FC = () => {
           <h3>Cronograma Anual de Guardias y Feriados TI</h3>
           <p className="text-muted">Lista cronológica de técnicos asignados a soporte de emergencias en días festivos y fines de semana.</p>
         </div>
-        {user?.rol === 'ADMIN' && (
+        {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && (
           <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
             Programar Turno Guardia
           </button>
@@ -259,106 +289,134 @@ export const Guardias: React.FC = () => {
           <div className="loader"></div>
           <p className="text-muted">Cargando turnos de guardia...</p>
         </div>
-      ) : guardias.length === 0 ? (
-        <div className="empty-panel glass-panel text-center py-5">
-          <span className="empty-big-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-dim)' }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          </span>
-          <h3>No hay guardias registradas</h3>
-          <p className="text-muted">Todos los días operativos siguen el horario de oficina estándar.</p>
-        </div>
       ) : (
         <>
-          <div className="assets-table-container glass-panel mt-2">
-            <table className="assets-table">
-              <thead>
-                <tr>
-                  <th>FECHA DE GUARDIA</th>
-                  <th>TIPO</th>
-                  <th>SEDE</th>
-                  <th>TÉCNICO DE TURNO</th>
-                  <th>OBSERVACIONES / MOTIVO</th>
-                  {user?.rol === 'ADMIN' && <th style={{ width: '80px', textAlign: 'center' }}>ACCIONES</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {guardias.map((g) => {
-                  const dateObj = new Date(g.fecha);
-                  const todayStr = new Date().toISOString().split('T')[0];
-                  const isToday = g.fecha.split('T')[0] === todayStr;
-                  const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-                  const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
-                  const fullDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-                  
-                  return (
-                    <tr key={g.id} className={isToday ? 'active-today' : ''} style={isToday ? { background: '#fdf4ff' } : undefined}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <strong style={{ textTransform: 'capitalize' }}>{dayName}</strong>
-                          <span className="text-muted">{fullDate}</span>
-                          {isToday && <span className="today-badge" style={{ background: '#fdf4ff', color: '#a21caf', border: '1px solid #f0abfc' }}>Hoy</span>}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`badge`} style={isWeekend ? { background: '#eff6ff', color: '#1e40af' } : { background: '#fef2f2', color: '#b91c1c' }}>
-                          {isWeekend ? 'Fin de Semana' : 'Feriado'}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="badge" style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '9px' }}>
-                          {g.empresa_nombre || 'Todas'}
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: '600', color: '#1e293b' }}>
-                        {g.tecnico_nombre}
-                      </td>
-                      <td className="text-muted" style={{ fontStyle: 'italic', fontSize: '11.5px' }}>
-                        {g.observaciones || 'Guardia de soporte pasivo programada'}
-                      </td>
-                      {user?.rol === 'ADMIN' && (
-                        <td style={{ textAlign: 'center' }}>
-                          <button 
-                            className="btn-delete" 
-                            onClick={() => handleDeleteGuardia(g.id)}
-                            title="Eliminar guardia"
-                          >
-                            ×
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          {/* Calendar Month Header */}
+          <div className="calendar-month-header glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', marginBottom: '14px' }}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={prevMonth}>
+              &larr; Anterior
+            </button>
+            <h4 style={{ margin: 0, fontWeight: 'bold', fontSize: '16px', color: 'var(--color-text-main)' }}>
+              {monthsEs[currentMonth]} {currentYear}
+            </h4>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={nextMonth}>
+              Siguiente &rarr;
+            </button>
           </div>
 
-          {/* Pagination Controls */}
-          {guardias.length > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', padding: '0 4px' }}>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
-              >
-                Anterior
-              </button>
-              <span style={{ fontSize: '13px', color: 'var(--color-text-main)', fontWeight: '500' }}>
-                Página {page} de {Math.ceil(total / limit) || 1} ({total} registros)
-              </span>
-              <button 
-                type="button"
-                className="btn btn-secondary btn-sm"
-                disabled={page >= (Math.ceil(total / limit) || 1)}
-                onClick={() => setPage(page + 1)}
-                style={{ cursor: page >= (Math.ceil(total / limit) || 1) ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
-              >
-                Siguiente
-              </button>
+          {/* Calendar Grid */}
+          <div className="calendar-grid-wrapper glass-panel" style={{ padding: '16px' }}>
+            <div className="calendar-weekdays" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-text-dim)', marginBottom: '8px' }}>
+              <div>Domingo</div>
+              <div>Lunes</div>
+              <div>Martes</div>
+              <div>Miércoles</div>
+              <div>Jueves</div>
+              <div>Viernes</div>
+              <div>Sábado</div>
             </div>
-          )}
+            <div className="calendar-days-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+              {/* Previous month blanks */}
+              {Array.from({ length: firstDayOfMonth }).map((_, index) => (
+                <div key={`blank-${index}`} className="calendar-day-cell blank" style={{ background: '#f8fafc', opacity: 0.4, minHeight: '100px', borderRadius: '6px', border: '1px solid #f1f5f9' }} />
+              ))}
+              {/* Current month days */}
+              {Array.from({ length: daysInMonth }).map((_, index) => {
+                const day = index + 1;
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dateObj = new Date(currentYear, currentMonth, day);
+                const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+                const isToday = new Date().toISOString().split('T')[0] === dateStr;
+
+                // Find guards for this date
+                const dayGuards = allGuardias.filter(g => g.fecha.split('T')[0] === dateStr);
+
+                return (
+                  <div 
+                    key={`day-${day}`} 
+                    className={`calendar-day-cell ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}`} 
+                    style={{ 
+                      background: isToday ? '#fdf4ff' : '#ffffff', 
+                      minHeight: '100px', 
+                      borderRadius: '6px', 
+                      border: isToday ? '1px solid #f0abfc' : '1px solid #e2e8f0', 
+                      padding: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.01)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ 
+                        fontWeight: isToday || isWeekend ? 'bold' : 'normal', 
+                        color: isToday ? '#a21caf' : isWeekend ? '#1e40af' : '#475569',
+                        fontSize: '13px'
+                      }}>
+                        {day}
+                      </span>
+                      {isToday && (
+                        <span className="today-badge" style={{ background: '#fdf4ff', color: '#a21caf', border: '1px solid #f0abfc', padding: '2px 4px', fontSize: '9px', borderRadius: '3px', fontWeight: 'bold' }}>Hoy</span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '4px', flex: 1, overflowY: 'auto' }}>
+                      {dayGuards.map(g => (
+                        <div 
+                          key={g.id} 
+                          style={{ 
+                            background: isWeekend ? '#eff6ff' : '#fef2f2', 
+                            color: isWeekend ? '#1e40af' : '#b91c1c', 
+                            border: isWeekend ? '1px solid #dbeafe' : '1px solid #fee2e2',
+                            fontSize: '9.5px', 
+                            padding: '3px 6px', 
+                            borderRadius: '4px', 
+                            fontWeight: '500',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            lineHeight: '1.2'
+                          }}
+                        >
+                          <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                            <span style={{ fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={g.tecnico_nombre}>
+                              {g.tecnico_nombre}
+                            </span>
+                            <span style={{ fontSize: '8px', opacity: 0.85, textTransform: 'uppercase' }}>
+                              {g.empresa_nombre || 'Global'}
+                            </span>
+                          </div>
+                          {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && (
+                            <button 
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteGuardia(g.id);
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'inherit',
+                                fontSize: '11px',
+                                cursor: 'pointer',
+                                padding: '0 2px',
+                                marginLeft: '2px',
+                                fontWeight: 'bold',
+                                opacity: 0.65
+                              }}
+                              title="Eliminar Guardia"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </>
       )}
 

@@ -23,9 +23,9 @@ export const Reportes: React.FC = () => {
   const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
-    if (user?.rol === 'ADMIN') {
+    if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') {
       projectService.getUsuarios().then((users) => {
-        setTecnicos(users.filter(u => u.rol === 'TECNICO' || u.rol === 'ADMIN'));
+        setTecnicos(users.filter(u => u.rol === 'TECNICO' || u.rol === 'SUPERVISOR' || u.rol === 'ADMIN'));
       }).catch(console.error);
     }
 
@@ -68,7 +68,7 @@ export const Reportes: React.FC = () => {
     if (token) params.append('token', token);
     if (startDate) params.append('start_date', startDate);
     if (endDate) params.append('end_date', endDate);
-    if (user?.rol === 'ADMIN' && tecnicoId) params.append('tecnico_id', tecnicoId);
+    if ((user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && tecnicoId) params.append('tecnico_id', tecnicoId);
     
     if (Array.from(params).length > 0) {
       url += `?${params.toString()}`;
@@ -212,7 +212,7 @@ export const Reportes: React.FC = () => {
               </select>
             </div>
 
-            {user?.rol === 'ADMIN' && (
+            {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && (
               <div className="form-group mb-3">
                 <label className="form-label">Filtrar por Técnico</label>
                 <select 

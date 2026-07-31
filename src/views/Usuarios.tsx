@@ -153,8 +153,8 @@ export const Usuarios: React.FC = () => {
       nombre_completo: nombreCompleto,
       is_active: isActive,
       rol_id: Number(rolId),
-      nivel_soporte: Number(rolId) === 2 ? nivelSoporte : undefined,
-      grupo_n2: (Number(rolId) === 2 && nivelSoporte === 'N2') ? (grupoN2 || null) : null,
+      nivel_soporte: (Number(rolId) === 2 || Number(rolId) === 4) ? nivelSoporte : undefined,
+      grupo_n2: ((Number(rolId) === 2 || Number(rolId) === 4) && nivelSoporte === 'N2') ? (grupoN2 || null) : null,
       empresa_ids: selectedEmpresas,
       empresa_inventario_ids: selectedEmpresasInventario,
       must_change_password: mustChangePassword
@@ -408,12 +408,13 @@ export const Usuarios: React.FC = () => {
                   disabled={submitting}
                 >
                   <option value={1}>ADMIN (Control total y reportes globales)</option>
+                  <option value={4}>SUPERVISOR (Control total, reportes, turnos y nivel soporte)</option>
                   <option value={2}>TECNICO (Acceso a sus propios tickets y chats)</option>
                   <option value={3}>USUARIO (Acceso básico de solicitud y lectura)</option>
                 </select>
               </div>
 
-              {Number(rolId) === 2 && (
+              {(Number(rolId) === 2 || Number(rolId) === 4) && (
                 <>
                   <div className="form-group">
                     <label className="form-label">NIVEL DE SOPORTE (ITIL)</label>
