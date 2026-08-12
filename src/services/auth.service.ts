@@ -4,9 +4,10 @@ export interface LoginResponse {
   access_token: string;
   token_type: string;
   user_id: number;
-  rol: 'ADMIN' | 'TECNICO' | 'USUARIO';
+  rol: 'ADMIN' | 'SUPERVISOR' | 'TECNICO' | 'USUARIO';
   nombre: string;
   must_change_password: boolean;
+  has_inventory_access: boolean;
 }
 
 export const authService = {

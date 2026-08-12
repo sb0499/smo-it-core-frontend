@@ -25,10 +25,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (['tickets', 'plantillas'].includes(activeView)) {
       setTicketsOpen(true);
     }
-    if (['inventario', 'movimientos'].includes(activeView)) {
+    if (['inventario', 'movimientos', 'bodegas'].includes(activeView)) {
       setInventarioOpen(true);
     }
-    if (['personas', 'proveedores', 'usuarios'].includes(activeView)) {
+    if (['personas', 'proveedores', 'usuarios', 'credenciales'].includes(activeView)) {
       setAdminOpen(true);
     }
   }, [activeView]);
@@ -41,6 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const getRoleLabel = (role?: string) => {
     if (!role) return '';
     if (role === 'ADMIN') return 'Administrador';
+    if (role === 'SUPERVISOR') return 'Supervisor TI';
     if (role === 'TECNICO') return 'Técnico TI';
     return 'Usuario Sede';
   };
@@ -199,38 +200,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className={`sub-nav-item ${activeView === 'plantillas' ? 'active' : ''}`}
                     onClick={() => handleNav('plantillas')}
                   >
-                    <span>• Plantillas Tareas</span>
+                    <span>• Soportes Recurrentes</span>
                   </button>
                 </div>
               </div>
 
               {/* Accordion 2: Inventarios */}
-              <div className={`accordion-group ${inventarioOpen ? 'open' : ''}`}>
-                <button
-                  className={`accordion-header ${['inventario', 'movimientos'].includes(activeView) ? 'active' : ''}`}
-                  onClick={() => setInventarioOpen(!inventarioOpen)}
-                >
-                  <div className="accordion-header-left">
-                    <span className="nav-icon">{Icons.inventario}</span>
-                    <span>Inventario TI</span>
+              {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) && (
+                <div className={`accordion-group ${inventarioOpen ? 'open' : ''}`}>
+                  <button
+                    className={`accordion-header ${['inventario', 'movimientos', 'bodegas'].includes(activeView) ? 'active' : ''}`}
+                    onClick={() => setInventarioOpen(!inventarioOpen)}
+                  >
+                    <div className="accordion-header-left">
+                      <span className="nav-icon">{Icons.inventario}</span>
+                      <span>Inventario TI</span>
+                    </div>
+                    <svg className="accordion-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" /></svg>
+                  </button>
+                  <div className="accordion-content">
+                    <button
+                      className={`sub-nav-item ${activeView === 'inventario' ? 'active' : ''}`}
+                      onClick={() => handleNav('inventario')}
+                    >
+                      <span>• Activos & Stock</span>
+                    </button>
+                    <button
+                      className={`sub-nav-item ${activeView === 'movimientos' ? 'active' : ''}`}
+                      onClick={() => handleNav('movimientos')}
+                    >
+                      <span>• Historial Movs</span>
+                    </button>
+                    <button
+                      className={`sub-nav-item ${activeView === 'bodegas' ? 'active' : ''}`}
+                      onClick={() => handleNav('bodegas')}
+                    >
+                      <span>• Bodegas</span>
+                    </button>
                   </div>
-                  <svg className="accordion-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" /></svg>
-                </button>
-                <div className="accordion-content">
-                  <button
-                    className={`sub-nav-item ${activeView === 'inventario' ? 'active' : ''}`}
-                    onClick={() => handleNav('inventario')}
-                  >
-                    <span>• Activos & Stock</span>
-                  </button>
-                  <button
-                    className={`sub-nav-item ${activeView === 'movimientos' ? 'active' : ''}`}
-                    onClick={() => handleNav('movimientos')}
-                  >
-                    <span>• Historial Movs</span>
-                  </button>
                 </div>
-              </div>
+              )}
 
               {/* Projects */}
               <button
@@ -272,10 +281,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {activeView === 'reportes' && <div className="active-glow"></div>}
               </button>
 
-              {/* Accordion 3: Administration */}
               <div className={`accordion-group ${adminOpen ? 'open' : ''}`}>
                 <button
-                  className={`accordion-header ${['personas', 'proveedores', 'usuarios'].includes(activeView) ? 'active' : ''}`}
+                  className={`accordion-header ${['personas', 'proveedores', 'usuarios', 'credenciales'].includes(activeView) ? 'active' : ''}`}
                   onClick={() => setAdminOpen(!adminOpen)}
                 >
                   <div className="accordion-header-left">
@@ -297,7 +305,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   >
                     <span>• Proveedores TI</span>
                   </button>
-                  {user?.rol === 'ADMIN' && (
+                  <button
+                    className={`sub-nav-item ${activeView === 'credenciales' ? 'active' : ''}`}
+                    onClick={() => handleNav('credenciales')}
+                  >
+                    <span>• Entrega Credenciales</span>
+                  </button>
+                  {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && (
                     <button
                       className={`sub-nav-item ${activeView === 'usuarios' ? 'active' : ''}`}
                       onClick={() => handleNav('usuarios')}

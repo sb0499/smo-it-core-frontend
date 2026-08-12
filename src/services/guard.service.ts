@@ -6,15 +6,25 @@ export interface GuardiaFeriado {
   tecnico_id: number;
   tecnico_nombre?: string;
   observaciones: string | null;
+  empresa_id?: number | null;
+  empresa_nombre?: string | null;
 }
 
 export const guardService = {
-  async getGuardias(): Promise<GuardiaFeriado[]> {
-    return apiClient.get<GuardiaFeriado[]>('/guardias');
+  async getGuardias(page?: number, limit?: number): Promise<any> {
+    const params: any = {};
+    if (page !== undefined) params.page = page;
+    if (limit !== undefined) params.limit = limit;
+    return apiClient.get('/guardias', { params });
   },
 
-  async createGuardia(fecha: string, tecnicoId: number, observaciones?: string): Promise<GuardiaFeriado> {
-    return apiClient.post<GuardiaFeriado>('/guardias', { fecha, tecnico_id: tecnicoId, observaciones });
+  async createGuardia(fecha: string, tecnicoId: number, observaciones?: string, empresaId?: number | null): Promise<GuardiaFeriado> {
+    return apiClient.post<GuardiaFeriado>('/guardias', { 
+      fecha, 
+      tecnico_id: tecnicoId, 
+      observaciones,
+      empresa_id: empresaId
+    });
   },
 
   async deleteGuardia(guardiaId: number): Promise<{ message: string }> {

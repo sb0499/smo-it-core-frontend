@@ -12,6 +12,7 @@ export interface Subtarea {
   responsable_id: number;
   responsable_nombre?: string;
   created_at: string;
+  comentarios?: ProyectoComentario[];
 }
 
 export interface Tarea {
@@ -28,6 +29,7 @@ export interface Tarea {
   ticket_origen_id: number | null;
   created_at: string;
   subtareas?: Subtarea[];
+  comentarios?: ProyectoComentario[];
 }
 
 export interface ProyectoComentario {
@@ -82,19 +84,30 @@ export interface Proyecto {
   comentarios?: ProyectoComentario[];
   archivos?: ProyectoArchivo[];
   historial?: ProyectoHistorial[];
+  miembros?: string;
 }
 
 export interface User {
   id: number;
   email: string;
   nombre_completo: string;
-  rol: 'ADMIN' | 'TECNICO' | 'USUARIO';
+  rol: 'ADMIN' | 'SUPERVISOR' | 'TECNICO' | 'USUARIO';
+  nivel_soporte?: 'N1' | 'N2';
+  grupo_n2?: 'Infraestructura' | 'Desarrollo';
+  empresa_ids?: number[];
+  empresa_nombres?: string[];
+  empresa_inventario_ids?: number[];
+  empresa_inventario_nombres?: string[];
 }
 
 export const projectService = {
   // Projects
-  async getProyectos(): Promise<Proyecto[]> {
-    return apiClient.get<Proyecto[]>('/proyectos');
+  async getProyectos(page?: number, limit?: number, search = ''): Promise<any> {
+    const params: any = {};
+    if (page !== undefined) params.page = page;
+    if (limit !== undefined) params.limit = limit;
+    if (search !== undefined) params.search = search;
+    return apiClient.get('/proyectos', { params });
   },
 
   async getProyectoById(id: number): Promise<Proyecto> {

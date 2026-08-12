@@ -3,14 +3,22 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { chatService, ChatCanal, ChatMensaje, ChatCanalMiembro } from '../services/chat.service';
 import { projectService, User } from '../services/project.service';
-import { API_BASE_URL } from '../services/api';
+import { API_BASE_URL, apiClient } from '../services/api';
+import { 
+  generateChannelKey, 
+  encryptChannelKey, 
+  decryptChannelKey, 
+  encryptMessage, 
+  decryptMessage 
+} from '../utils/crypto';
 import './Chats.css';
 
 export const Chats: React.FC = () => {
-  const { user } = useAuth();
+  const { user, userPrivateKey } = useAuth();
   const [canales, setCanales] = useState<ChatCanal[]>([]);
   const [activeCanal, setActiveCanal] = useState<ChatCanal | null>(null);
   const [mensajes, setMensajes] = useState<ChatMensaje[]>([]);
+  const [activeChannelKey, setActiveChannelKey] = useState<CryptoKey | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,6 +42,7 @@ export const Chats: React.FC = () => {
   const [channelMembers, setChannelMembers] = useState<ChatCanalMiembro[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const decryptedCacheRef = useRef<Map<number, string>>(new Map());
 
   const fetchChannels = async () => {
     try {
@@ -55,12 +64,46 @@ export const Chats: React.FC = () => {
     }
   };
 
+  const decryptMessagesList = async (msgList: ChatMensaje[], channelKey: CryptoKey | null): Promise<ChatMensaje[]> => {
+    if (!channelKey) {
+      return msgList.map(m => ({ ...m, isEncrypted: false } as any));
+    }
+    return Promise.all(msgList.map(async (m) => {
+      if (decryptedCacheRef.current.has(m.id)) {
+        return { ...m, mensaje: decryptedCacheRef.current.get(m.id)!, isEncrypted: true } as any;
+      }
+      try {
+        const decryptedText = await decryptMessage(m.mensaje, channelKey);
+        decryptedCacheRef.current.set(m.id, decryptedText);
+        return { ...m, mensaje: decryptedText, isEncrypted: true } as any;
+      } catch (err) {
+        // Fallback to original text if it's plaintext / historic
+        return { ...m, isEncrypted: false } as any;
+      }
+    }));
+  };
+
   const handleSelectCanal = async (canal: ChatCanal) => {
+    decryptedCacheRef.current.clear();
     setActiveCanal(canal);
-    setActiveCanal(canal);
+    let channelKey: CryptoKey | null = null;
+    
+    if (canal.encrypted_channel_key && userPrivateKey) {
+      try {
+        channelKey = await decryptChannelKey(canal.encrypted_channel_key, userPrivateKey);
+        setActiveChannelKey(channelKey);
+      } catch (err) {
+        console.error("Error decrypting channel key:", err);
+        setActiveChannelKey(null);
+      }
+    } else {
+      setActiveChannelKey(null);
+    }
+
     try {
       const chatHistory = await chatService.getCanalMensajes(canal.id);
-      setMensajes(chatHistory);
+      const decryptedHistory = await decryptMessagesList(chatHistory, channelKey);
+      setMensajes(decryptedHistory);
       if (canal.is_private) {
         const members = await chatService.getCanalMiembros(canal.id);
         setChannelMembers(members);
@@ -83,13 +126,12 @@ export const Chats: React.FC = () => {
   useEffect(() => {
     if (!activeCanal) return;
     
-    // Set up rapid message fetch timer
     const interval = setInterval(async () => {
       try {
         const chatHistory = await chatService.getCanalMensajes(activeCanal.id);
-        // Only update state if message lengths or latest timestamps changed to reduce UI repaint
         if (chatHistory.length !== mensajes.length) {
-          setMensajes(chatHistory);
+          const decryptedHistory = await decryptMessagesList(chatHistory, activeChannelKey);
+          setMensajes(decryptedHistory);
         }
       } catch (e) {
         // ignore
@@ -97,7 +139,7 @@ export const Chats: React.FC = () => {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [activeCanal, mensajes]);
+  }, [activeCanal, mensajes, activeChannelKey]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -111,7 +153,32 @@ export const Chats: React.FC = () => {
 
   const handleStartDM = async (targetUserId: number) => {
     try {
-      const dmChan = await chatService.getOrCreateDMChannel(targetUserId);
+      if (!user) return;
+      
+      let keysPayload: any = undefined;
+      
+      // Try to generate channel key and encrypt it for both users
+      try {
+        const [targetKeys, myKeys] = await Promise.all([
+          apiClient.get<any>(`/usuarios/${targetUserId}/keys`),
+          apiClient.get<any>(`/usuarios/${user.id}/keys`)
+        ]);
+        
+        if (targetKeys?.public_key && myKeys?.public_key) {
+          const channelKey = await generateChannelKey();
+          const encryptedKeyForTarget = await encryptChannelKey(channelKey, targetKeys.public_key);
+          const encryptedKeyForMe = await encryptChannelKey(channelKey, myKeys.public_key);
+          
+          keysPayload = {
+            [user.id]: encryptedKeyForMe,
+            [targetUserId]: encryptedKeyForTarget
+          };
+        }
+      } catch (keyErr) {
+        console.warn("Could not exchange keys for DM (user might not have logged in yet):", keyErr);
+      }
+      
+      const dmChan = await chatService.getOrCreateDMChannel(targetUserId, keysPayload);
       setShowDmSelect(false);
       
       const list = await chatService.getCanales();
@@ -129,12 +196,23 @@ export const Chats: React.FC = () => {
     if ((!newMsg && !selectedFile) || !activeCanal) return;
 
     try {
-      const sent = await chatService.addMensaje(activeCanal.id, newMsg, selectedFile || undefined);
-      setMensajes(prev => [...prev, {
+      let messageToSend = newMsg;
+      if (activeChannelKey && newMsg) {
+        messageToSend = await encryptMessage(newMsg, activeChannelKey);
+      }
+
+      const sent = await chatService.addMensaje(activeCanal.id, messageToSend, selectedFile || undefined);
+      
+      // Keep it decrypted in local UI state
+      const decryptedSent: ChatMensaje = {
         ...sent,
+        mensaje: newMsg,
         usuario_nombre: user?.nombre || 'Tú',
         usuario_rol: user?.rol
-      }]);
+      };
+      (decryptedSent as any).isEncrypted = !!activeChannelKey;
+
+      setMensajes(prev => [...prev, decryptedSent]);
       setNewMsg('');
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -145,17 +223,42 @@ export const Chats: React.FC = () => {
 
   const handleCreateChannel = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newChanName) return;
+    if (!newChanName || !user) return;
 
     try {
       setIsSubmitting(true);
-      const created = await chatService.createCanal(newChanName, newChanPrivate);
       
-      if (newChanPrivate && selectedUsers.length > 0) {
-        for (const uid of selectedUsers) {
-          await chatService.unirMiembro(created.id, uid);
+      let keysPayload: any = undefined;
+      
+      if (newChanPrivate) {
+        // Private channel: create and encrypt symmetric channel key
+        try {
+          const myKeys = await apiClient.get<any>(`/usuarios/${user.id}/keys`);
+          if (myKeys?.public_key) {
+            const channelKey = await generateChannelKey();
+            const encryptedKeyForMe = await encryptChannelKey(channelKey, myKeys.public_key);
+            
+            keysPayload = {
+              [user.id]: encryptedKeyForMe
+            };
+            
+            for (const uId of selectedUsers) {
+              try {
+                const uKeys = await apiClient.get<any>(`/usuarios/${uId}/keys`);
+                if (uKeys?.public_key) {
+                  keysPayload[uId] = await encryptChannelKey(channelKey, uKeys.public_key);
+                }
+              } catch (err) {
+                console.warn(`No public key found for user ${uId}:`, err);
+              }
+            }
+          }
+        } catch (cryptoErr) {
+          console.error("Crypto setup failed for private channel creation:", cryptoErr);
         }
       }
+
+      const created = await chatService.createCanal(newChanName, newChanPrivate, keysPayload);
       
       setShowCreateModal(false);
       setNewChanName('');
@@ -176,6 +279,7 @@ export const Chats: React.FC = () => {
   const getRoleLabel = (role?: string) => {
     if (!role) return '';
     if (role === 'ADMIN') return 'Admin';
+    if (role === 'SUPERVISOR') return 'Supervisor';
     if (role === 'TECNICO') return 'Técnico';
     return 'Sede';
   };
@@ -186,7 +290,18 @@ export const Chats: React.FC = () => {
       if (isMember) {
         await chatService.removerMiembro(activeCanal.id, userId);
       } else {
-        await chatService.unirMiembro(activeCanal.id, userId);
+        let encKey: string | undefined = undefined;
+        if (activeChannelKey) {
+          try {
+            const targetKeys = await apiClient.get<any>(`/usuarios/${userId}/keys`);
+            if (targetKeys?.public_key) {
+              encKey = await encryptChannelKey(activeChannelKey, targetKeys.public_key);
+            }
+          } catch (keyErr) {
+            console.error("Failed to encrypt channel key for new member:", keyErr);
+          }
+        }
+        await chatService.unirMiembro(activeCanal.id, userId, encKey);
       }
       const updated = await chatService.getCanalMiembros(activeCanal.id);
       setChannelMembers(updated);
@@ -195,54 +310,71 @@ export const Chats: React.FC = () => {
     }
   };
 
+  // Parse project members for initials avatars display
+  let memberIds: number[] = [];
+  try {
+    memberIds = activeCanal && activeCanal.creador_id ? [activeCanal.creador_id] : [];
+  } catch (err) {}
+
   return (
     <div className="chats-container animate-fade">
+      {/* Search/Filter or Select direct message dropdown modal */}
+      {showDmSelect && (
+        <div className="modal-overlay animate-fade">
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '380px' }}>
+            <div className="modal-header">
+              <h2>Iniciar Conversación Directa</h2>
+              <button className="modal-close-btn" onClick={() => setShowDmSelect(false)}>×</button>
+            </div>
+            <div className="dm-users-list mt-3" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              {users.filter(u => u.id !== user?.id).length === 0 ? (
+                <p className="text-muted text-center">No hay otros usuarios registrados.</p>
+              ) : (
+                users.filter(u => u.id !== user?.id).map((u) => (
+                  <button 
+                    key={u.id} 
+                    className="dm-user-item-btn"
+                    onClick={() => handleStartDM(u.id)}
+                    style={{ display: 'flex', width: '100%', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: '1px solid #f1f5f9', textAlign: 'left', cursor: 'pointer', alignItems: 'center', gap: '10px' }}
+                  >
+                    <div className="msg-avatar" style={{ margin: 0 }}>
+                      {u.nombre_completo.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#1e293b' }}>{u.nombre_completo}</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>{u.rol}</div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="dashboard-loading">
           <div className="loader"></div>
-          <p className="text-muted">Conectando con servidor de chat...</p>
+          <p className="text-muted">Conectando con la central de mensajería...</p>
         </div>
       ) : (
         <div className="chat-layout glass-panel">
-          {/* Left Panel: Channel list */}
-          <div className="channels-sidebar" style={{ position: 'relative' }}>
+          {/* Left Sidebar: Channels & DMs */}
+          <div className="channels-sidebar">
             <div className="sidebar-chat-header">
-              <h4>CANALES TI</h4>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <button className="add-channel-btn" onClick={() => setShowDmSelect(!showDmSelect)} title="Nuevo Chat Directo" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px' }}>
-                  💬
+              <h4>Canales de Chat</h4>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button className="add-channel-btn" onClick={() => setShowDmSelect(true)} title="Nuevo Chat Directo" style={{ fontSize: '10px' }}>
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </button>
-                {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
-                  <button className="add-channel-btn" onClick={() => setShowCreateModal(true)} title="Crear Canal">
-                    +
-                  </button>
-                )}
+                <button className="add-channel-btn" onClick={() => setShowCreateModal(true)} title="Crear Canal" style={{ fontSize: '10px' }}>
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
               </div>
             </div>
 
-            {showDmSelect && (
-              <div className="dm-select-dropdown glass-panel" style={{ position: 'absolute', top: '55px', left: '16px', right: '16px', zIndex: 100, padding: '12px', borderRadius: '10px', border: 'var(--border-glass)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid var(--overlay-05)', paddingBottom: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Chat Directo con...</span>
-                  <button onClick={() => setShowDmSelect(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', color: 'var(--color-text-main)' }}>×</button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
-                  {users.filter(u => u.id !== user?.id).map(u => (
-                    <button 
-                      key={u.id}
-                      onClick={() => handleStartDM(u.id)}
-                      style={{ padding: '6px 8px', borderRadius: '6px', border: 'none', background: 'transparent', color: 'var(--color-text-main)', textAlign: 'left', cursor: 'pointer', fontSize: '12px', display: 'block', width: '100%', transition: 'var(--transition-smooth)' }}
-                      className="dm-user-option-btn"
-                    >
-                      {u.nombre_completo}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="channels-list">
-              <div className="sidebar-section-title" style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--color-text-dim)', margin: '12px 0 6px 0', letterSpacing: '0.05em' }}>Canales de Grupo</div>
+              <div className="sidebar-section-title" style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--color-text-dim)', marginBottom: '6px', letterSpacing: '0.05em' }}>Canales del Servidor</div>
               {canales.filter(c => !c.is_dm).length === 0 ? (
                 <p className="text-muted font-xs text-center py-2" style={{ fontSize: '11px' }}>No hay canales públicos.</p>
               ) : (
@@ -300,7 +432,7 @@ export const Chats: React.FC = () => {
                     {activeCanal.is_dm ? (activeCanal.dm_destinatario_nombre || 'Tú mismo') : activeCanal.nombre}
                   </span>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {!activeCanal.is_dm && activeCanal.is_private && (user?.rol === 'ADMIN' || activeCanal.creador_id === user?.id) && (
+                    {!activeCanal.is_dm && activeCanal.is_private && (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || activeCanal.creador_id === user?.id) && (
                       <button className="refresh-chat-btn" onClick={() => setShowMembersModal(true)} title="Gestionar Miembros" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                       </button>
@@ -312,6 +444,28 @@ export const Chats: React.FC = () => {
                 </div>
 
                 <div className="messages-timeline-box">
+                  {/* Security E2EE Banners */}
+                  {!userPrivateKey && (
+                    <div style={{ margin: '8px 16px 16px 16px', background: 'rgba(239,68,68,0.06)', border: '1px dashed rgba(239,68,68,0.2)', padding: '10px 14px', borderRadius: '8px', fontSize: '11.5px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      <span><strong>Cifrado E2EE Desactivado</strong>: Para activar el cifrado seguro de extremo a extremo, por favor <strong>cierra sesión y vuelve a ingresar</strong> con tu usuario y contraseña.</span>
+                    </div>
+                  )}
+
+                  {userPrivateKey && !activeChannelKey && (activeCanal.is_private || activeCanal.is_dm) && (
+                    <div style={{ margin: '8px 16px 16px 16px', background: 'rgba(245,158,11,0.06)', border: '1px dashed rgba(245,158,11,0.2)', padding: '10px 14px', borderRadius: '8px', fontSize: '11.5px', color: '#d97706', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      <span><strong>Chat histórico sin llaves</strong>: Este chat/canal se creó antes de configurar el cifrado de extremo a extremo. Los nuevos mensajes en este canal específico no se cifrarán.</span>
+                    </div>
+                  )}
+
+                  {activeChannelKey && (activeCanal.is_private || activeCanal.is_dm) && (
+                    <div style={{ margin: '8px 16px 16px 16px', background: 'rgba(16,185,129,0.06)', border: '1px dashed rgba(16,185,129,0.2)', padding: '10px 14px', borderRadius: '8px', fontSize: '11.5px', color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      <span><strong>Cifrado de Extremo a Extremo (E2EE) Activo</strong>: Los mensajes y archivos en este chat están protegidos criptográficamente. Nadie fuera de este chat puede leerlos.</span>
+                    </div>
+                  )}
+
                   {mensajes.length === 0 ? (
                     <div className="empty-chat text-center py-5">
                       <span className="chat-welcome-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: 'var(--color-text-dim)' }}>
@@ -334,7 +488,23 @@ export const Chats: React.FC = () => {
                             </span>
                             <span className="msg-time text-dim">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
-                          {m.mensaje && <p className="msg-content-text">{m.mensaje}</p>}
+                          
+                          {m.mensaje && (
+                            <p className="msg-content-text" style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', flexWrap: 'wrap' }}>
+                              {(m as any).isEncrypted ? (
+                                <span title="Cifrado de extremo a extremo (E2EE)" style={{ display: 'inline-flex', alignItems: 'center', color: '#10b981', background: 'rgba(16,185,129,0.08)', padding: '2px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>
+                                  <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="3" style={{ marginRight: '3px' }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                  E2EE
+                                </span>
+                              ) : (
+                                <span title="Mensaje sin cifrar" style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--color-text-dim)', background: 'var(--overlay-05)', padding: '2px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>
+                                  🔓 Abierto
+                                </span>
+                              )}
+                              <span>{m.mensaje}</span>
+                            </p>
+                          )}
+
                           {m.archivo_ruta && (
                             <div className="msg-attachment-box" style={{ marginTop: '8px', padding: '8px', borderRadius: '8px', background: 'var(--overlay-02)', border: 'var(--border-glass)', display: 'inline-flex', flexDirection: 'column', gap: '6px', maxWidth: '280px' }}>
                               {m.archivo_mimetype?.startsWith('image/') ? (

@@ -12,10 +12,12 @@ import { Guardias } from './views/Guardias';
 import { Chats } from './views/Chats';
 import { Personas } from './views/Personas';
 import { Proveedores } from './views/Proveedores';
-import { Plantillas } from './views/Plantillas';
+import { SoportesRecurrentes } from './views/SoportesRecurrentes';
 import { Usuarios } from './views/Usuarios';
 import { MovimientosInventario } from './views/MovimientosInventario';
 import { Reportes } from './views/Reportes';
+import { Bodegas } from './views/Bodegas';
+import { EntregaCredenciales } from './views/EntregaCredenciales';
 import { AlertContainer } from './components/AlertContainer';
 import './App.css';
 
@@ -25,10 +27,14 @@ function AppContent() {
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
   const [refreshKey, setRefreshKey] = useState<number>(0);
 
-  // Sync activeView for Sede user
+  // Reset activeView to default dashboard or role-based default view on user change (login/logout)
   useEffect(() => {
-    if (user?.rol === 'USUARIO') {
-      setActiveView('tickets');
+    if (user) {
+      if (user.rol === 'USUARIO') {
+        setActiveView('tickets');
+      } else {
+        setActiveView('dashboard');
+      }
     }
   }, [user]);
 
@@ -53,7 +59,10 @@ function AppContent() {
       case 'tickets':
         return <Tickets key={refreshKey} />;
       case 'inventario':
-        return <Inventario key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
+          return <Inventario key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'proyectos':
         return <Proyectos key={refreshKey} />;
       case 'guardias':
@@ -61,17 +70,39 @@ function AppContent() {
       case 'chats':
         return <Chats key={refreshKey} />;
       case 'personas':
-        return <Personas key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') {
+          return <Personas key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'proveedores':
-        return <Proveedores key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') {
+          return <Proveedores key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'plantillas':
-        return <Plantillas key={refreshKey} />;
+        return <SoportesRecurrentes key={refreshKey} />;
       case 'usuarios':
-        return <Usuarios key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') {
+          return <Usuarios key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'movimientos':
-        return <MovimientosInventario key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
+          return <MovimientosInventario key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'reportes':
         return <Reportes key={refreshKey} />;
+      case 'bodegas':
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
+          return <Bodegas key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
+      case 'credenciales':
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') {
+          return <EntregaCredenciales key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       default:
         return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
     }

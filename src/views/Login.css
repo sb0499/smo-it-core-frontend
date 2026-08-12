@@ -1,103 +1,226 @@
-/* Login Screen CSS for SMO IT CORE - Professional Redesign */
+/* Sleek Split-Screen Premium Login Design for SMO IT CORE */
 
-.login-wrapper {
-  position: relative;
+.login-wrapper-split {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100vw;
   height: 100vh;
-  background-color: #f1f5f9;
-  background-image: 
-    radial-gradient(at 0% 0%, #e2e8f0 0px, transparent 50%),
-    radial-gradient(at 100% 100%, #cbd5e1 0px, transparent 50%);
   overflow: hidden;
+  background-color: #ffffff;
+  font-family: var(--font-sans);
 }
 
-/* Container */
-.login-container {
+/* LEFT DECORATIVE PANEL */
+.login-decor-side {
   position: relative;
-  width: 100%;
-  max-width: 440px;
-  padding: 40px;
-  z-index: 1;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 50%, #4c1d95 100%);
+  overflow: hidden;
+  color: #ffffff;
 }
 
-.login-header {
+.decor-shapes-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Background floating glow circles */
+.decor-circle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.circle-1 {
+  width: 350px;
+  height: 350px;
+  top: -50px;
+  left: -50px;
+  background: rgba(255, 255, 255, 0.12);
+  filter: blur(50px);
+  animation: floatSlow 15s infinite alternate;
+}
+
+.circle-2 {
+  width: 450px;
+  height: 450px;
+  bottom: -100px;
+  right: -100px;
+  background: rgba(255, 255, 255, 0.08);
+  filter: blur(70px);
+  animation: floatSlow 18s infinite alternate-reverse;
+}
+
+@keyframes floatSlow {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, 20px) scale(1.05); }
+}
+
+/* Sliding diagonal capsule shapes */
+.decor-capsule {
+  position: absolute;
+  background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.03));
+  border-radius: 9999px;
+  transform: rotate(-45deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.capsule-1 {
+  width: 80px;
+  height: 320px;
+  left: 10%;
+  bottom: -150px;
+  animation: slideUpCapsule 22s infinite linear;
+}
+
+.capsule-2 {
+  width: 60px;
+  height: 240px;
+  left: 30%;
+  bottom: -100px;
+  animation: slideUpCapsule 17s infinite linear;
+  animation-delay: 3s;
+}
+
+.capsule-3 {
+  width: 90px;
+  height: 380px;
+  left: 50%;
+  bottom: -200px;
+  animation: slideUpCapsule 26s infinite linear;
+  animation-delay: 1s;
+}
+
+.capsule-4 {
+  width: 50px;
+  height: 180px;
+  left: 70%;
+  bottom: -50px;
+  animation: slideUpCapsule 14s infinite linear;
+  animation-delay: 5s;
+}
+
+.capsule-5 {
+  width: 75px;
+  height: 300px;
+  left: 85%;
+  bottom: -120px;
+  animation: slideUpCapsule 20s infinite linear;
+  animation-delay: 2s;
+}
+
+@keyframes slideUpCapsule {
+  0% {
+    transform: translateY(200px) rotate(-45deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.45;
+  }
+  85% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translateY(-800px) rotate(-45deg);
+    opacity: 0;
+  }
+}
+
+.decor-content {
+  position: relative;
+  z-index: 2;
+  max-width: 480px;
+  width: 100%;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  animation: fadeInContent 1s ease-out;
+}
+
+.decor-title {
+  font-size: 38px;
+  font-weight: 300;
+  line-height: 1.2;
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.decor-brand {
+  font-weight: 800;
+  color: #ffffff;
+  display: block;
+  font-size: 48px;
+  margin-top: 6px;
+}
+
+.decor-subtitle {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+@keyframes fadeInContent {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* RIGHT FORM PANEL */
+.login-form-side {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  background-color: #ffffff;
+  z-index: 5;
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInForm 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInForm {
+  from { opacity: 0; transform: translateY(25px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.login-form-header {
   text-align: center;
   margin-bottom: 32px;
 }
 
-.logo-brand {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
-  color: #0f172a;
+.login-form-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #6366f1;
+  letter-spacing: 0.08em;
+  margin: 0;
 }
 
-.logo-brand .gradient-text {
-  background: linear-gradient(135deg, #1e3a8a, #4f46e5);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.logo-tagline {
-  font-size: 13px;
-  font-weight: 500;
-  color: #64748b;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.btn-submit {
-  width: 100%;
-  padding: 14px;
-  font-size: 15px;
-  margin-top: 10px;
-  background: linear-gradient(135deg, #1e3a8a, #3b82f6);
-  color: #ffffff;
-  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.15);
-}
-
-.btn-submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
-  box-shadow: 0 6px 15px rgba(30, 58, 138, 0.25);
-  transform: translateY(-1px);
-}
-
-.spinner-auth {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.spinner-auth svg {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  100% { transform: rotate(360deg); }
-}
-
-/* Error alert */
+/* Custom Alert Box */
 .login-error-alert {
   display: flex;
   align-items: center;
   gap: 10px;
   background: #fef2f2;
-  border: 1px solid #fee2e2;
-  border-radius: 10px;
-  padding: 12px 16px;
+  border: 1px solid #fecaca;
+  border-radius: 20px;
+  padding: 10px 16px;
   margin-bottom: 24px;
 }
 
@@ -107,77 +230,270 @@
 }
 
 .alert-text {
-  font-size: 13px;
-  font-weight: 600;
-  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 500;
+  color: #991b1b;
 }
 
-/* Quick Access Section */
-.quick-access-section {
+/* Custom Form and Elements */
+.login-form-element {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 36px;
-  padding-top: 24px;
-  border-top: 1px solid #f1f5f9;
+  gap: 20px;
 }
 
-.quick-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+.form-group-custom {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-pill-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.pill-icon-svg {
+  position: absolute;
+  left: 20px;
+  color: #818cf8;
+  pointer-events: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.pill-control {
+  width: 100%;
+  height: 52px;
+  padding: 0 20px 0 54px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  background-color: #f1f0fa;
+  border: 2px solid transparent;
+  border-radius: 26px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.pill-control::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.pill-control:focus {
+  background-color: #ffffff;
+  border-color: #818cf8;
+  box-shadow: 0 8px 20px rgba(129, 140, 248, 0.08);
+}
+
+.input-pill-wrapper:focus-within .pill-icon-svg {
+  color: #4f46e5;
+  transform: scale(1.05);
+}
+
+/* Options row: check box & forgot pass link */
+.form-options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-left: 26px;
+  cursor: pointer;
+  user-select: none;
   color: #64748b;
-  text-align: center;
+  font-weight: 500;
 }
 
-.quick-buttons-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  left: 0;
+  height: 17px;
+  width: 17px;
+  background-color: #f1f0fa;
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+  background-color: #e2e0f4;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+  background-color: #818cf8;
+}
+
+.checkmark::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 6px;
+  top: 3px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-container input:checked ~ .checkmark::after {
+  display: block;
+}
+
+.checkbox-label {
+  line-height: 1;
+}
+
+.forgot-link {
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.forgot-link:hover {
+  color: #4f46e5;
+}
+
+/* Gradient capsule button */
+.btn-gradient-submit {
+  position: relative;
+  width: 100%;
+  height: 52px;
+  margin-top: 10px;
+  background: linear-gradient(90deg, #0ea5e9 0%, #6366f1 50%, #4c1d95 100%);
+  background-size: 200% auto;
+  border: none;
+  border-radius: 26px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 10px 25px -10px rgba(129, 140, 248, 0.6);
+  transition: all 0.3s ease;
+}
+
+.btn-gradient-submit:hover:not(:disabled) {
+  background-position: right center;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -10px rgba(99, 102, 241, 0.5);
+}
+
+.btn-gradient-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-gradient-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner-auth-custom {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-.quick-btn {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  color: #475569;
-  font-family: var(--font-sans);
+/* Quick Access Badges Area */
+.quick-access-section-custom {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.quick-label-custom {
   font-size: 11px;
   font-weight: 600;
-  padding: 8px 4px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.quick-buttons-grid-custom {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.quick-badge {
+  flex: 1;
+  max-width: 100px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: center;
 }
 
-.quick-btn:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
+.admin-badge {
+  color: #64748b;
 }
 
-.quick-btn.role-badge-admin:hover {
-  border-color: #c084fc;
-  background: #faf5ff;
-  color: #7e22ce;
+.admin-badge:hover {
+  color: #4f46e5;
+  border-color: #818cf8;
+  background-color: #f5f3ff;
 }
 
-.quick-btn.role-badge-tech:hover {
-  border-color: #38bdf8;
-  background: #f0f9ff;
-  color: #0369a1;
+.tech-badge {
+  color: #64748b;
 }
 
-.quick-btn.role-badge-user:hover {
-  border-color: #94a3b8;
-  background: #f8fafc;
-  color: #334155;
+.tech-badge:hover {
+  color: #10b981;
+  border-color: #34d399;
+  background-color: #ecfdf5;
 }
 
-@media (max-width: 480px) {
-  .login-container {
-    padding: 30px 20px;
-    max-width: 90%;
+.user-badge {
+  color: #64748b;
+}
+
+.user-badge:hover {
+  color: #f59e0b;
+  border-color: #fbbf24;
+  background-color: #fffbeb;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 900px) {
+  .login-decor-side {
+    display: none;
+  }
+  
+  .login-form-side {
+    padding: 24px;
   }
 }

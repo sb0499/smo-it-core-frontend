@@ -13,10 +13,18 @@ export const Tickets: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filterEstado, setFilterEstado] = useState<string>('todos');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [totalTickets, setTotalTickets] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [showEscalarModal, setShowEscalarModal] = useState(false);
+  const [escalarGrupo, setEscalarGrupo] = useState<'Infraestructura' | 'Desarrollo'>('Infraestructura');
+  const [escalarTechId, setEscalarTechId] = useState<number>(0);
 
   // New ticket state
   const [newTitle, setNewTitle] = useState('');
@@ -26,6 +34,7 @@ export const Tickets: React.FC = () => {
   const [newEmpresaId, setNewEmpresaId] = useState<number>(0);
   const [newPersonaSol, setNewPersonaSol] = useState('');
   const [newAreaSol, setNewAreaSol] = useState('');
+  const [newNivelSoporte, setNewNivelSoporte] = useState<'N1' | 'N2'>('N1');
 
   // Ticket edit state
   const [editEstado, setEditEstado] = useState<string>('');
@@ -38,30 +47,16 @@ export const Tickets: React.FC = () => {
   const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
   const [categoriesList, setCategoriesList] = useState<{ id: number; nombre: string }[]>([]);
 
-  const fetchTicketsData = async () => {
+  const loggedInTech = technicians.find(t => t.id === user?.id);
+  const isN2 = loggedInTech?.nivel_soporte === 'N2';
+
+  const fetchTicketsData = async (pageNumber = page, searchVal = debouncedSearch, estadoVal = filterEstado) => {
     try {
       setLoading(true);
-      const list = await ticketService.getTickets();
-      setTickets(list);
-
-      // Load companies
-      const companiesList = await apiClient.get<{ id: number; nombre: string }[]>('/empresas');
-      setEmpresas(companiesList);
-      if (companiesList.length > 0 && newEmpresaId === 0) {
-        setNewEmpresaId(companiesList[0].id);
-      }
-
-      // Load categories
-      const cats = await ticketService.getCategorias().catch(() => []);
-      setCategoriesList(cats);
-      if (cats.length > 0) {
-        setNewCat(cats[0].nombre);
-      }
-
-      // Load techs for assignment
-      const usersList = await projectService.getUsuarios();
-      const techs = usersList.filter(u => u.rol === 'TECNICO' || u.rol === 'ADMIN');
-      setTechnicians(techs);
+      const res = await ticketService.getTicketsPaginated(pageNumber, 10, undefined, estadoVal, searchVal);
+      console.log('fetchTicketsData response:', res);
+      setTickets(res.data);
+      setTotalTickets(res.total);
     } catch (e) {
       console.error('Error fetching support tickets', e);
     } finally {
@@ -69,9 +64,52 @@ export const Tickets: React.FC = () => {
     }
   };
 
+  // Load static metadata once on mount
   useEffect(() => {
-    fetchTicketsData();
+    const loadMetadata = async () => {
+      try {
+        const [companiesList, cats, usersList] = await Promise.all([
+          apiClient.get<{ id: number; nombre: string }[]>('/empresas'),
+          ticketService.getCategorias().catch(() => []),
+          projectService.getUsuarios().catch(() => [])
+        ]);
+
+        setEmpresas(companiesList);
+        if (companiesList.length > 0 && newEmpresaId === 0) {
+          setNewEmpresaId(companiesList[0].id);
+        }
+
+        setCategoriesList(cats);
+        if (cats.length > 0) {
+          setNewCat(cats[0].nombre);
+        }
+
+        const techs = usersList.filter(u => u.rol === 'TECNICO' || u.rol === 'SUPERVISOR');
+        setTechnicians(techs);
+      } catch (err) {
+        console.error('Error loading metadata', err);
+      }
+    };
+    loadMetadata();
   }, []);
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset page when search or status changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, filterEstado]);
+
+  // Fetch tickets when page, search, or status changes
+  useEffect(() => {
+    fetchTicketsData(page, debouncedSearch, filterEstado);
+  }, [page, debouncedSearch, filterEstado]);
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +128,7 @@ export const Tickets: React.FC = () => {
         persona_solicitante: newPersonaSol || undefined,
         area_solicitante: newAreaSol || undefined,
         medio_solicitud: 'Plataforma',
+        nivel_soporte: isN2 ? newNivelSoporte : undefined,
       };
 
       await ticketService.createTicket(payload);
@@ -100,6 +139,7 @@ export const Tickets: React.FC = () => {
       setNewDesc('');
       setNewPersonaSol('');
       setNewAreaSol('');
+      setNewNivelSoporte('N1');
       
       fetchTicketsData();
     } catch (err: any) {
@@ -142,6 +182,27 @@ export const Tickets: React.FC = () => {
     }
   };
 
+  const handleEscalarN2Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicket) return;
+
+    try {
+      setIsUpdating(true);
+      await ticketService.escalarTicketAN2(selectedTicket.id, {
+        grupo_n2: escalarGrupo,
+        tecnico_id: escalarTechId > 0 ? escalarTechId : null
+      });
+      setShowEscalarModal(false);
+      setSelectedTicket(null);
+      fetchTicketsData();
+      showAlert('Ticket escalado a Nivel 2 exitosamente.');
+    } catch (err: any) {
+      showAlert('Error al escalar el ticket: ' + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleUpdateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTicket) return;
@@ -178,13 +239,7 @@ export const Tickets: React.FC = () => {
     }
   };
 
-  const filteredTickets = tickets.filter(t => {
-    const matchEstado = filterEstado === 'todos' || t.estado === filterEstado;
-    const matchSearch = t.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        t.descripcion.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        t.categoria.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchEstado && matchSearch;
-  });
+  const filteredTickets = tickets;
 
   return (
     <div className="tickets-container animate-fade">
@@ -210,11 +265,12 @@ export const Tickets: React.FC = () => {
             <option value="Pruebas">Pruebas</option>
             <option value="Finalizada">Finalizada</option>
             <option value="Escalado a Proyecto">Escalado a Proyecto</option>
+            <option value="Escalado a Proveedor">Escalado a Proveedor</option>
           </select>
         </div>
  
         <div className="controls-right-buttons">
-          {user?.rol === 'ADMIN' && (
+          {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && (
             <>
               <button 
                 className="btn btn-secondary" 
@@ -260,7 +316,10 @@ export const Tickets: React.FC = () => {
                 <span className={`badge badge-priority-${ticket.prioridad.toLowerCase()}`}>
                   {ticket.prioridad}
                 </span>
-                <span className={`badge badge-${ticket.estado.toLowerCase().replace(' ', '')}`}>
+                <span className={`badge badge-level-${ticket.nivel_soporte?.toLowerCase() || 'n1'}`}>
+                  Nivel {ticket.nivel_soporte || 'N1'} {ticket.nivel_soporte === 'N2' && ticket.grupo_n2 ? `(${ticket.grupo_n2})` : ''}
+                </span>
+                <span className={`badge badge-${ticket.estado.toLowerCase().replace(/\s+/g, '')}`}>
                   {ticket.estado}
                 </span>
               </div>
@@ -271,7 +330,7 @@ export const Tickets: React.FC = () => {
                 
                 <div className="ticket-meta mt-3">
                   <div className="meta-tag">{ticket.categoria}</div>
-                  <div className="meta-tag">{ticket.empresa_nombre || 'CONDADO'}</div>
+                  <div className="meta-tag">{ticket.empresa_nombre || 'Sin Sede Asignada'}</div>
                 </div>
               </div>
 
@@ -289,6 +348,33 @@ export const Tickets: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalTickets > 10 && (
+        <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '24px', padding: '12px 0' }}>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+          >
+            Anterior
+          </button>
+          <span style={{ fontSize: '13px', color: 'var(--color-text)', fontWeight: '500' }}>
+            Página {page} de {Math.ceil(totalTickets / 10)} ({totalTickets} registros)
+          </span>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === Math.ceil(totalTickets / 10)}
+            onClick={() => setPage(page + 1)}
+            style={{ cursor: page === Math.ceil(totalTickets / 10) ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+          >
+            Siguiente
+          </button>
         </div>
       )}
 
@@ -376,6 +462,20 @@ export const Tickets: React.FC = () => {
                 />
               </div>
 
+              {isN2 && (
+                <div className="form-group">
+                  <label className="form-label">NIVEL DE SOPORTE</label>
+                  <select 
+                    className="form-control" 
+                    value={newNivelSoporte} 
+                    onChange={(e) => setNewNivelSoporte(e.target.value as 'N1' | 'N2')}
+                  >
+                    <option value="N1">Nivel 1 (N1) - Asignar a Centro Comercial</option>
+                    <option value="N2">Nivel 2 (N2) - Mi nivel (Asignado a mí)</option>
+                  </select>
+                </div>
+              )}
+
               <div className="form-group">
                 <label className="form-label">DESCRIPCIÓN DE LA FALLA O SOLICITUD</label>
                 <textarea
@@ -414,12 +514,16 @@ export const Tickets: React.FC = () => {
                   <span>Sede: <strong>{selectedTicket.empresa_nombre || 'CONDADO'}</strong></span>
                   <span>Categoría: <strong>{selectedTicket.categoria}</strong></span>
                   <span>Prioridad: <strong>{selectedTicket.prioridad}</strong></span>
+                  <span>Nivel: <strong className={`badge badge-level-${selectedTicket.nivel_soporte?.toLowerCase() || 'n1'}`} style={{ display: 'inline-block', padding: '2px 6px', fontSize: '10px', verticalAlign: 'middle', marginLeft: '4px' }}>{selectedTicket.nivel_soporte || 'N1'} {selectedTicket.nivel_soporte === 'N2' && selectedTicket.grupo_n2 ? `(${selectedTicket.grupo_n2})` : ''}</strong></span>
+                  {selectedTicket.sla_paused_at && (
+                    <span style={{ color: '#ec4899', fontWeight: 600 }}>[SLA PAUSADO]</span>
+                  )}
                   <span>Fecha: {new Date(selectedTicket.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
 
               {/* Editable Fields for Admin / Technical Staff */}
-              {user?.rol === 'ADMIN' || user?.rol === 'TECNICO' ? (
+              {user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO' ? (
                 <div className="admin-editable-section">
                   <h4 className="section-title gradient-text mt-3 mb-2">Administrar Operación TI</h4>
 
@@ -484,7 +588,12 @@ export const Tickets: React.FC = () => {
                         <option value="Pendiente">Pendiente</option>
                         <option value="Pruebas">Pruebas</option>
                         <option value="Finalizada">Finalizada</option>
-                        <option value="Escalado a Proyecto">Escalado a Proyecto</option>
+                        {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || isN2) && (
+                          <>
+                            <option value="Escalado a Proyecto">Escalado a Proyecto</option>
+                            <option value="Escalado a Proveedor">Escalado a Proveedor (SLA Pausado)</option>
+                          </>
+                        )}
                       </select>
                     </div>
                   </div>
@@ -492,7 +601,7 @@ export const Tickets: React.FC = () => {
                   <div className="form-row">
                     <div className="form-group half">
                       <label className="form-label">TÉCNICO TI ASIGNADO</label>
-                      {user.rol === 'ADMIN' ? (
+                      {user.rol === 'ADMIN' || user.rol === 'SUPERVISOR' ? (
                         <select 
                           className="form-control" 
                           value={editTechId} 
@@ -500,7 +609,9 @@ export const Tickets: React.FC = () => {
                         >
                           <option value="0">Seleccionar Técnico...</option>
                           {technicians.map(t => (
-                            <option key={t.id} value={t.id}>{t.nombre_completo}</option>
+                            <option key={t.id} value={t.id}>
+                              {t.nombre_completo} {t.nivel_soporte ? `(${t.nivel_soporte})` : ''}
+                            </option>
                           ))}
                         </select>
                       ) : (
@@ -548,11 +659,82 @@ export const Tickets: React.FC = () => {
 
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setSelectedTicket(null)}>Cerrar</button>
-                {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
+                {selectedTicket.nivel_soporte === 'N1' && (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && selectedTicket.estado !== 'Finalizada' && (
+                  <button
+                    type="button"
+                    className="btn btn-warning"
+                    style={{ background: '#8b5cf6', borderColor: '#8b5cf6', color: 'white' }}
+                    onClick={() => {
+                      setEscalarGrupo('Infraestructura');
+                      setEscalarTechId(0);
+                      setShowEscalarModal(true);
+                    }}
+                    disabled={isUpdating}
+                  >
+                    Escalar a N2 (Especialista)
+                  </button>
+                )}
+                {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && (
                   <button type="submit" className="btn btn-primary" disabled={isUpdating}>
                     {isUpdating ? 'Guardando...' : 'Actualizar Estado'}
                   </button>
                 )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {showEscalarModal && (
+        <div className="modal-backdrop animate-fade" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+          <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '420px', padding: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '16px' }}>Escalar Ticket a Nivel 2</h4>
+              <button type="button" onClick={() => setShowEscalarModal(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '20px', cursor: 'pointer' }}>×</button>
+            </div>
+            
+            <form onSubmit={handleEscalarN2Submit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">SELECCIONE GRUPO N2</label>
+                <select
+                  className="form-control"
+                  value={escalarGrupo}
+                  onChange={(e) => {
+                    setEscalarGrupo(e.target.value as any);
+                    setEscalarTechId(0);
+                  }}
+                  disabled={isUpdating}
+                  required
+                >
+                  <option value="Infraestructura">Infraestructura</option>
+                  <option value="Desarrollo">Desarrollo</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">ASIGNAR A TÉCNICO ESPECÍFICO</label>
+                <select
+                  className="form-control"
+                  value={escalarTechId}
+                  onChange={(e) => setEscalarTechId(Number(e.target.value))}
+                  disabled={isUpdating}
+                >
+                  <option value="0">Auto-asignación (Balanceo de Carga)</option>
+                  {technicians
+                    .filter(t => t.nivel_soporte === 'N2' && t.grupo_n2 === escalarGrupo)
+                    .map(t => (
+                      <option key={t.id} value={t.id}>{t.nombre_completo}</option>
+                    ))
+                  }
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowEscalarModal(false)} disabled={isUpdating}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#8b5cf6', borderColor: '#8b5cf6', color: 'white' }} disabled={isUpdating}>
+                  {isUpdating ? 'Escalando...' : 'Confirmar Escalación'}
+                </button>
               </div>
             </form>
           </div>

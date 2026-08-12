@@ -14,7 +14,11 @@ export interface Ticket {
   avance_proceso: number;
   observaciones: string | null;
   prioridad: 'Baja' | 'Media' | 'Alta' | 'Critica';
-  estado: 'Nuevo' | 'Pendiente' | 'Pruebas' | 'Finalizada' | 'En Proceso' | 'Escalado a Proyecto';
+  estado: 'Nuevo' | 'Pendiente' | 'Pruebas' | 'Finalizada' | 'En Proceso' | 'Escalado a Proyecto' | 'Escalado a Proveedor';
+  nivel_soporte: 'N1' | 'N2' | 'N3';
+  grupo_n2?: 'Infraestructura' | 'Desarrollo' | null;
+  sla_paused_at: string | null;
+  sla_acumulado_pausa_segundos: number;
   creador_id: number;
   tecnico_id: number | null;
   tecnico_nombre?: string;
@@ -33,11 +37,12 @@ export interface CreateTicketPayload {
   fecha_final_tentativa?: string | null;
   prioridad?: 'Baja' | 'Media' | 'Alta' | 'Critica';
   tecnico_id?: number | null;
+  nivel_soporte?: 'N1' | 'N2';
 }
 
 export interface UpdateTicketPayload {
   titulo?: string;
-  estado?: 'Nuevo' | 'Pendiente' | 'Pruebas' | 'Finalizada' | 'En Proceso' | 'Escalado a Proyecto';
+  estado?: 'Nuevo' | 'Pendiente' | 'Pruebas' | 'Finalizada' | 'En Proceso' | 'Escalado a Proyecto' | 'Escalado a Proveedor';
   avance_proceso?: number;
   observaciones?: string | null;
   tecnico_id?: number | null;
@@ -48,6 +53,14 @@ export const ticketService = {
     return apiClient.get<Ticket[]>('/tickets');
   },
 
+  async getTicketsPaginated(page = 1, limit = 10, excludeStatus?: string, estado?: string, search?: string): Promise<{ total: number; page: number; limit: number; data: Ticket[] }> {
+    const params: any = { page, limit };
+    if (excludeStatus !== undefined) params.excludeStatus = excludeStatus;
+    if (estado !== undefined) params.estado = estado;
+    if (search !== undefined) params.search = search;
+    return apiClient.get('/tickets/paginated', { params });
+  },
+
   async createTicket(payload: CreateTicketPayload): Promise<Ticket> {
     return apiClient.post<Ticket>('/tickets', payload);
   },
@@ -56,8 +69,8 @@ export const ticketService = {
     return apiClient.put<Ticket>(`/tickets/${ticketId}`, payload);
   },
 
-  async createDesdePlantilla(plantillaId: number): Promise<Ticket> {
-    return apiClient.post<Ticket>(`/tickets/crear-desde-plantilla/${plantillaId}`);
+  async escalarTicketAN2(ticketId: number, payload: { grupo_n2: 'Infraestructura' | 'Desarrollo'; tecnico_id: number | null }): Promise<Ticket> {
+    return apiClient.post<Ticket>(`/tickets/${ticketId}/escalar-n2`, payload);
   },
 
   async triggerCierreDiario(): Promise<{ message: string }> {

@@ -8,6 +8,7 @@ export interface ChatCanal {
   dm_destinatario_nombre?: string;
   creador_id: number;
   created_at: string;
+  encrypted_channel_key?: string;
 }
 
 export interface ChatMensaje {
@@ -36,8 +37,8 @@ export const chatService = {
     return apiClient.get<ChatCanal[]>('/chats/canales');
   },
 
-  async createCanal(nombre: string, isPrivate: boolean): Promise<ChatCanal> {
-    return apiClient.post<ChatCanal>('/chats/canales', { nombre, is_private: isPrivate });
+  async createCanal(nombre: string, isPrivate: boolean, keys?: { [userId: number]: string }): Promise<ChatCanal> {
+    return apiClient.post<ChatCanal>('/chats/canales', { nombre, is_private: isPrivate, keys });
   },
 
   async getCanalMensajes(canalId: number): Promise<ChatMensaje[]> {
@@ -54,16 +55,16 @@ export const chatService = {
     return apiClient.post<ChatMensaje>(`/chats/canales/${canalId}/mensajes`, { mensaje });
   },
 
-  async getOrCreateDMChannel(targetUserId: number): Promise<ChatCanal> {
-    return apiClient.post<ChatCanal>('/chats/dm', { usuario_id: targetUserId });
+  async getOrCreateDMChannel(targetUserId: number, keys?: { [userId: number]: string }): Promise<ChatCanal> {
+    return apiClient.post<ChatCanal>('/chats/dm', { usuario_id: targetUserId, keys });
   },
 
   async getCanalMiembros(canalId: number): Promise<ChatCanalMiembro[]> {
     return apiClient.get<ChatCanalMiembro[]>(`/chats/canales/${canalId}/miembros`);
   },
 
-  async unirMiembro(canalId: number, usuarioId: number): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>(`/chats/canales/${canalId}/miembros/${usuarioId}`);
+  async unirMiembro(canalId: number, usuarioId: number, encryptedChannelKey?: string): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>(`/chats/canales/${canalId}/miembros/${usuarioId}`, { encrypted_channel_key: encryptedChannelKey });
   },
 
   async removerMiembro(canalId: number, usuarioId: number): Promise<{ message: string }> {
