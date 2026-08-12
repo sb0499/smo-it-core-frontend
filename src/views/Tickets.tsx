@@ -330,7 +330,7 @@ export const Tickets: React.FC = () => {
                 
                 <div className="ticket-meta mt-3">
                   <div className="meta-tag">{ticket.categoria}</div>
-                  <div className="meta-tag">{ticket.empresa_nombre || 'CONDADO'}</div>
+                  <div className="meta-tag">{ticket.empresa_nombre || 'Sin Sede Asignada'}</div>
                 </div>
               </div>
 

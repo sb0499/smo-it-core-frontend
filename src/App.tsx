@@ -70,13 +70,22 @@ function AppContent() {
       case 'chats':
         return <Chats key={refreshKey} />;
       case 'personas':
-        return <Personas key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') {
+          return <Personas key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'proveedores':
-        return <Proveedores key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') {
+          return <Proveedores key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'plantillas':
         return <SoportesRecurrentes key={refreshKey} />;
       case 'usuarios':
-        return <Usuarios key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') {
+          return <Usuarios key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'movimientos':
         if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
           return <MovimientosInventario key={refreshKey} />;
@@ -90,7 +99,10 @@ function AppContent() {
         }
         return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'credenciales':
-        return <EntregaCredenciales key={refreshKey} />;
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') {
+          return <EntregaCredenciales key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       default:
         return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
     }

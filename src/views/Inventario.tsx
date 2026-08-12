@@ -1,5 +1,6 @@
 import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useEffect, useState } from 'react';
+import { formatLocalDateSimple } from '../utils/date';
 import { useAuth } from '../context/AuthContext';
 import { 
   inventoryService, 
@@ -1182,7 +1183,7 @@ export const Inventario: React.FC = () => {
                       {selectedActivo.fecha_compra && (
                         <div className="spec-item" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
                           <span style={{ color: '#64748b' }}>Fecha Adquisición:</span>
-                          <strong>{new Date(selectedActivo.fecha_compra).toLocaleDateString()}</strong>
+                          <strong>{formatLocalDateSimple(selectedActivo.fecha_compra)}</strong>
                         </div>
                       )}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
@@ -1246,7 +1247,7 @@ export const Inventario: React.FC = () => {
                               <div style={{ background: '#f8fafc', border: '1px solid #f1f5f9', padding: '10px 14px', borderRadius: '6px', fontSize: '12px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', color: '#1e293b', marginBottom: '4px' }}>
                                   <span>{m.tipo}</span>
-                                  <span style={{ color: '#94a3b8', textTransform: 'none', fontWeight: 'normal' }}>{new Date(m.fecha).toLocaleDateString()}</span>
+                                  <span style={{ color: '#94a3b8', textTransform: 'none', fontWeight: 'normal' }}>{formatLocalDateSimple(m.fecha)}</span>
                                 </div>
                                 <p style={{ color: '#475569', fontSize: '11.5px' }}>
                                   {m.desde_persona_nombre ? `De: ${m.desde_persona_nombre}` : ''}
@@ -1289,7 +1290,7 @@ export const Inventario: React.FC = () => {
                               <div style={{ background: '#fdfbeb', border: '1px solid #fef3c7', padding: '10px 14px', borderRadius: '6px', fontSize: '12px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', color: '#b45309', marginBottom: '4px' }}>
                                   <span>Modificado por: {hc.usuario_nombre}</span>
-                                  <span style={{ color: '#d97706', textTransform: 'none', fontWeight: 'normal' }}>{new Date(hc.fecha).toLocaleDateString()}</span>
+                                  <span style={{ color: '#d97706', textTransform: 'none', fontWeight: 'normal' }}>{formatLocalDateSimple(hc.fecha)}</span>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
                                   {hc.cambios.split(' | ').map((cambio, idx) => (

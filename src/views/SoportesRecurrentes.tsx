@@ -1,5 +1,6 @@
 import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useState, useEffect } from 'react';
+import { formatLocalDateSimple } from '../utils/date';
 import { apiClient } from '../services/api';
 import { recurrenciaService, SoporteRecurrente } from '../services/recurrencia.service';
 import { ticketService } from '../services/ticket.service';
@@ -275,10 +276,10 @@ export const SoportesRecurrentes: React.FC = () => {
                         </span>
                       </td>
                       <td style={{ fontWeight: '600', color: 'var(--color-primary)' }}>
-                        {new Date(s.siguiente_ejecucion).toLocaleDateString()}
+                        {formatLocalDateSimple(s.siguiente_ejecucion)}
                       </td>
                       <td>
-                        {s.ultima_ejecucion ? new Date(s.ultima_ejecucion).toLocaleDateString() : 'Nunca'}
+                        {s.ultima_ejecucion ? formatLocalDateSimple(s.ultima_ejecucion) : 'Nunca'}
                       </td>
                       <td>
                         <span className={`badge ${s.is_active ? 'badge-done' : 'badge-baja'}`} style={{ fontSize: '10px' }}>

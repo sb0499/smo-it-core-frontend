@@ -42,6 +42,7 @@ export const Chats: React.FC = () => {
   const [channelMembers, setChannelMembers] = useState<ChatCanalMiembro[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const decryptedCacheRef = useRef<Map<number, string>>(new Map());
 
   const fetchChannels = async () => {
     try {
@@ -68,8 +69,12 @@ export const Chats: React.FC = () => {
       return msgList.map(m => ({ ...m, isEncrypted: false } as any));
     }
     return Promise.all(msgList.map(async (m) => {
+      if (decryptedCacheRef.current.has(m.id)) {
+        return { ...m, mensaje: decryptedCacheRef.current.get(m.id)!, isEncrypted: true } as any;
+      }
       try {
         const decryptedText = await decryptMessage(m.mensaje, channelKey);
+        decryptedCacheRef.current.set(m.id, decryptedText);
         return { ...m, mensaje: decryptedText, isEncrypted: true } as any;
       } catch (err) {
         // Fallback to original text if it's plaintext / historic
@@ -79,6 +84,7 @@ export const Chats: React.FC = () => {
   };
 
   const handleSelectCanal = async (canal: ChatCanal) => {
+    decryptedCacheRef.current.clear();
     setActiveCanal(canal);
     let channelKey: CryptoKey | null = null;
     
