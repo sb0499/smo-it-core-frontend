@@ -149,9 +149,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside className={`sidebar glass-panel ${mobileOpen ? 'mobile-open' : ''}`}>
-        <div className="sidebar-header">
-          <div className="logo-glow"></div>
-          <span className="logo-text">SMO <span className="gradient-text">IT CORE</span></span>
+        <div className="sidebar-header" style={{ padding: '0 4px' }}>
+          <img src="/tismo-logo.svg" alt="TISMO" style={{ width: '100%', maxWidth: '210px', height: 'auto', objectFit: 'contain' }} />
         </div>
 
         <nav className="sidebar-nav">

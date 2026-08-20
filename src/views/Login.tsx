@@ -1,24 +1,24 @@
-import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import './Login.css';
+import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import "./Login.css";
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
   const [rememberMe, setRememberMe] = useState(() => {
-    return localStorage.getItem('smo_remember_me') === 'true';
+    return localStorage.getItem("smo_remember_me") === "true";
   });
   const [email, setEmail] = useState(() => {
-    const saved = localStorage.getItem('smo_remembered_email');
-    return saved || '';
+    const saved = localStorage.getItem("smo_remembered_email");
+    return saved || "";
   });
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('Por favor, ingresa tu correo y contraseña.');
+      setError("Por favor, ingresa tu correo y contraseña.");
       return;
     }
 
@@ -26,15 +26,17 @@ export const Login: React.FC = () => {
     setLoading(true);
     try {
       if (rememberMe) {
-        localStorage.setItem('smo_remembered_email', email);
-        localStorage.setItem('smo_remember_me', 'true');
+        localStorage.setItem("smo_remembered_email", email);
+        localStorage.setItem("smo_remember_me", "true");
       } else {
-        localStorage.removeItem('smo_remembered_email');
-        localStorage.setItem('smo_remember_me', 'false');
+        localStorage.removeItem("smo_remembered_email");
+        localStorage.setItem("smo_remember_me", "false");
       }
       await login(email, password);
     } catch (err: any) {
-      setError(err.message || 'Error de autenticación. Verifica tus credenciales.');
+      setError(
+        err.message || "Error de autenticación. Verifica tus credenciales.",
+      );
     } finally {
       setLoading(false);
     }
@@ -52,14 +54,27 @@ export const Login: React.FC = () => {
           <div className="decor-capsule capsule-4"></div>
           <div className="decor-capsule capsule-5"></div>
         </div>
-        <div className="decor-content">
-          <h1 className="decor-title">
-            Bienvenido a <br/>
-            <span className="decor-brand">SMO IT CORE</span>
-          </h1>
-          <p className="decor-subtitle">
-            Gestión Central de TI para SMO.
-          </p>
+        <div
+          className="decor-content"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "10px",
+            textAlign: "center",
+          }}
+        >
+          <img
+            src="/tismo-logo.svg"
+            alt="TISMO Logo"
+            style={{
+              width: "100%",
+              maxWidth: "460px",
+              height: "auto",
+              objectFit: "contain",
+              filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.2))",
+            }}
+          />
         </div>
       </div>
 
@@ -72,7 +87,21 @@ export const Login: React.FC = () => {
 
           {error && (
             <div className="login-error-alert animate-fade">
-              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="alert-icon-svg"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="alert-icon-svg"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
               <span className="alert-text">{error}</span>
             </div>
           )}
@@ -80,7 +109,20 @@ export const Login: React.FC = () => {
           <form className="login-form-element" onSubmit={handleSubmit}>
             <div className="form-group-custom">
               <div className="input-pill-wrapper">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pill-icon-svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="pill-icon-svg"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
                 <input
                   type="email"
                   id="email"
@@ -96,7 +138,27 @@ export const Login: React.FC = () => {
 
             <div className="form-group-custom">
               <div className="input-pill-wrapper">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pill-icon-svg"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="pill-icon-svg"
+                >
+                  <rect
+                    x="3"
+                    y="11"
+                    width="18"
+                    height="11"
+                    rx="2"
+                    ry="2"
+                  ></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
                 <input
                   type="password"
                   id="password"
@@ -112,8 +174,8 @@ export const Login: React.FC = () => {
 
             <div className="form-options-row">
               <label className="checkbox-container">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                 />
@@ -122,10 +184,28 @@ export const Login: React.FC = () => {
               </label>
             </div>
 
-            <button type="submit" className="btn-gradient-submit" disabled={loading}>
+            <button
+              type="submit"
+              className="btn-gradient-submit"
+              disabled={loading}
+            >
               {loading ? (
                 <span className="spinner-auth-custom">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path></svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    style={{ animation: "spin 1s linear infinite" }}
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path
+                      d="M12 2a10 10 0 0 1 10 10"
+                      stroke="currentColor"
+                    ></path>
+                  </svg>
                   Iniciando...
                 </span>
               ) : (
