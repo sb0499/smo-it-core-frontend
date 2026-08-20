@@ -62,6 +62,13 @@ export const Proyectos: React.FC = () => {
   // New Project Member state
   const [selectedMiembros, setSelectedMiembros] = useState<number[]>([]);
 
+  // Autocomplete @mention states
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionStartIndex, setMentionStartIndex] = useState<number>(-1);
+  const [activeInputType, setActiveInputType] = useState<'project' | 'task-sub' | null>(null);
+  const [filteredTechs, setFilteredTechs] = useState<User[]>([]);
+  const [dropdownIndex, setDropdownIndex] = useState(0);
+
   // Load technicians once on mount
   useEffect(() => {
     projectService.getUsuarios()
@@ -247,6 +254,74 @@ export const Proyectos: React.FC = () => {
       handleSelectProyecto(activeProyecto.id);
     } catch (err: any) {
       showAlert('Error actualizando subtarea: ' + err.message);
+    }
+  };
+
+  // Autocomplete @mention helpers
+  const checkMentionTrigger = (text: string, selectionStart: number, inputType: 'project' | 'task-sub') => {
+    const textBeforeCursor = text.substring(0, selectionStart);
+    const match = textBeforeCursor.match(/@([a-zA-Z0-9._-]*)$/);
+    
+    if (match) {
+      const query = match[1];
+      const startIndex = match.index!;
+      setMentionQuery(query);
+      setMentionStartIndex(startIndex);
+      setActiveInputType(inputType);
+      setDropdownIndex(0);
+      
+      const filtered = technicians.filter(t => 
+        t.nombre_completo.toLowerCase().includes(query.toLowerCase()) ||
+        t.email.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredTechs(filtered);
+    } else {
+      setMentionQuery(null);
+      setMentionStartIndex(-1);
+      setActiveInputType(null);
+      setFilteredTechs([]);
+    }
+  };
+
+  const selectUserMention = (targetUser: User) => {
+    if (mentionStartIndex === -1 || activeInputType === null) return;
+    
+    const emailPrefix = targetUser.email.split('@')[0];
+    const mentionText = `@${emailPrefix} `;
+    
+    if (activeInputType === 'project') {
+      const textBefore = newComment.substring(0, mentionStartIndex);
+      const textAfter = newComment.substring(mentionStartIndex + (mentionQuery || '').length + 1);
+      const newValue = textBefore + mentionText + textAfter;
+      setNewComment(newValue);
+    } else if (activeInputType === 'task-sub') {
+      const textBefore = newTaskSubComment.substring(0, mentionStartIndex);
+      const textAfter = newTaskSubComment.substring(mentionStartIndex + (mentionQuery || '').length + 1);
+      const newValue = textBefore + mentionText + textAfter;
+      setNewTaskSubComment(newValue);
+    }
+    
+    setMentionQuery(null);
+    setMentionStartIndex(-1);
+    setActiveInputType(null);
+    setFilteredTechs([]);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, inputType: 'project' | 'task-sub') => {
+    if (mentionQuery !== null && filteredTechs.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setDropdownIndex(prev => (prev + 1) % filteredTechs.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setDropdownIndex(prev => (prev - 1 + filteredTechs.length) % filteredTechs.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        selectUserMention(filteredTechs[dropdownIndex]);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setMentionQuery(null);
+      }
     }
   };
 
@@ -651,9 +726,32 @@ export const Proyectos: React.FC = () => {
                     className="form-control comment-input"
                     placeholder="Escribe un comentario o menciona con @..."
                     value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
+                    onChange={(e) => {
+                      setNewComment(e.target.value);
+                      checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'project');
+                    }}
+                    onKeyDown={(e) => handleKeyDown(e, 'project')}
+                    onSelect={(e: any) => {
+                      checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'project');
+                    }}
                   />
                   <button type="submit" className="btn btn-primary btn-comment-send">Enviar</button>
+
+                  {/* Mention Dropdown */}
+                  {mentionQuery !== null && activeInputType === 'project' && filteredTechs.length > 0 && (
+                    <div className="mention-dropdown">
+                      {filteredTechs.map((t, idx) => (
+                        <div 
+                          key={t.id} 
+                          className={`mention-item ${idx === dropdownIndex ? 'active' : ''}`}
+                          onClick={() => selectUserMention(t)}
+                        >
+                          <span className="mention-item-name">{t.nombre_completo}</span>
+                          <span className="mention-item-email">{t.email}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </form>
               </div>
 
@@ -1035,17 +1133,40 @@ export const Proyectos: React.FC = () => {
 
             {/* Comment Input Form */}
             {user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || activeProyecto?.creador_id === user?.id || commentsModalData.responsableId === user?.id ? (
-              <form onSubmit={handleAddTaskSubComment} style={{ marginTop: '16px', display: 'flex', gap: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '14px' }}>
+              <form onSubmit={handleAddTaskSubComment} style={{ marginTop: '16px', display: 'flex', gap: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '14px', position: 'relative' }}>
                 <input
                   type="text"
                   className="form-control"
                   placeholder="Escribe un comentario..."
                   value={newTaskSubComment}
-                  onChange={(e) => setNewTaskSubComment(e.target.value)}
+                  onChange={(e) => {
+                    setNewTaskSubComment(e.target.value);
+                    checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'task-sub');
+                  }}
+                  onKeyDown={(e) => handleKeyDown(e, 'task-sub')}
+                  onSelect={(e: any) => {
+                    checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'task-sub');
+                  }}
                   required
                   style={{ flex: 1 }}
                 />
                 <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '12px' }}>Enviar</button>
+
+                {/* Mention Dropdown */}
+                {mentionQuery !== null && activeInputType === 'task-sub' && filteredTechs.length > 0 && (
+                  <div className="mention-dropdown">
+                    {filteredTechs.map((t, idx) => (
+                      <div 
+                        key={t.id} 
+                        className={`mention-item ${idx === dropdownIndex ? 'active' : ''}`}
+                        onClick={() => selectUserMention(t)}
+                      >
+                        <span className="mention-item-name">{t.nombre_completo}</span>
+                        <span className="mention-item-email">{t.email}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </form>
             ) : (
               <p className="text-muted font-xs italic mt-3 text-center" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>

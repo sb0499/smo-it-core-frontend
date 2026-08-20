@@ -120,6 +120,7 @@ function AppContent() {
       <main className="app-main-content">
         <Navbar
           activeView={activeView}
+          setActiveView={setActiveView}
           setMobileOpen={setMobileOpen}
           onRefresh={handleRefresh}
         />
