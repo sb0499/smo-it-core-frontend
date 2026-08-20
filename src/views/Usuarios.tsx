@@ -1,7 +1,37 @@
 import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import './Inventario.css';
+
+const fallbackCopy = (text: string) => {
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.style.top = '0';
+  textArea.style.left = '0';
+  textArea.style.position = 'fixed';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    showAlert('¡Copiado al portapapeles!');
+  } catch (err) {
+    showAlert('Error al copiar al portapapeles.');
+  }
+  document.body.removeChild(textArea);
+};
+
+const copyToClipboard = (text: string) => {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showAlert('¡Copiado al portapapeles!'))
+      .catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+};
+
 
 interface Usuario {
   id: number;
@@ -25,6 +55,7 @@ interface Empresa {
 }
 
 export const Usuarios: React.FC = () => {
+  const { user } = useAuth();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
@@ -179,6 +210,19 @@ export const Usuarios: React.FC = () => {
     }
   };
 
+  const handleDelete = async (id: number, name: string) => {
+    if (!await showConfirm(`¿Estás seguro de que deseas eliminar permanentemente la cuenta de "${name}"?`)) {
+      return;
+    }
+    try {
+      await apiClient.delete(`/usuarios/${id}`);
+      showAlert('La cuenta de usuario fue eliminada correctamente.');
+      fetchData();
+    } catch (err: any) {
+      showAlert(err.message || 'Error al eliminar la cuenta.');
+    }
+  };
+
   const filteredUsuarios = usuarios.filter(u =>
     u.nombre_completo.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase())
@@ -306,9 +350,14 @@ export const Usuarios: React.FC = () => {
                       )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <button className="btn btn-secondary" style={{ padding: '5px 7px' }} onClick={() => openEditModal(u)} title="Editar / Cambiar Clave">
+                      <button className="btn btn-secondary" style={{ padding: '5px 7px', marginRight: '6px' }} onClick={() => openEditModal(u)} title="Editar / Cambiar Clave">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg>
                       </button>
+                      {user?.id !== u.id && (
+                        <button className="btn btn-danger" style={{ padding: '5px 7px' }} onClick={() => handleDelete(u.id, u.nombre_completo)} title="Eliminar Cuenta">
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -389,8 +438,7 @@ export const Usuarios: React.FC = () => {
                       type="button" 
                       style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
                       onClick={() => {
-                        navigator.clipboard.writeText(generatedPassword);
-                        showAlert('¡Copiado al portapapeles!');
+                        copyToClipboard(generatedPassword);
                       }}
                     >
                       Copiar
