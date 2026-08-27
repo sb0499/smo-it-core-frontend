@@ -307,7 +307,7 @@ export const Proyectos: React.FC = () => {
     setFilteredTechs([]);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, inputType: 'project' | 'task-sub') => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (mentionQuery !== null && filteredTechs.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -730,7 +730,7 @@ export const Proyectos: React.FC = () => {
                       setNewComment(e.target.value);
                       checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'project');
                     }}
-                    onKeyDown={(e) => handleKeyDown(e, 'project')}
+                    onKeyDown={handleKeyDown}
                     onSelect={(e: any) => {
                       checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'project');
                     }}
@@ -1143,7 +1143,7 @@ export const Proyectos: React.FC = () => {
                     setNewTaskSubComment(e.target.value);
                     checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'task-sub');
                   }}
-                  onKeyDown={(e) => handleKeyDown(e, 'task-sub')}
+                  onKeyDown={handleKeyDown}
                   onSelect={(e: any) => {
                     checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'task-sub');
                   }}
