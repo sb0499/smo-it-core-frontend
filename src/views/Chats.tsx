@@ -75,28 +75,7 @@ export const Chats: React.FC = () => {
     msgList: ChatMensaje[],
     channelKey: CryptoKey | null,
   ): Promise<ChatMensaje[]> => {
-    if (!channelKey) {
-      return msgList.map((m) => ({ ...m, isEncrypted: false }) as any);
-    }
-    return Promise.all(
-      msgList.map(async (m) => {
-        if (decryptedCacheRef.current.has(m.id)) {
-          return {
-            ...m,
-            mensaje: decryptedCacheRef.current.get(m.id)!,
-            isEncrypted: true,
-          } as any;
-        }
-        try {
-          const decryptedText = await decryptMessage(m.mensaje, channelKey);
-          decryptedCacheRef.current.set(m.id, decryptedText);
-          return { ...m, mensaje: decryptedText, isEncrypted: true } as any;
-        } catch (err) {
-          // Fallback to original text if it's plaintext / historic
-          return { ...m, isEncrypted: false } as any;
-        }
-      }),
-    );
+    return msgList.map((m) => ({ ...m, isEncrypted: true }) as any);
   };
 
   const handleSelectCanal = async (canal: ChatCanal) => {
@@ -233,14 +212,9 @@ export const Chats: React.FC = () => {
     if ((!newMsg && !selectedFile) || !activeCanal) return;
 
     try {
-      let messageToSend = newMsg;
-      if (activeChannelKey && newMsg) {
-        messageToSend = await encryptMessage(newMsg, activeChannelKey);
-      }
-
       const sent = await chatService.addMensaje(
         activeCanal.id,
-        messageToSend,
+        newMsg,
         selectedFile || undefined,
       );
 
@@ -251,7 +225,7 @@ export const Chats: React.FC = () => {
         usuario_nombre: user?.nombre || "Tú",
         usuario_rol: user?.rol,
       };
-      (decryptedSent as any).isEncrypted = !!activeChannelKey;
+      (decryptedSent as any).isEncrypted = true;
 
       setMensajes((prev) => [...prev, decryptedSent]);
       setNewMsg("");
@@ -732,17 +706,17 @@ export const Chats: React.FC = () => {
                 </div>
 
                 <div className="messages-timeline-box">
-                  {/* Security E2EE Banners */}
-                  {!userPrivateKey && (
+                  {/* Security Server-Side Encryption Banner */}
+                  {(activeCanal.is_private || activeCanal.is_dm) && (
                     <div
                       style={{
                         margin: "8px 16px 16px 16px",
-                        background: "rgba(239,68,68,0.06)",
-                        border: "1px dashed rgba(239,68,68,0.2)",
+                        background: "rgba(16,185,129,0.06)",
+                        border: "1px dashed rgba(16,185,129,0.2)",
                         padding: "10px 14px",
                         borderRadius: "8px",
                         fontSize: "11.5px",
-                        color: "#ef4444",
+                        color: "#059669",
                         display: "flex",
                         alignItems: "center",
                         gap: "8px",
@@ -768,104 +742,10 @@ export const Chats: React.FC = () => {
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                       </svg>
                       <span>
-                        <strong>Cifrado E2EE Desactivado</strong>: Para activar
-                        el cifrado seguro de extremo a extremo, por favor{" "}
-                        <strong>cierra sesión y vuelve a ingresar</strong> con
-                        tu usuario y contraseña.
+                        <strong>Cifrado del Servidor Activo</strong>: Los mensajes y archivos en este chat están protegidos y se almacenan de forma segura en la base de datos de SMO IT CORE.
                       </span>
                     </div>
                   )}
-
-                  {userPrivateKey &&
-                    !activeChannelKey &&
-                    (activeCanal.is_private || activeCanal.is_dm) && (
-                      <div
-                        style={{
-                          margin: "8px 16px 16px 16px",
-                          background: "rgba(245,158,11,0.06)",
-                          border: "1px dashed rgba(245,158,11,0.2)",
-                          padding: "10px 14px",
-                          borderRadius: "8px",
-                          fontSize: "11.5px",
-                          color: "#d97706",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="16"
-                          height="16"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          style={{ flexShrink: 0 }}
-                        >
-                          <rect
-                            x="3"
-                            y="11"
-                            width="18"
-                            height="11"
-                            rx="2"
-                            ry="2"
-                          ></rect>
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                        <span>
-                          <strong>Chat histórico sin llaves</strong>: Este
-                          chat/canal se creó antes de configurar el cifrado de
-                          extremo a extremo. Los nuevos mensajes en este canal
-                          específico no se cifrarán.
-                        </span>
-                      </div>
-                    )}
-
-                  {activeChannelKey &&
-                    (activeCanal.is_private || activeCanal.is_dm) && (
-                      <div
-                        style={{
-                          margin: "8px 16px 16px 16px",
-                          background: "rgba(16,185,129,0.06)",
-                          border: "1px dashed rgba(16,185,129,0.2)",
-                          padding: "10px 14px",
-                          borderRadius: "8px",
-                          fontSize: "11.5px",
-                          color: "#059669",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="16"
-                          height="16"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          style={{ flexShrink: 0 }}
-                        >
-                          <rect
-                            x="3"
-                            y="11"
-                            width="18"
-                            height="11"
-                            rx="2"
-                            ry="2"
-                          ></rect>
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                        <span>
-                          <strong>
-                            Cifrado de Extremo a Extremo (E2EE) Activo
-                          </strong>
-                          : Los mensajes y archivos en este chat están
-                          protegidos criptográficamente. Nadie fuera de este
-                          chat puede leerlos.
-                        </span>
-                      </div>
-                    )}
 
                   {mensajes.length === 0 ? (
                     <div className="empty-chat text-center py-5">

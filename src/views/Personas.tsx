@@ -27,6 +27,12 @@ export const Personas: React.FC = () => {
   // Search state
   const [search, setSearch] = useState('');
   
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   // Modal / Form state
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -42,21 +48,48 @@ export const Personas: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    fetchEmpresas();
   }, []);
 
-  const fetchData = async () => {
+  const fetchEmpresas = async () => {
+    try {
+      const empresasData = await apiClient.get<Empresa[]>('/empresas');
+      setEmpresas(empresasData);
+    } catch (err: any) {
+      console.error('Error al cargar empresas:', err);
+    }
+  };
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // Fetch personas when page or search changes
+  useEffect(() => {
+    fetchPersonas(page, debouncedSearch);
+  }, [page, debouncedSearch]);
+
+  const fetchPersonas = async (pageNumber = page, searchVal = debouncedSearch) => {
     setLoading(true);
     setError(null);
     try {
-      const [personasData, empresasData] = await Promise.all([
-        apiClient.get<Persona[]>('/personas'),
-        apiClient.get<Empresa[]>('/empresas'),
-      ]);
-      setPersonas(personasData);
-      setEmpresas(empresasData);
+      const res = await apiClient.get<{ total: number; page: number; limit: number; data: Persona[] }>(
+        `/personas?page=${pageNumber}&limit=10&search=${encodeURIComponent(searchVal)}`
+      );
+      setPersonas(res.data);
+      setTotalPages(Math.ceil(res.total / res.limit));
+      setTotalItems(res.total);
     } catch (err: any) {
-      setError(err.message || 'Error al cargar los datos.');
+      setError(err.message || 'Error al cargar los empleados.');
     } finally {
       setLoading(false);
     }
@@ -113,7 +146,7 @@ export const Personas: React.FC = () => {
         await apiClient.post('/personas', payload);
       }
       setShowModal(false);
-      fetchData();
+      fetchPersonas(page, debouncedSearch);
     } catch (err: any) {
       setError(err.message || 'Error al guardar el empleado.');
     } finally {
@@ -121,11 +154,7 @@ export const Personas: React.FC = () => {
     }
   };
 
-  const filteredPersonas = personas.filter(p => 
-    p.nombre.toLowerCase().includes(search.toLowerCase()) || 
-    p.cedula.includes(search) ||
-    (p.empresa_nombre && p.empresa_nombre.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredPersonas = personas;
 
   return (
     <div className="inventario-view animate-fade">
@@ -153,7 +182,7 @@ export const Personas: React.FC = () => {
           />
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', left: '14px', top: '15px', color: 'var(--color-text-dim)' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
-        <button className="btn btn-secondary" onClick={fetchData}>
+        <button className="btn btn-secondary" onClick={() => fetchPersonas(page, debouncedSearch)}>
           Actualizar
         </button>
       </div>
@@ -168,7 +197,7 @@ export const Personas: React.FC = () => {
       ) : error && !showModal ? (
         <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
           <p>{error}</p>
-          <button className="btn btn-secondary" onClick={fetchData} style={{ marginTop: '12px' }}>Reintentar</button>
+          <button className="btn btn-secondary" onClick={() => fetchPersonas(page, debouncedSearch)} style={{ marginTop: '12px' }}>Reintentar</button>
         </div>
       ) : (
         <div className="table-wrapper glass-panel">
@@ -212,6 +241,32 @@ export const Personas: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '20px', padding: '10px 0' }}>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+          >
+            Anterior
+          </button>
+          <span style={{ fontSize: '13px', color: 'var(--color-text)', fontWeight: '500' }}>
+            Página {page} de {totalPages} ({totalItems} registros)
+          </span>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+            style={{ cursor: page === totalPages ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+          >
+            Siguiente
+          </button>
         </div>
       )}
 
