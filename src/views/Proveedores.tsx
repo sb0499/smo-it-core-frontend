@@ -18,6 +18,12 @@ export const Proveedores: React.FC = () => {
   
   // Search state
   const [search, setSearch] = useState('');
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   
   // Modal / Form state
   const [showModal, setShowModal] = useState(false);
@@ -31,16 +37,34 @@ export const Proveedores: React.FC = () => {
   
   const [submitting, setSubmitting] = useState(false);
 
+  // Debounce search input
   useEffect(() => {
-    fetchProveedores();
-  }, []);
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
 
-  const fetchProveedores = async () => {
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // Fetch proveedores when page or search changes
+  useEffect(() => {
+    fetchProveedores(page, debouncedSearch);
+  }, [page, debouncedSearch]);
+
+  const fetchProveedores = async (pageNumber = page, searchVal = debouncedSearch) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<Proveedor[]>('/proveedores');
-      setProveedores(data);
+      const res = await apiClient.get<{ total: number; page: number; limit: number; data: Proveedor[] }>(
+        `/proveedores?page=${pageNumber}&limit=10&search=${encodeURIComponent(searchVal)}`
+      );
+      setProveedores(res.data);
+      setTotalPages(Math.ceil(res.total / res.limit));
+      setTotalItems(res.total);
     } catch (err: any) {
       setError(err.message || 'Error al cargar proveedores.');
     } finally {
@@ -93,7 +117,7 @@ export const Proveedores: React.FC = () => {
         await apiClient.post('/proveedores', payload);
       }
       setShowModal(false);
-      fetchProveedores();
+      fetchProveedores(page, debouncedSearch);
     } catch (err: any) {
       setError(err.message || 'Error al guardar el proveedor.');
     } finally {
@@ -107,17 +131,13 @@ export const Proveedores: React.FC = () => {
     }
     try {
       await apiClient.delete(`/proveedores/${id}`);
-      fetchProveedores();
+      fetchProveedores(page, debouncedSearch);
     } catch (err: any) {
       showAlert(`Error al eliminar proveedor: ${err.message}`);
     }
   };
 
-  const filteredProveedores = proveedores.filter(p => 
-    p.nombre.toLowerCase().includes(search.toLowerCase()) || 
-    (p.contacto && p.contacto.toLowerCase().includes(search.toLowerCase())) ||
-    (p.email && p.email.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredProveedores = proveedores;
 
   return (
     <div className="inventario-view animate-fade">
@@ -145,7 +165,7 @@ export const Proveedores: React.FC = () => {
           />
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', left: '14px', top: '15px', color: 'var(--color-text-dim)' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
-        <button className="btn btn-secondary" onClick={fetchProveedores}>
+        <button className="btn btn-secondary" onClick={() => fetchProveedores(page, debouncedSearch)}>
           Actualizar
         </button>
       </div>
@@ -160,7 +180,7 @@ export const Proveedores: React.FC = () => {
       ) : error && !showModal ? (
         <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
           <p>{error}</p>
-          <button className="btn btn-secondary" onClick={fetchProveedores} style={{ marginTop: '12px' }}>Reintentar</button>
+          <button className="btn btn-secondary" onClick={() => fetchProveedores(page, debouncedSearch)} style={{ marginTop: '12px' }}>Reintentar</button>
         </div>
       ) : (
         <div className="table-wrapper glass-panel">
@@ -199,6 +219,32 @@ export const Proveedores: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '20px', padding: '10px 0' }}>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+          >
+            Anterior
+          </button>
+          <span style={{ fontSize: '13px', color: 'var(--color-text)', fontWeight: '500' }}>
+            Página {page} de {totalPages} ({totalItems} registros)
+          </span>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+            style={{ cursor: page === totalPages ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+          >
+            Siguiente
+          </button>
         </div>
       )}
 

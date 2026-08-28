@@ -64,6 +64,12 @@ export const Usuarios: React.FC = () => {
   // Search filter
   const [search, setSearch] = useState('');
 
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   // Modal / Form state
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -84,19 +90,46 @@ export const Usuarios: React.FC = () => {
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchData();
+    fetchEmpresas();
   }, []);
 
-  const fetchData = async () => {
+  const fetchEmpresas = async () => {
+    try {
+      const empresasData = await apiClient.get<Empresa[]>('/empresas');
+      setEmpresas(empresasData);
+    } catch (err: any) {
+      console.error('Error al cargar empresas:', err);
+    }
+  };
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // Fetch usuarios when page or search changes
+  useEffect(() => {
+    fetchUsuarios(page, debouncedSearch);
+  }, [page, debouncedSearch]);
+
+  const fetchUsuarios = async (pageNumber = page, searchVal = debouncedSearch) => {
     setLoading(true);
     setError(null);
     try {
-      const [usuariosData, empresasData] = await Promise.all([
-        apiClient.get<Usuario[]>('/usuarios'),
-        apiClient.get<Empresa[]>('/empresas'),
-      ]);
-      setUsuarios(usuariosData);
-      setEmpresas(empresasData);
+      const res = await apiClient.get<{ total: number; page: number; limit: number; data: Usuario[] }>(
+        `/usuarios?page=${pageNumber}&limit=10&search=${encodeURIComponent(searchVal)}`
+      );
+      setUsuarios(res.data);
+      setTotalPages(Math.ceil(res.total / res.limit));
+      setTotalItems(res.total);
     } catch (err: any) {
       setError(err.message || 'Error al cargar los usuarios.');
     } finally {
@@ -202,7 +235,7 @@ export const Usuarios: React.FC = () => {
         await apiClient.post('/usuarios', payload);
       }
       setShowModal(false);
-      fetchData();
+      fetchUsuarios(page, debouncedSearch);
     } catch (err: any) {
       setError(err.message || 'Error al guardar el usuario.');
     } finally {
@@ -217,16 +250,13 @@ export const Usuarios: React.FC = () => {
     try {
       await apiClient.delete(`/usuarios/${id}`);
       showAlert('La cuenta de usuario fue eliminada correctamente.');
-      fetchData();
+      fetchUsuarios(page, debouncedSearch);
     } catch (err: any) {
       showAlert(err.message || 'Error al eliminar la cuenta.');
     }
   };
 
-  const filteredUsuarios = usuarios.filter(u =>
-    u.nombre_completo.toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredUsuarios = usuarios;
 
   return (
     <div className="inventario-view animate-fade">
@@ -254,7 +284,7 @@ export const Usuarios: React.FC = () => {
           />
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', left: '14px', top: '15px', color: 'var(--color-text-dim)' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
-        <button className="btn btn-secondary" onClick={fetchData}>
+        <button className="btn btn-secondary" onClick={() => fetchUsuarios(page, debouncedSearch)}>
           Actualizar
         </button>
       </div>
@@ -269,7 +299,7 @@ export const Usuarios: React.FC = () => {
       ) : error && !showModal ? (
         <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
           <p>{error}</p>
-          <button className="btn btn-secondary" onClick={fetchData} style={{ marginTop: '12px' }}>Reintentar</button>
+          <button className="btn btn-secondary" onClick={() => fetchUsuarios(page, debouncedSearch)} style={{ marginTop: '12px' }}>Reintentar</button>
         </div>
       ) : (
         <div className="table-wrapper glass-panel">
@@ -364,6 +394,32 @@ export const Usuarios: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '20px', padding: '10px 0' }}>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+          >
+            Anterior
+          </button>
+          <span style={{ fontSize: '13px', color: 'var(--color-text)', fontWeight: '500' }}>
+            Página {page} de {totalPages} ({totalItems} registros)
+          </span>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+            style={{ cursor: page === totalPages ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+          >
+            Siguiente
+          </button>
         </div>
       )}
 
