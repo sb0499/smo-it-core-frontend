@@ -75,7 +75,7 @@ export const Chats: React.FC = () => {
     msgList: ChatMensaje[],
     channelKey: CryptoKey | null,
   ): Promise<ChatMensaje[]> => {
-    return msgList.map((m) => ({ ...m, isEncrypted: true }) as any);
+    return msgList.map((m) => ({ ...m, isEncrypted: !!channelKey }) as any);
   };
 
   const handleSelectCanal = async (canal: ChatCanal) => {

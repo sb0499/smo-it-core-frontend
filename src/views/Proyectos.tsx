@@ -730,7 +730,7 @@ export const Proyectos: React.FC = () => {
                       setNewComment(e.target.value);
                       checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'project');
                     }}
-                    onKeyDown={handleKeyDown}
+                    onKeyDown={(e) => handleKeyDown(e)}
                     onSelect={(e: any) => {
                       checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'project');
                     }}
@@ -1143,7 +1143,7 @@ export const Proyectos: React.FC = () => {
                     setNewTaskSubComment(e.target.value);
                     checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'task-sub');
                   }}
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={(e) => handleKeyDown(e)}
                   onSelect={(e: any) => {
                     checkMentionTrigger(e.target.value, e.target.selectionStart || 0, 'task-sub');
                   }}
