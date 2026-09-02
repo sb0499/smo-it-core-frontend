@@ -752,6 +752,26 @@ export const Inventario: React.FC = () => {
     fetchTipoEquiposPage(pageTipoEquipos, debouncedSearchTipoEquipo);
   }, [pageTipoEquipos, debouncedSearchTipoEquipo]);
 
+  // Fetch assigned assets for selected employee and sede in Recepcion (Devolucion) modal
+  useEffect(() => {
+    if (showRecepcionModal && recepcionPersonaId > 0) {
+      inventoryService.getActivos(1, 1000, '', 'Asignado', recepcionPersonaId, recepcionEmpresaId > 0 ? recepcionEmpresaId : undefined)
+        .then(res => {
+          const list = Array.isArray(res) ? res : (res.data || []);
+          setPersonaAssignedActivos(list);
+          setSelectedRecepcionAssetIds([]);
+        })
+        .catch(err => {
+          console.error('Error fetching assigned assets for recepcion:', err);
+          setPersonaAssignedActivos([]);
+          setSelectedRecepcionAssetIds([]);
+        });
+    } else {
+      setPersonaAssignedActivos([]);
+      setSelectedRecepcionAssetIds([]);
+    }
+  }, [showRecepcionModal, recepcionPersonaId, recepcionEmpresaId]);
+
 
 
   useEffect(() => {
