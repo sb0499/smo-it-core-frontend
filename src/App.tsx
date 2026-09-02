@@ -18,6 +18,7 @@ import { MovimientosInventario } from './views/MovimientosInventario';
 import { Reportes } from './views/Reportes';
 import { Bodegas } from './views/Bodegas';
 import { EntregaCredenciales } from './views/EntregaCredenciales';
+import { ActasIngreso } from './views/ActasIngreso';
 import { AlertContainer } from './components/AlertContainer';
 import './App.css';
 
@@ -89,6 +90,11 @@ function AppContent() {
       case 'movimientos':
         if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
           return <MovimientosInventario key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
+      case 'actas':
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
+          return <ActasIngreso key={refreshKey} />;
         }
         return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'reportes':

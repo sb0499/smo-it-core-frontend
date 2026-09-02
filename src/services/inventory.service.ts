@@ -79,6 +79,57 @@ export interface HistorialCambio {
   cambios: string;
 }
 
+export interface IngresoBodegaItem {
+  tipo_equipo_id: number;
+  marca: string;
+  modelo: string;
+  serial?: string;
+  especificaciones?: string;
+  bodega_id?: number;
+}
+
+export interface IngresoBodega {
+  id: number;
+  codigo_ingreso: string;
+  empresa_id: number;
+  empresa_nombre?: string;
+  proveedor_id?: number | null;
+  proveedor_nombre?: string;
+  nro_orden_compra: string;
+  nro_factura?: string | null;
+  nro_solicitud_pago?: string | null;
+  fecha_compra: string;
+  fecha_ingreso: string;
+  descripcion: string;
+  realizado_por_id?: number | null;
+  realizado_por_nombre?: string;
+  revisado_por?: string;
+  revisado_por_cargo?: string;
+  cantidad_activos?: number;
+  activos?: Activo[];
+  created_at: string;
+}
+
+export interface EgresoBodega {
+  id: number;
+  codigo_egreso: string;
+  empresa_id: number;
+  empresa_nombre?: string;
+  custodio_id: number;
+  custodio_nombre?: string;
+  custodio_cargo?: string;
+  area?: string | null;
+  observaciones?: string | null;
+  fecha_egreso: string;
+  realizado_por_id?: number | null;
+  realizado_por_nombre?: string;
+  revisado_por?: string;
+  revisado_por_cargo?: string;
+  cantidad_activos?: number;
+  activos?: Activo[];
+  created_at: string;
+}
+
 export const inventoryService = {
   // Activos (Hardware)
   async getActivos(page = 1, limit = 10, search = '', estado = ''): Promise<{ total: number; page: number; limit: number; data: Activo[] }> {
@@ -148,6 +199,71 @@ export const inventoryService = {
   getActaUrl(movimientoId: number): string {
     const token = localStorage.getItem('smo_token');
     return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/movimientos/${movimientoId}/acta?token=${token}`;
+  },
+
+  // Ingresos de Bodega (Actas de Ingreso)
+  async getIngresosBodega(page = 1, limit = 10, search = ''): Promise<{ total: number; page: number; limit: number; data: IngresoBodega[] }> {
+    return apiClient.get('/inventarios/ingresos', {
+      params: { page, limit, search }
+    });
+  },
+
+  async getIngresoBodegaById(id: number): Promise<IngresoBodega> {
+    return apiClient.get<IngresoBodega>(`/inventarios/ingresos/${id}`);
+  },
+
+  async createIngresoBodega(payload: {
+    empresa_id: number;
+    proveedor_id?: number;
+    nro_orden_compra: string;
+    nro_factura?: string;
+    nro_solicitud_pago?: string;
+    fecha_compra: string;
+    fecha_ingreso: string;
+    descripcion: string;
+    revisado_por?: string;
+    revisado_por_cargo?: string;
+    activos: IngresoBodegaItem[];
+  }): Promise<IngresoBodega> {
+    return apiClient.post<IngresoBodega>('/inventarios/ingresos', payload);
+  },
+
+  getActaIngresoUrl(ingresoId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/ingresos/${ingresoId}/acta?token=${token}`;
+  },
+
+  // Egresos de Bodega (Actas de Egreso / Asignación Multi-Activo)
+  async getEgresosBodega(page = 1, limit = 10, search = ''): Promise<{ total: number; page: number; limit: number; data: EgresoBodega[] }> {
+    return apiClient.get('/inventarios/egresos', {
+      params: { page, limit, search }
+    });
+  },
+
+  async getEgresoBodegaById(id: number): Promise<EgresoBodega> {
+    return apiClient.get<EgresoBodega>(`/inventarios/egresos/${id}`);
+  },
+
+  async createEgresoBodega(payload: {
+    empresa_id: number;
+    custodio_id: number;
+    area?: string;
+    observaciones?: string;
+    revisado_por?: string;
+    revisado_por_cargo?: string;
+    activo_ids: number[];
+  }): Promise<EgresoBodega> {
+    return apiClient.post<EgresoBodega>('/inventarios/egresos', payload);
+  },
+
+  getActaEgresoUrl(egresoId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/egresos/${egresoId}/acta?token=${token}`;
+  },
+
+  getActaEntregaEgresoUrl(egresoId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/egresos/${egresoId}/acta-entrega?token=${token}`;
   },
 
   // Tipo Equipos CRUD

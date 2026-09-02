@@ -75,17 +75,34 @@ export const Inventario: React.FC = () => {
   const [totalConsumibles, setTotalConsumibles] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // Asset Create fields
+  // Asset Create / Ingreso fields
   const [assetCodigo, setAssetCodigo] = useState('');
   const [assetSerial, setAssetSerial] = useState('');
   const [assetMarca, setAssetMarca] = useState('');
   const [assetModelo, setAssetModelo] = useState('');
   const [assetEspecificaciones, setAssetEspecificaciones] = useState('');
   const [assetProveedorId, setAssetProveedorId] = useState<number>(0);
-  const [assetFechaCompra, setAssetFechaCompra] = useState('');
+  const [assetFechaCompra, setAssetFechaCompra] = useState<string>(new Date().toISOString().split('T')[0]);
   const [assetEmpresaId, setAssetEmpresaId] = useState<number>(0);
   const [assetTipoEquipoId, setAssetTipoEquipoId] = useState<number>(0);
   const [assetBodegaId, setAssetBodegaId] = useState<number>(0);
+
+  // New Ingreso de Bodega extra fields
+  const [assetNroOrdenCompra, setAssetNroOrdenCompra] = useState('');
+  const [assetNroFactura, setAssetNroFactura] = useState('');
+  const [assetNroSolicitudPago, setAssetNroSolicitudPago] = useState('');
+  const [assetFechaIngreso, setAssetFechaIngreso] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [assetDescripcion, setAssetDescripcion] = useState('');
+  const [extraAssets, setExtraAssets] = useState<Array<{ tipo_equipo_id: number; marca: string; modelo: string; serial: string; especificaciones: string }>>([]);
+
+  // Egreso / Multi-Asset Assignment State
+  const [showEgresoModal, setShowEgresoModal] = useState(false);
+  const [egresoEmpresaId, setEgresoEmpresaId] = useState<number>(0);
+  const [egresoPersonaId, setEgresoPersonaId] = useState<number>(0);
+  const [egresoArea, setEgresoArea] = useState<string>('');
+  const [egresoObservaciones, setEgresoObservaciones] = useState<string>('');
+  const [egresoSearchAsset, setEgresoSearchAsset] = useState<string>('');
+  const [selectedEgresoAssetIds, setSelectedEgresoAssetIds] = useState<number[]>([]);
 
   // Asset Edit fields
   const [isEditingAsset, setIsEditingAsset] = useState(false);
@@ -155,27 +172,73 @@ export const Inventario: React.FC = () => {
 
   const handleCreateAsset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!assetSerial || !assetMarca || !assetModelo || assetEmpresaId <= 0 || assetTipoEquipoId <= 0) {
-      showAlert('Por favor completa los campos requeridos para el activo.');
+    if (assetEmpresaId <= 0) {
+      showAlert('Seleccione la Sede / Ubicación.');
+      return;
+    }
+    if (!assetNroOrdenCompra.trim()) {
+      showAlert('Ingrese el Nro. Orden de Compra.');
+      return;
+    }
+    if (!assetFechaCompra || !assetFechaIngreso) {
+      showAlert('Ingrese las fechas de compra e ingreso.');
+      return;
+    }
+    if (!assetDescripcion.trim()) {
+      showAlert('Ingrese la descripción de la compra completa.');
       return;
     }
 
+    // Asset 1 validation
+    if (assetTipoEquipoId <= 0 || !assetMarca.trim() || !assetModelo.trim()) {
+      showAlert('Por favor complete los datos obligatorios del Activo #1 (Tipo, Marca, Modelo).');
+      return;
+    }
+
+    // Extra assets validation
+    for (let i = 0; i < extraAssets.length; i++) {
+      const ext = extraAssets[i];
+      if (ext.tipo_equipo_id <= 0 || !ext.marca.trim() || !ext.modelo.trim()) {
+        showAlert(`Por favor complete los datos del Activo #${i + 2} (Tipo, Marca, Modelo).`);
+        return;
+      }
+    }
+
+    const allAssets = [
+      {
+        tipo_equipo_id: assetTipoEquipoId,
+        marca: assetMarca.trim(),
+        modelo: assetModelo.trim(),
+        serial: assetSerial.trim() || 'NA',
+        especificaciones: assetEspecificaciones.trim() || undefined,
+        bodega_id: assetBodegaId > 0 ? assetBodegaId : undefined
+      },
+      ...extraAssets.map(ext => ({
+        tipo_equipo_id: ext.tipo_equipo_id,
+        marca: ext.marca.trim(),
+        modelo: ext.modelo.trim(),
+        serial: ext.serial.trim() || 'NA',
+        especificaciones: ext.especificaciones.trim() || undefined
+      }))
+    ];
+
     try {
       setIsSubmitting(true);
-      await inventoryService.createActivo({
-        codigo: assetCodigo,
-        serial: assetSerial,
-        marca: assetMarca,
-        modelo: assetModelo,
-        especificaciones: assetEspecificaciones || undefined,
-        proveedor_id: assetProveedorId > 0 ? assetProveedorId : undefined,
-        fecha_compra: assetFechaCompra || undefined,
+      const createdIngreso = await inventoryService.createIngresoBodega({
         empresa_id: assetEmpresaId,
-        tipo_equipo_id: assetTipoEquipoId,
-        bodega_id: assetBodegaId > 0 ? assetBodegaId : undefined
+        proveedor_id: assetProveedorId > 0 ? assetProveedorId : undefined,
+        nro_orden_compra: assetNroOrdenCompra.trim(),
+        nro_factura: assetNroFactura.trim() || undefined,
+        nro_solicitud_pago: assetNroSolicitudPago.trim() || undefined,
+        fecha_compra: assetFechaCompra,
+        fecha_ingreso: assetFechaIngreso,
+        descripcion: assetDescripcion.trim(),
+        activos: allAssets
       });
 
       setShowCreateAssetModal(false);
+      showAlert(`Ingreso de Bodega ${createdIngreso.codigo_ingreso} registrado exitosamente.`);
+
       // Reset fields
       setAssetCodigo('');
       setAssetSerial('');
@@ -183,14 +246,69 @@ export const Inventario: React.FC = () => {
       setAssetModelo('');
       setAssetEspecificaciones('');
       setAssetProveedorId(0);
-      setAssetFechaCompra('');
+      setAssetFechaCompra(new Date().toISOString().split('T')[0]);
+      setAssetFechaIngreso(new Date().toISOString().split('T')[0]);
       setAssetEmpresaId(0);
       setAssetTipoEquipoId(0);
       setAssetBodegaId(0);
+      setAssetNroOrdenCompra('');
+      setAssetNroFactura('');
+      setAssetNroSolicitudPago('');
+      setAssetDescripcion('');
+      setExtraAssets([]);
 
       fetchInventoryData();
+
+      // Automatically open PDF in new tab
+      window.open(inventoryService.getActaIngresoUrl(createdIngreso.id), '_blank');
     } catch (err: any) {
-      showAlert('Error registrando activo: ' + err.message);
+      showAlert('Error registrando ingreso de bodega: ' + (err.message || 'Error inesperado'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateEgreso = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (egresoEmpresaId <= 0) {
+      showAlert('Seleccione la Sede / Ubicación del egreso.');
+      return;
+    }
+    if (egresoPersonaId <= 0) {
+      showAlert('Seleccione la persona / custodio a quien se asigna.');
+      return;
+    }
+    if (selectedEgresoAssetIds.length === 0) {
+      showAlert('Seleccione al menos un activo disponible en stock para asignar.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const createdEgreso = await inventoryService.createEgresoBodega({
+        empresa_id: egresoEmpresaId,
+        custodio_id: egresoPersonaId,
+        area: egresoArea.trim() || undefined,
+        observaciones: egresoObservaciones.trim() || undefined,
+        activo_ids: selectedEgresoAssetIds
+      });
+
+      setShowEgresoModal(false);
+      showAlert(`Asignación / Egreso ${createdEgreso.codigo_egreso} registrado exitosamente.`);
+
+      setEgresoEmpresaId(0);
+      setEgresoPersonaId(0);
+      setEgresoArea('');
+      setEgresoObservaciones('');
+      setEgresoSearchAsset('');
+      setSelectedEgresoAssetIds([]);
+
+      fetchInventoryData();
+
+      // Open PDF in new tab
+      window.open(inventoryService.getActaEgresoUrl(createdEgreso.id), '_blank');
+    } catch (err: any) {
+      showAlert('Error registrando asignación: ' + (err.message || 'Error inesperado'));
     } finally {
       setIsSubmitting(false);
     }
@@ -684,14 +802,32 @@ export const Inventario: React.FC = () => {
                 Exportar Todo
               </a>
               {activeTab === 'activos' && (
-                <button className="btn btn-primary" onClick={() => {
-                  setAssetEmpresaId(0);
-                  setAssetTipoEquipoId(0);
-                  setAssetCodigo('');
-                  setShowCreateAssetModal(true);
-                }}>
-                  Registrar Activo
-                </button>
+                <>
+                  <button className="btn btn-primary" onClick={() => {
+                    setEgresoEmpresaId(0);
+                    setEgresoPersonaId(0);
+                    setEgresoArea('');
+                    setEgresoObservaciones('');
+                    setEgresoSearchAsset('');
+                    setSelectedEgresoAssetIds([]);
+                    setShowEgresoModal(true);
+                  }}>
+                    + Registrar Asignación
+                  </button>
+                  <button className="btn btn-primary" onClick={() => {
+                    setAssetEmpresaId(0);
+                    setAssetTipoEquipoId(0);
+                    setAssetCodigo('');
+                    setAssetNroOrdenCompra('');
+                    setAssetNroFactura('');
+                    setAssetNroSolicitudPago('');
+                    setAssetDescripcion('');
+                    setExtraAssets([]);
+                    setShowCreateAssetModal(true);
+                  }}>
+                    + Registrar Nuevo Ingreso
+                  </button>
+                </>
               )}
               {activeTab === 'consumibles' && (
                 <button className="btn btn-primary" onClick={() => setShowCreateConsumableModal(true)}>
@@ -774,15 +910,7 @@ export const Inventario: React.FC = () => {
                         </button>
                         {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
                           <>
-                            {a.estado === 'Stock' ? (
-                              <button 
-                                className="btn btn-primary" 
-                                style={{ padding: '6px 12px', fontSize: '12px' }}
-                                onClick={() => { setSelectedActivo(a); setShowAssignModal(true); }}
-                              >
-                                Asignar
-                              </button>
-                            ) : a.estado === 'Asignado' ? (
+                            {a.estado === 'Asignado' ? (
                               <button 
                                 className="btn btn-danger" 
                                 style={{ padding: '6px 12px', fontSize: '12px', border: '1px solid #fca5a5', color: '#b91c1c' }}
@@ -1394,160 +1522,339 @@ export const Inventario: React.FC = () => {
         </div>
       )}
 
-      {/* CREATE ASSET MODAL */}
+      {/* CREATE ASSET / INGRESO DE BODEGA MODAL */}
       {showCreateAssetModal && (
         <div className="modal-overlay animate-fade" style={{ zIndex: 1001 }}>
-          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '500px' }}>
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '780px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="modal-header">
-              <h2>Registrar Nuevo Activo Tecnológico</h2>
+              <h2>Registrar Nuevo Ingreso de Bodega</h2>
               <button className="modal-close-btn" onClick={() => setShowCreateAssetModal(false)}>×</button>
             </div>
 
             <form onSubmit={handleCreateAsset} className="modal-form">
-              <div className="form-row">
-                <div className="form-group half">
-                  <label className="form-label">SEDE / UBICACIÓN *</label>
-                  <select 
-                    className="form-control" 
-                    value={assetEmpresaId} 
-                    onChange={(e) => setAssetEmpresaId(Number(e.target.value))}
-                    required
-                  >
-                    <option value="0">Seleccionar sede...</option>
-                    {empresas.map(emp => (
-                      <option key={emp.id} value={emp.id}>{emp.nombre}</option>
-                    ))}
-                  </select>
+              {/* DATOS DE LA COMPRA / INGRESO */}
+              <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.9rem' }}>Datos Generales del Ingreso / Compra</h4>
+
+                <div className="form-row">
+                  <div className="form-group half">
+                    <label className="form-label">SEDE / UBICACIÓN *</label>
+                    <select 
+                      className="form-control" 
+                      value={assetEmpresaId} 
+                      onChange={(e) => setAssetEmpresaId(Number(e.target.value))}
+                      required
+                    >
+                      <option value="0">Seleccionar sede...</option>
+                      {empresas.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group half">
+                    <label className="form-label">PROVEEDOR TI</label>
+                    <select
+                      className="form-control"
+                      value={assetProveedorId}
+                      onChange={(e) => setAssetProveedorId(Number(e.target.value))}
+                    >
+                      <option value="0">Seleccionar proveedor...</option>
+                      {proveedores.map((p) => (
+                        <option key={p.id} value={p.id}>{p.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                <div className="form-group half">
-                  <label className="form-label">TIPO DE EQUIPO *</label>
-                  <select 
-                    className="form-control" 
-                    value={assetTipoEquipoId} 
-                    onChange={(e) => setAssetTipoEquipoId(Number(e.target.value))}
-                    required
-                  >
-                    <option value="0">Seleccionar tipo...</option>
-                    {tipoEquipos.map(te => (
-                      <option key={te.id} value={te.id}>{te.nombre}</option>
-                    ))}
-                  </select>
+                <div className="form-row">
+                  <div className="form-group half">
+                    <label className="form-label">NRO. ORDEN DE COMPRA *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ej: OC-SC-26-0603"
+                      value={assetNroOrdenCompra}
+                      onChange={(e) => setAssetNroOrdenCompra(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group half">
+                    <label className="form-label">NRO. FACTURA (OPCIONAL)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Nro. Factura"
+                      value={assetNroFactura}
+                      onChange={(e) => setAssetNroFactura(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="form-row">
-                <div className="form-group" style={{ width: '100%' }}>
-                  <label className="form-label">BODEGA DE ALMACENAMIENTO *</label>
-                  <select
-                    className="form-control"
-                    value={assetBodegaId}
-                    onChange={(e) => setAssetBodegaId(Number(e.target.value))}
-                    required
-                    disabled={assetEmpresaId === 0}
-                  >
-                    <option value="0">Seleccionar bodega...</option>
-                    {bodegas
-                      .filter(b => b.empresa_id === assetEmpresaId)
-                      .map(b => (
-                        <option key={b.id} value={b.id}>{b.nombre}</option>
-                      ))
-                    }
-                  </select>
+                <div className="form-row">
+                  <div className="form-group half">
+                    <label className="form-label">NRO. SOLICITUD PAGO (OPCIONAL)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Nro. Solicitud de Pago"
+                      value={assetNroSolicitudPago}
+                      onChange={(e) => setAssetNroSolicitudPago(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group half">
+                    <label className="form-label">FECHA DE COMPRA *</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={assetFechaCompra}
+                      onChange={(e) => setAssetFechaCompra(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label className="form-label">CÓDIGO ÚNICO AUTOGENERADO</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Se generará al seleccionar sede y tipo de equipo"
-                  value={assetCodigo}
-                  readOnly
-                  style={{ background: '#f1f5f9', fontWeight: 'bold' }}
-                />
-              </div>
+                <div className="form-row">
+                  <div className="form-group half">
+                    <label className="form-label">FECHA DE INGRESO *</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={assetFechaIngreso}
+                      onChange={(e) => setAssetFechaIngreso(e.target.value)}
+                      required
+                    />
+                  </div>
 
-              <div className="form-group">
-                <label className="form-label">NÚMERO DE SERIAL *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ej: S/N 872348A"
-                  value={assetSerial}
-                  onChange={(e) => setAssetSerial(e.target.value)}
-                  required
-                />
-              </div>
+                  <div className="form-group half">
+                    <label className="form-label">BODEGA DE ALMACENAMIENTO</label>
+                    <select
+                      className="form-control"
+                      value={assetBodegaId}
+                      onChange={(e) => setAssetBodegaId(Number(e.target.value))}
+                      disabled={assetEmpresaId === 0}
+                    >
+                      <option value="0">Bodega Por Defecto de la Sede</option>
+                      {bodegas
+                        .filter(b => b.empresa_id === assetEmpresaId)
+                        .map(b => (
+                          <option key={b.id} value={b.id}>{b.nombre}</option>
+                        ))
+                      }
+                    </select>
+                  </div>
+                </div>
 
-              <div className="form-row">
-                <div className="form-group half">
-                  <label className="form-label">MARCA *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ej: HP, Dell, Lenovo"
-                    value={assetMarca}
-                    onChange={(e) => setAssetMarca(e.target.value)}
+                <div className="form-group">
+                  <label className="form-label">DESCRIPCIÓN COMPLETA DE LA COMPRA *</label>
+                  <textarea
+                    className="form-control textarea-field"
+                    placeholder="Ej: EQUIPO DE COMPUTO PROYECTO SAP"
+                    rows={2}
+                    value={assetDescripcion}
+                    onChange={(e) => setAssetDescripcion(e.target.value)}
                     required
                   />
                 </div>
-
-                <div className="form-group half">
-                  <label className="form-label">MODELO *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ej: EliteBook 840 G8"
-                    value={assetModelo}
-                    onChange={(e) => setAssetModelo(e.target.value)}
-                    required
-                  />
-                </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group half">
-                  <label className="form-label">PROVEEDOR TI</label>
-                  <select
-                    className="form-control"
-                    value={assetProveedorId}
-                    onChange={(e) => setAssetProveedorId(Number(e.target.value))}
+              {/* SECCIÓN ACTIVOS DE ESTE INGRESO */}
+              <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.9rem' }}>
+                    Activos a Registrar ({1 + extraAssets.length})
+                  </h4>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setExtraAssets([...extraAssets, { tipo_equipo_id: 0, marca: '', modelo: '', serial: '', especificaciones: '' }])}
+                    style={{ fontSize: '0.8rem', padding: '4px 10px' }}
                   >
-                    <option value="0">Seleccionar proveedor...</option>
-                    {proveedores.map((p) => (
-                      <option key={p.id} value={p.id}>{p.nombre}</option>
-                    ))}
-                  </select>
+                    + Agregar más activos a esta compra
+                  </button>
                 </div>
 
-                <div className="form-group half">
-                  <label className="form-label">FECHA DE COMPRA</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={assetFechaCompra}
-                    onChange={(e) => setAssetFechaCompra(e.target.value)}
-                  />
-                </div>
-              </div>
+                {/* ACTIVO #1 (PRINCIPAL) */}
+                <div style={{ border: '1px dashed rgba(255,255,255,0.15)', padding: '0.8rem', borderRadius: '6px', marginBottom: '0.8rem', background: 'rgba(0,0,0,0.1)' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#94a3b8', marginBottom: '0.5rem' }}>
+                    Activo #1
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group half">
+                      <label className="form-label">TIPO DE EQUIPO *</label>
+                      <select 
+                        className="form-control" 
+                        value={assetTipoEquipoId} 
+                        onChange={(e) => setAssetTipoEquipoId(Number(e.target.value))}
+                        required
+                      >
+                        <option value="0">Seleccionar tipo...</option>
+                        {tipoEquipos.map(te => (
+                          <option key={te.id} value={te.id}>{te.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
 
-              <div className="form-group">
-                <label className="form-label">ESPECIFICACIONES TÉCNICAS</label>
-                <textarea
-                  className="form-control textarea-field"
-                  placeholder="Ej: Intel Core i7 11th Gen, 16GB RAM DDR4, SSD 512GB..."
-                  rows={3}
-                  value={assetEspecificaciones}
-                  onChange={(e) => setAssetEspecificaciones(e.target.value)}
-                />
+                    <div className="form-group half">
+                      <label className="form-label">MARCA *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej: Dell, HP, Gazal"
+                        value={assetMarca}
+                        onChange={(e) => setAssetMarca(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group half">
+                      <label className="form-label">MODELO *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej: 16 PRO, M101"
+                        value={assetModelo}
+                        onChange={(e) => setAssetModelo(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group half">
+                      <label className="form-label">NÚMERO DE SERIAL (OPCIONAL / NA)</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej: FHV56H4 o dejar vacío para NA"
+                        value={assetSerial}
+                        onChange={(e) => setAssetSerial(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">ESPECIFICACIONES TÉCNICAS</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ej: Core i7 16GB RAM SSD 512GB..."
+                      value={assetEspecificaciones}
+                      onChange={(e) => setAssetEspecificaciones(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* ACTIVOS ADICIONALES (EXTRA) */}
+                {extraAssets.map((extra, idx) => (
+                  <div key={idx} style={{ border: '1px dashed rgba(255,255,255,0.15)', padding: '0.8rem', borderRadius: '6px', marginBottom: '0.8rem', background: 'rgba(0,0,0,0.1)', position: 'relative' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#94a3b8' }}>
+                        Activo #{idx + 2}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setExtraAssets(extraAssets.filter((_, i) => i !== idx))}
+                        style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group half">
+                        <label className="form-label">TIPO DE EQUIPO *</label>
+                        <select 
+                          className="form-control" 
+                          value={extra.tipo_equipo_id} 
+                          onChange={(e) => {
+                            const updated = [...extraAssets];
+                            updated[idx].tipo_equipo_id = Number(e.target.value);
+                            setExtraAssets(updated);
+                          }}
+                          required
+                        >
+                          <option value="0">Seleccionar tipo...</option>
+                          {tipoEquipos.map(te => (
+                            <option key={te.id} value={te.id}>{te.nombre}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="form-group half">
+                        <label className="form-label">MARCA *</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Ej: Dell, HP, Gazal"
+                          value={extra.marca}
+                          onChange={(e) => {
+                            const updated = [...extraAssets];
+                            updated[idx].marca = e.target.value;
+                            setExtraAssets(updated);
+                          }}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group half">
+                        <label className="form-label">MODELO *</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Ej: 16 PRO, M101"
+                          value={extra.modelo}
+                          onChange={(e) => {
+                            const updated = [...extraAssets];
+                            updated[idx].modelo = e.target.value;
+                            setExtraAssets(updated);
+                          }}
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group half">
+                        <label className="form-label">NÚMERO DE SERIAL (OPCIONAL / NA)</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Ej: FHV56H4 o dejar vacío para NA"
+                          value={extra.serial}
+                          onChange={(e) => {
+                            const updated = [...extraAssets];
+                            updated[idx].serial = e.target.value;
+                            setExtraAssets(updated);
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">ESPECIFICACIONES TÉCNICAS</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej: Mouse óptico usb..."
+                        value={extra.especificaciones}
+                        onChange={(e) => {
+                          const updated = [...extraAssets];
+                          updated[idx].especificaciones = e.target.value;
+                          setExtraAssets(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowCreateAssetModal(false)}>Cancelar</button>
                 <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                  {isSubmitting ? 'Guardando...' : 'Registrar Activo'}
+                  {isSubmitting ? 'Guardando...' : 'Guardar y Generar Acta de Ingreso'}
                 </button>
               </div>
             </form>
@@ -1832,8 +2139,195 @@ export const Inventario: React.FC = () => {
                 >
                   Cerrar
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={importProgress || !importFile}>
-                  {importProgress ? 'Importando...' : 'Iniciar Importación'}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* REGISTRAR ASIGNACIÓN / EGRESO DE BODEGA MODAL */}
+      {showEgresoModal && (
+        <div className="modal-overlay animate-fade" style={{ zIndex: 1001 }}>
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="modal-header">
+              <h2>Registrar Asignación (Egreso de Bodega)</h2>
+              <button className="modal-close-btn" onClick={() => setShowEgresoModal(false)}>×</button>
+            </div>
+
+            <form onSubmit={handleCreateEgreso} className="modal-form">
+              {/* DATOS GENERALES DE ASIGNACIÓN */}
+              <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <h4 style={{ margin: '0 0 0.8rem 0', fontSize: '0.9rem' }}>Datos del Receptor y Asignación</h4>
+
+                <div className="form-row">
+                  <div className="form-group half">
+                    <label className="form-label">SEDE / UBICACIÓN *</label>
+                    <select 
+                      className="form-control" 
+                      value={egresoEmpresaId} 
+                      onChange={(e) => {
+                        const empId = Number(e.target.value);
+                        setEgresoEmpresaId(empId);
+                        setEgresoPersonaId(0);
+                        setSelectedEgresoAssetIds([]);
+                      }}
+                      required
+                    >
+                      <option value="0">Seleccionar sede...</option>
+                      {empresas.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group half">
+                    <label className="form-label">USUARIO / CUSTODIO RECEPTOR *</label>
+                    <select
+                      className="form-control"
+                      value={egresoPersonaId}
+                      onChange={(e) => {
+                        const pId = Number(e.target.value);
+                        setEgresoPersonaId(pId);
+                        const found = personas.find(p => p.id === pId);
+                        if (found) {
+                          setEgresoArea(found.departamento || found.cargo || '');
+                        }
+                      }}
+                      required
+                    >
+                      <option value="0">Seleccionar persona...</option>
+                      {personas
+                        .filter(p => egresoEmpresaId === 0 || p.empresa_id === egresoEmpresaId)
+                        .map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.nombre} {p.cargo ? `(${p.cargo})` : ''}
+                          </option>
+                        ))
+                      }
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group half">
+                    <label className="form-label">ÁREA / DEPARTAMENTO *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ej: SAP, Sistemas, Contabilidad"
+                      value={egresoArea}
+                      onChange={(e) => setEgresoArea(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group half">
+                    <label className="form-label">OBSERVACIONES / MOTIVO (Opcional)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ej: Entrega de laptop de trabajo y periféricos"
+                      value={egresoObservaciones}
+                      onChange={(e) => setEgresoObservaciones(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECCIÓN SELECCIÓN DE ACTIVOS DISPONIBLES EN STOCK (NUEVOS PRIMERO) */}
+              <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.9rem' }}>
+                    Seleccionar Activos a Asignar ({selectedEgresoAssetIds.length} seleccionados)
+                  </h4>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                    Ordenados: Primero los más nuevos
+                  </span>
+                </div>
+
+                {/* BUSCADOR DE ACTIVOS POR SERIAL O CÓDIGO */}
+                <div style={{ marginBottom: '0.8rem', position: 'relative' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Buscar activo por serial o código..."
+                    value={egresoSearchAsset}
+                    onChange={(e) => setEgresoSearchAsset(e.target.value)}
+                    style={{ paddingLeft: '36px' }}
+                  />
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', left: '12px', top: '12px', color: '#94a3b8' }}>
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </div>
+
+                {/* LISTA DE ACTIVOS EN STOCK */}
+                <div style={{ maxHeight: '220px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }}>
+                  {activos
+                    .filter(a => a.estado === 'Stock')
+                    .filter(a => egresoEmpresaId === 0 || a.empresa_id === egresoEmpresaId)
+                    .filter(a => {
+                      if (!egresoSearchAsset.trim()) return true;
+                      const q = egresoSearchAsset.toLowerCase();
+                      return (
+                        a.codigo.toLowerCase().includes(q) ||
+                        a.serial.toLowerCase().includes(q) ||
+                        a.marca.toLowerCase().includes(q) ||
+                        a.modelo.toLowerCase().includes(q)
+                      );
+                    })
+                    // Sort: newest first (higher ID / created_at)
+                    .sort((a, b) => b.id - a.id)
+                    .map(a => {
+                      const isSelected = selectedEgresoAssetIds.includes(a.id);
+                      return (
+                        <div
+                          key={a.id}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedEgresoAssetIds(selectedEgresoAssetIds.filter(id => id !== a.id));
+                            } else {
+                              setSelectedEgresoAssetIds([...selectedEgresoAssetIds, a.id]);
+                            }
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '8px 12px',
+                            borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            background: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}} // Handled by div onClick
+                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                          />
+                          <div style={{ flex: 1, fontSize: '0.85rem' }}>
+                            <strong style={{ color: 'var(--color-primary)' }}>{a.codigo}</strong> - {a.tipo_equipo_nombre || 'Equipo'} ({a.marca} {a.modelo})
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                              Serie: <strong>{a.serial || 'NA'}</strong> | Sede: {a.empresa_nombre || 'General'}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                  {activos.filter(a => a.estado === 'Stock').length === 0 && (
+                    <div style={{ padding: '1.5rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                      No hay activos disponibles en Stock para asignar.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowEgresoModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Procesando...' : 'Guardar y Generar Acta de Egreso'}
                 </button>
               </div>
             </form>
