@@ -1,6 +1,18 @@
 // Custom Fetch-based API Client for SMO IT CORE
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const getDynamicApiUrl = (): string => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  
+  if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+    if (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
+      return `http://${currentHost}:5006/api/v1`;
+    }
+  }
+  return envUrl || `http://${currentHost}:5006/api/v1`;
+};
+
+export const API_BASE_URL = getDynamicApiUrl();
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean>;
@@ -25,7 +37,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   if (options.params) {
     const searchParams = new URLSearchParams();
     Object.entries(options.params).forEach(([key, val]) => {
-      if (val !== undefined && val !== null) {
+      if (val !== undefined && val !== null && val !== '') {
         searchParams.append(key, String(val));
       }
     });
@@ -51,12 +63,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     }
 
     if (!response.ok) {
-      let errorMessage = 'Ha ocurrido un error inesperado';
+      let errorMessage = `HTTP ${response.status}: Ha ocurrido un error inesperado`;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.detail || errorData.message || errorMessage;
+        errorMessage = errorData.detail || errorData.message || `HTTP ${response.status}: ${response.statusText || 'Error inesperado'}`;
       } catch {
-        // Fallback for non-JSON or parsing error
+        errorMessage = `HTTP ${response.status}: ${response.statusText || 'Error de conexión o formato'}`;
       }
       throw new Error(errorMessage);
     }
