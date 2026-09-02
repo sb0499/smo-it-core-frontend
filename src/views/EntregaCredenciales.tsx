@@ -45,7 +45,7 @@ export const EntregaCredenciales: React.FC = () => {
   const [correoReceptor, setCorreoReceptor] = useState('');
 
   // Live preview helpers
-  const [previewSecuencial, setPreviewSecuencial] = useState('SI-[CC]-MMDDSEQ-YYYY');
+  const [previewSecuencial, setPreviewSecuencial] = useState('TI-[CC]-EC-0001');
   const [previewVersionTI, setPreviewVersionTI] = useState(false);
 
   // Load empresas once on mount
@@ -82,10 +82,10 @@ export const EntregaCredenciales: React.FC = () => {
           setPreviewSecuencial(res.secuencial);
         })
         .catch(() => {
-          setPreviewSecuencial('SI-[CC]-MMDDSEQ-YYYY');
+          setPreviewSecuencial('TI-[CC]-EC-0001');
         });
     } else {
-      setPreviewSecuencial('SI-[CC]-MMDDSEQ-YYYY');
+      setPreviewSecuencial('TI-[CC]-EC-0001');
     }
   }, [empresaId, fechaEntrega]);
 
@@ -424,23 +424,23 @@ export const EntregaCredenciales: React.FC = () => {
 
       {/* Main Glassmorphic Modal with Live Preview */}
       {showModal && (
-        <div className="modal-backdrop animate-fade" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel animate-slide-up" style={{ width: '95%', maxWidth: '960px', padding: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3>Registrar Entrega de Credenciales</h3>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '20px', cursor: 'pointer' }}>×</button>
+        <div className="credenciales-modal-backdrop animate-fade">
+          <div className="glass-panel credenciales-modal-panel animate-slide-up">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexShrink: 0 }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>Registrar Entrega de Credenciales</h3>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '24px', cursor: 'pointer', lineHeight: 1 }}>×</button>
             </div>
             
             {error && (
-              <div className="login-error-alert" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '8px', padding: '10px 14px' }}>
+              <div className="login-error-alert" style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '8px', padding: '10px 14px', flexShrink: 0 }}>
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="#ef4444" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                 <span className="alert-text" style={{ color: '#b91c1c', fontSize: '13px', fontWeight: 600 }}>{error}</span>
               </div>
             )}
 
-            <div className="modal-grid">
+            <div className="modal-grid" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '4px' }}>
               {/* Form Side */}
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div className="form-group">
                   <label className="form-label">CENTRO COMERCIAL *</label>
                   <select
@@ -595,35 +595,42 @@ export const EntregaCredenciales: React.FC = () => {
                 {/* Simulated Paper Sheet */}
                 <div className="acta-live-preview">
                   {/* Letterhead */}
-                  <div className="acta-preview-header">
-                    <div>
-                      <div className="acta-preview-logo-text">TECNOLOGÍA DE LA INFORMACIÓN</div>
-                      <div className="acta-preview-logo-text">SHOPPING MANAGEMENTS OPERADORA</div>
+                  <div className="acta-preview-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    {/* Top Left: Logo Sede si existe (si no existe se deja vacío) */}
+                    <div style={{ display: 'flex', alignItems: 'center', minHeight: '45px' }}>
+                      {(() => {
+                        const cleanName = getEmpresaCleanName(empresaId);
+                        const isShoppingMain = !cleanName || cleanName === 'shopping' || cleanName === 'shopping-managements';
+                        if (!isShoppingMain) {
+                          return (
+                            <img 
+                              key={`left-${empresaId}`}
+                              src={`/logo-${cleanName}.png`}
+                              alt={cleanName}
+                              style={{ maxHeight: '55px', width: 'auto', display: 'block' }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
+
+                    {/* Top Right: Logo Shopping Fijo */}
                     <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                       <img 
-                        key={empresaId}
-                        src={`/logo-${getEmpresaCleanName(empresaId)}.png`}
+                        src="/logo-shopping.png" 
                         alt="shoppingmanagements" 
-                        style={{ height: '22px', width: 'auto', display: 'none' }}
-                        onLoad={(e) => {
-                          e.currentTarget.style.display = 'block';
-                          const sibling = e.currentTarget.nextSibling as HTMLElement;
-                          if (sibling) sibling.style.display = 'none';
-                        }}
+                        style={{ height: '42px', width: 'auto', display: 'block' }}
                         onError={(e) => {
-                          const currentSrc = e.currentTarget.src;
-                          const fallbackSrc = window.location.origin + '/logo-shopping.png';
-                          if (currentSrc !== fallbackSrc) {
-                            e.currentTarget.src = '/logo-shopping.png';
-                          } else {
-                            e.currentTarget.style.display = 'none';
-                            const sibling = e.currentTarget.nextSibling as HTMLElement;
-                            if (sibling) sibling.style.display = 'block';
-                          }
+                          e.currentTarget.style.display = 'none';
+                          const sibling = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (sibling) sibling.style.display = 'block';
                         }}
                       />
-                      <svg width="110" height="22" viewBox="0 0 180 40">
+                      <svg width="140" height="28" viewBox="0 0 180 40" style={{ display: 'none' }}>
                         <polygon points="15,5 170,5 175,0 180,30 177,35 165,35 15,35 3,35 0,30 5,0" fill="#304d69" />
                         <text x="90" y="24" fill="#ffffff" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="Helvetica, Arial, sans-serif">shoppingmanagements</text>
                       </svg>

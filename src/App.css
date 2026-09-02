@@ -6,6 +6,7 @@
   height: 100vh;
   background-color: var(--bg-main);
   overflow: hidden;
+  position: relative;
 }
 
 .app-main-content {
@@ -16,18 +17,34 @@
   padding: 24px;
   overflow-y: auto;
   overflow-x: hidden;
+  transition: var(--transition-smooth);
 }
 
 .view-content-wrapper {
   display: flex;
+  flex-direction: column;
   flex: 1;
   width: 100%;
+  max-width: 1720px;
+  margin: 0 auto;
 }
 
-/* Mobile responsive padding compensation */
+/* Responsive adjustments across breakpoints */
+@media (max-width: 1024px) {
+  .app-main-content {
+    padding: 20px 18px;
+  }
+}
+
 @media (max-width: 768px) {
   .app-main-content {
-    padding: 104px 16px 24px 16px; /* Offsets content down so it does not overlap with fixed mobile top bar */
+    padding: 96px 14px 20px 14px;
     height: 100vh;
+  }
+}
+
+@media (min-width: 1920px) {
+  .view-content-wrapper {
+    max-width: 1920px;
   }
 }

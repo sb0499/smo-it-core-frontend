@@ -25,7 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (['tickets', 'plantillas'].includes(activeView)) {
       setTicketsOpen(true);
     }
-    if (['inventario', 'movimientos', 'bodegas'].includes(activeView)) {
+    if (['inventario', 'movimientos', 'actas', 'bodegas', 'hostings-dominios'].includes(activeView)) {
       setInventarioOpen(true);
     }
     if (['personas', 'proveedores', 'usuarios', 'credenciales'].includes(activeView)) {
@@ -208,7 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) && (
                 <div className={`accordion-group ${inventarioOpen ? 'open' : ''}`}>
                   <button
-                    className={`accordion-header ${['inventario', 'movimientos', 'bodegas'].includes(activeView) ? 'active' : ''}`}
+                    className={`accordion-header ${['inventario', 'movimientos', 'actas', 'bodegas', 'hostings-dominios'].includes(activeView) ? 'active' : ''}`}
                     onClick={() => setInventarioOpen(!inventarioOpen)}
                   >
                     <div className="accordion-header-left">
@@ -231,10 +231,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <span>• Historial Movs</span>
                     </button>
                     <button
+                      className={`sub-nav-item ${activeView === 'actas' ? 'active' : ''}`}
+                      onClick={() => handleNav('actas')}
+                    >
+                      <span>• Actas</span>
+                    </button>
+                    <button
                       className={`sub-nav-item ${activeView === 'bodegas' ? 'active' : ''}`}
                       onClick={() => handleNav('bodegas')}
                     >
                       <span>• Bodegas</span>
+                    </button>
+                    <button
+                      className={`sub-nav-item ${activeView === 'hostings-dominios' ? 'active' : ''}`}
+                      onClick={() => handleNav('hostings-dominios')}
+                    >
+                      <span>• Hostings y Dominios</span>
                     </button>
                   </div>
                 </div>

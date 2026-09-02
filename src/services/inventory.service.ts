@@ -79,6 +79,57 @@ export interface HistorialCambio {
   cambios: string;
 }
 
+export interface IngresoBodegaItem {
+  tipo_equipo_id: number;
+  marca: string;
+  modelo: string;
+  serial?: string;
+  especificaciones?: string;
+  bodega_id?: number;
+}
+
+export interface IngresoBodega {
+  id: number;
+  codigo_ingreso: string;
+  empresa_id: number;
+  empresa_nombre?: string;
+  proveedor_id?: number | null;
+  proveedor_nombre?: string;
+  nro_orden_compra: string;
+  nro_factura?: string | null;
+  nro_solicitud_pago?: string | null;
+  fecha_compra: string;
+  fecha_ingreso: string;
+  descripcion: string;
+  realizado_por_id?: number | null;
+  realizado_por_nombre?: string;
+  revisado_por?: string;
+  revisado_por_cargo?: string;
+  cantidad_activos?: number;
+  activos?: Activo[];
+  created_at: string;
+}
+
+export interface EgresoBodega {
+  id: number;
+  codigo_egreso: string;
+  empresa_id: number;
+  empresa_nombre?: string;
+  custodio_id: number;
+  custodio_nombre?: string;
+  custodio_cargo?: string;
+  area?: string | null;
+  observaciones?: string | null;
+  fecha_egreso: string;
+  realizado_por_id?: number | null;
+  realizado_por_nombre?: string;
+  revisado_por?: string;
+  revisado_por_cargo?: string;
+  cantidad_activos?: number;
+  activos?: Activo[];
+  created_at: string;
+}
+
 export const inventoryService = {
   // Activos (Hardware)
   async getActivos(page = 1, limit = 10, search = '', estado = ''): Promise<{ total: number; page: number; limit: number; data: Activo[] }> {
@@ -135,6 +186,10 @@ export const inventoryService = {
     return apiClient.get<Persona[]>('/personas');
   },
 
+  async getEmpresas(): Promise<any[]> {
+    return apiClient.get<any[]>('/empresas');
+  },
+
   async createPersona(payload: Partial<Persona>): Promise<Persona> {
     return apiClient.post<Persona>('/personas', payload);
   },
@@ -150,9 +205,118 @@ export const inventoryService = {
     return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/movimientos/${movimientoId}/acta?token=${token}`;
   },
 
+  // Ingresos de Bodega (Actas de Ingreso)
+  async getIngresosBodega(page = 1, limit = 10, search = '', fechaDesde = '', fechaHasta = '', empresaId = 0): Promise<{ total: number; page: number; limit: number; data: IngresoBodega[] }> {
+    const params: any = { page, limit, search };
+    if (fechaDesde) params.fecha_desde = fechaDesde;
+    if (fechaHasta) params.fecha_hasta = fechaHasta;
+    if (empresaId > 0) params.empresa_id = empresaId;
+    return apiClient.get('/inventarios/ingresos', { params });
+  },
+
+  async getIngresoBodegaById(id: number): Promise<IngresoBodega> {
+    return apiClient.get<IngresoBodega>(`/inventarios/ingresos/${id}`);
+  },
+
+  async createIngresoBodega(payload: {
+    empresa_id: number;
+    proveedor_id?: number;
+    nro_orden_compra: string;
+    nro_factura?: string;
+    nro_solicitud_pago?: string;
+    fecha_compra: string;
+    fecha_ingreso: string;
+    descripcion: string;
+    revisado_por?: string;
+    revisado_por_cargo?: string;
+    activos: IngresoBodegaItem[];
+  }): Promise<IngresoBodega> {
+    return apiClient.post<IngresoBodega>('/inventarios/ingresos', payload);
+  },
+
+  getActaIngresoUrl(ingresoId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/ingresos/${ingresoId}/acta?token=${token}`;
+  },
+
+  // Egresos de Bodega (Actas de Egreso / Asignación Multi-Activo)
+  async getEgresosBodega(page = 1, limit = 10, search = '', fechaDesde = '', fechaHasta = '', empresaId = 0): Promise<{ total: number; page: number; limit: number; data: EgresoBodega[] }> {
+    const params: any = { page, limit, search };
+    if (fechaDesde) params.fecha_desde = fechaDesde;
+    if (fechaHasta) params.fecha_hasta = fechaHasta;
+    if (empresaId > 0) params.empresa_id = empresaId;
+    return apiClient.get('/inventarios/egresos', { params });
+  },
+
+  async getEgresoBodegaById(id: number): Promise<EgresoBodega> {
+    return apiClient.get<EgresoBodega>(`/inventarios/egresos/${id}`);
+  },
+
+  async createEgresoBodega(payload: {
+    empresa_id: number;
+    custodio_id: number;
+    area?: string;
+    observaciones?: string;
+    revisado_por?: string;
+    revisado_por_cargo?: string;
+    activo_ids: number[];
+  }): Promise<EgresoBodega> {
+    return apiClient.post<EgresoBodega>('/inventarios/egresos', payload);
+  },
+
+  getActaEgresoUrl(egresoId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/egresos/${egresoId}/acta?token=${token}`;
+  },
+
+  getActaEntregaEgresoUrl(egresoId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/egresos/${egresoId}/acta-entrega?token=${token}`;
+  },
+
+  // Recepciones de Bodega (Actas de Recepción)
+  async getRecepcionesBodega(page = 1, limit = 10, search = '', fechaDesde = '', fechaHasta = '', empresaId = 0): Promise<{ total: number; page: number; limit: number; data: any[] }> {
+    const params: any = { page, limit, search };
+    if (fechaDesde) params.fecha_desde = fechaDesde;
+    if (fechaHasta) params.fecha_hasta = fechaHasta;
+    if (empresaId > 0) params.empresa_id = empresaId;
+    return apiClient.get('/inventarios/recepciones', { params });
+  },
+
+  async getRecepcionBodegaById(id: number): Promise<any> {
+    return apiClient.get<any>(`/inventarios/recepciones/${id}`);
+  },
+
+  async createRecepcionBodega(payload: {
+    empresa_id: number;
+    persona_entrega_id: number;
+    area?: string;
+    bodega_id?: number;
+    observaciones?: string;
+    revisado_por?: string;
+    revisado_por_cargo?: string;
+    activo_ids: number[];
+  }): Promise<any> {
+    return apiClient.post<any>('/inventarios/recepciones', payload);
+  },
+
+  getActaRecepcionUrl(recepcionId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/recepciones/${recepcionId}/acta?token=${token}`;
+  },
+
+  getActaIngresoDevolucionUrl(recepcionId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/recepciones/${recepcionId}/acta-ingreso?token=${token}`;
+  },
+
   // Tipo Equipos CRUD
-  async getTipoEquipos(): Promise<{ id: number; nombre: string; created_at: string }[]> {
-    return apiClient.get('/tipo-equipos');
+  async getTipoEquipos(page?: number, limit?: number, search = ''): Promise<any> {
+    const params: any = {};
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    if (search) params.search = search;
+    return apiClient.get('/tipo-equipos', { params });
   },
   async createTipoEquipo(payload: { nombre: string }): Promise<{ id: number; nombre: string }> {
     return apiClient.post('/tipo-equipos', payload);

@@ -161,17 +161,27 @@
 @media (max-width: 768px) {
   .navbar {
     position: fixed;
-    top: 16px;
-    left: 16px;
-    right: 16px;
-    width: calc(100% - 32px);
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    width: calc(100% - 20px);
+    height: 56px;
     z-index: 98;
     margin-bottom: 0;
-    padding: 0 16px;
+    padding: 0 10px;
+  }
+
+  .navbar-left {
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
   }
 
   .mobile-toggle-btn {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
   }
 
   .breadcrumb-sub, .breadcrumb-slash {
@@ -179,10 +189,45 @@
   }
 
   .breadcrumb-main {
-    font-size: 15px;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 135px;
+  }
+
+  .navbar-right {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .admin-cierre-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 12px;
   }
 
   .system-status {
+    display: none !important;
+  }
+
+  .notif-dropdown {
+    position: fixed;
+    top: 70px;
+    left: 12px;
+    right: 12px;
+    width: calc(100% - 24px);
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .breadcrumb-main {
+    max-width: 105px;
+    font-size: 12.5px;
+  }
+
+  .admin-cierre-btn {
     display: none;
   }
 }
