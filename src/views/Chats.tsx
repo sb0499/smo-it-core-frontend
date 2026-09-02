@@ -742,7 +742,7 @@ export const Chats: React.FC = () => {
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                       </svg>
                       <span>
-                        <strong>Cifrado del Servidor Activo</strong>: Los mensajes y archivos en este chat están protegidos y se almacenan de forma segura en la base de datos de SMO IT CORE.
+                        <strong>Cifrado del Servidor Activo</strong>: Los mensajes y archivos en este chat están protegidos y se almacenan de forma segura en la base de datos de TISMO.
                       </span>
                     </div>
                   )}
