@@ -1,3 +1,4 @@
+import { showAlert, showConfirm } from '../utils/alerts';
 import React, { useEffect, useRef, useState } from 'react';
 import { formatLocalDateSimple } from '../utils/date';
 import { useAuth } from '../context/AuthContext';
@@ -23,7 +24,7 @@ interface TipoEquipo {
 
 export const Inventario: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'activos' | 'consumibles' | 'tipos_equipo'>('activos');
+  const [activeTab, setActiveTab] = useState<'activos' | 'consumibles' | 'tipos_equipo' | 'recepciones'>('activos');
   const [activos, setActivos] = useState<Activo[]>([]);
   const [consumibles, setConsumibles] = useState<Consumible[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
