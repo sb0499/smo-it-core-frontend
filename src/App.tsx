@@ -19,6 +19,7 @@ import { Reportes } from './views/Reportes';
 import { Bodegas } from './views/Bodegas';
 import { EntregaCredenciales } from './views/EntregaCredenciales';
 import { ActasIngreso } from './views/ActasIngreso';
+import { HostingsDominios } from './views/HostingsDominios';
 import { AlertContainer } from './components/AlertContainer';
 import './App.css';
 
@@ -107,6 +108,11 @@ function AppContent() {
       case 'credenciales':
         if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') {
           return <EntregaCredenciales key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
+      case 'hostings-dominios':
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
+          return <HostingsDominios key={refreshKey} />;
         }
         return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       default:

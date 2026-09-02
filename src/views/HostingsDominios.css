@@ -1,0 +1,196 @@
+/* HostingsDominios.css - Standard SMO IT CORE System Theme */
+@import './Inventario.css';
+
+.hd-stats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.hd-stat-card {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 12px;
+}
+
+.hd-stat-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-dim);
+}
+
+.hd-stat-number {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 4px;
+}
+
+.hd-stat-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hd-stat-icon-wrapper.blue { background: rgba(99, 102, 241, 0.08); color: var(--color-primary); }
+.hd-stat-icon-wrapper.purple { background: rgba(168, 85, 247, 0.08); color: #a855f7; }
+.hd-stat-icon-wrapper.amber { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+.hd-stat-icon-wrapper.red { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+
+/* Custom Badge colors matching SMO IT CORE */
+.badge-vencimiento-vigente {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-vencimiento-porvencer {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-vencimiento-vencido {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Modal Overlay & Responsive Fixed Box */
+.hd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(6px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.hd-modal-container {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 85vh;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #eef2f6;
+}
+
+.hd-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  background: #ffffff;
+}
+
+.hd-modal-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.hd-modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.hd-modal-close-btn:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.hd-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.hd-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.hd-form-full {
+  grid-column: 1 / -1;
+}
+
+.hd-modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .hd-stats-container {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .hd-stat-card {
+    padding: 12px 14px;
+  }
+
+  .hd-stat-number {
+    font-size: 18px;
+  }
+
+  .hd-modal-container {
+    max-width: 100% !important;
+    margin: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hd-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

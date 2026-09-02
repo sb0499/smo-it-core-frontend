@@ -186,6 +186,10 @@ export const inventoryService = {
     return apiClient.get<Persona[]>('/personas');
   },
 
+  async getEmpresas(): Promise<any[]> {
+    return apiClient.get<any[]>('/empresas');
+  },
+
   async createPersona(payload: Partial<Persona>): Promise<Persona> {
     return apiClient.post<Persona>('/personas', payload);
   },
@@ -202,10 +206,12 @@ export const inventoryService = {
   },
 
   // Ingresos de Bodega (Actas de Ingreso)
-  async getIngresosBodega(page = 1, limit = 10, search = ''): Promise<{ total: number; page: number; limit: number; data: IngresoBodega[] }> {
-    return apiClient.get('/inventarios/ingresos', {
-      params: { page, limit, search }
-    });
+  async getIngresosBodega(page = 1, limit = 10, search = '', fechaDesde = '', fechaHasta = '', empresaId = 0): Promise<{ total: number; page: number; limit: number; data: IngresoBodega[] }> {
+    const params: any = { page, limit, search };
+    if (fechaDesde) params.fecha_desde = fechaDesde;
+    if (fechaHasta) params.fecha_hasta = fechaHasta;
+    if (empresaId > 0) params.empresa_id = empresaId;
+    return apiClient.get('/inventarios/ingresos', { params });
   },
 
   async getIngresoBodegaById(id: number): Promise<IngresoBodega> {
@@ -234,10 +240,12 @@ export const inventoryService = {
   },
 
   // Egresos de Bodega (Actas de Egreso / Asignación Multi-Activo)
-  async getEgresosBodega(page = 1, limit = 10, search = ''): Promise<{ total: number; page: number; limit: number; data: EgresoBodega[] }> {
-    return apiClient.get('/inventarios/egresos', {
-      params: { page, limit, search }
-    });
+  async getEgresosBodega(page = 1, limit = 10, search = '', fechaDesde = '', fechaHasta = '', empresaId = 0): Promise<{ total: number; page: number; limit: number; data: EgresoBodega[] }> {
+    const params: any = { page, limit, search };
+    if (fechaDesde) params.fecha_desde = fechaDesde;
+    if (fechaHasta) params.fecha_hasta = fechaHasta;
+    if (empresaId > 0) params.empresa_id = empresaId;
+    return apiClient.get('/inventarios/egresos', { params });
   },
 
   async getEgresoBodegaById(id: number): Promise<EgresoBodega> {
@@ -266,9 +274,49 @@ export const inventoryService = {
     return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/egresos/${egresoId}/acta-entrega?token=${token}`;
   },
 
+  // Recepciones de Bodega (Actas de Recepción)
+  async getRecepcionesBodega(page = 1, limit = 10, search = '', fechaDesde = '', fechaHasta = '', empresaId = 0): Promise<{ total: number; page: number; limit: number; data: any[] }> {
+    const params: any = { page, limit, search };
+    if (fechaDesde) params.fecha_desde = fechaDesde;
+    if (fechaHasta) params.fecha_hasta = fechaHasta;
+    if (empresaId > 0) params.empresa_id = empresaId;
+    return apiClient.get('/inventarios/recepciones', { params });
+  },
+
+  async getRecepcionBodegaById(id: number): Promise<any> {
+    return apiClient.get<any>(`/inventarios/recepciones/${id}`);
+  },
+
+  async createRecepcionBodega(payload: {
+    empresa_id: number;
+    persona_entrega_id: number;
+    area?: string;
+    bodega_id?: number;
+    observaciones?: string;
+    revisado_por?: string;
+    revisado_por_cargo?: string;
+    activo_ids: number[];
+  }): Promise<any> {
+    return apiClient.post<any>('/inventarios/recepciones', payload);
+  },
+
+  getActaRecepcionUrl(recepcionId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/recepciones/${recepcionId}/acta?token=${token}`;
+  },
+
+  getActaIngresoDevolucionUrl(recepcionId: number): string {
+    const token = localStorage.getItem('smo_token');
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/inventarios/recepciones/${recepcionId}/acta-ingreso?token=${token}`;
+  },
+
   // Tipo Equipos CRUD
-  async getTipoEquipos(): Promise<{ id: number; nombre: string; created_at: string }[]> {
-    return apiClient.get('/tipo-equipos');
+  async getTipoEquipos(page?: number, limit?: number, search = ''): Promise<any> {
+    const params: any = {};
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    if (search) params.search = search;
+    return apiClient.get('/tipo-equipos', { params });
   },
   async createTipoEquipo(payload: { nombre: string }): Promise<{ id: number; nombre: string }> {
     return apiClient.post('/tipo-equipos', payload);

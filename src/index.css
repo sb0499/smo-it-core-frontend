@@ -16,7 +16,7 @@
   --border-glass: 1px solid #eef2f6;
   --border-glass-active: 1px solid #6366f1;
 
-  /* Sophisticated, purple-indigo brand identity */
+  /* Sophisticated identity */
   --color-primary: #6366f1;
   --color-primary-rgb: 99, 102, 241;
   --color-secondary: #64748b;
@@ -25,7 +25,7 @@
   --color-text-muted: #64748b;
   --color-text-dim: #94a3b8;
 
-  /* Soft, desaturated pastel states */
+  /* Soft desaturated states */
   --state-new: #6366f1;
   --state-process: #f1f5f9;
   --state-pending: #f5f3ff;
@@ -74,11 +74,11 @@ body {
   background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(99, 102, 241, 0.12);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.18);
+  background: rgba(99, 102, 241, 0.22);
 }
 
 /* Glassmorphism/Flat Panels */
@@ -94,6 +94,16 @@ body {
   border-color: #cbd5e1;
   box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.08);
   transform: translateY(-1px);
+}
+
+/* View Header Layout */
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
 /* Layout Setup */
@@ -114,13 +124,6 @@ body {
   padding: 24px;
   position: relative;
   transition: var(--transition-smooth);
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding: 16px;
-    padding-top: 80px;
-  }
 }
 
 /* Typography Customization */
@@ -159,11 +162,6 @@ p, td, th, input, select, textarea, button {
   font-size: 13px;
 }
 
-h1 span, h2 span, h3 span, h4 span, h5 span {
-  font-size: inherit;
-  font-weight: inherit;
-}
-
 .gradient-text {
   background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
   -webkit-background-clip: text;
@@ -194,6 +192,7 @@ h1 span, h2 span, h3 span, h4 span, h5 span {
   cursor: pointer;
   transition: var(--transition-smooth);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .btn-primary {
@@ -247,6 +246,17 @@ h1 span, h2 span, h3 span, h4 span, h5 span {
   gap: 6px;
 }
 
+.form-row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.form-group.half {
+  flex: 1;
+  min-width: 0;
+}
+
 .form-label {
   font-size: 11px;
   font-weight: 700;
@@ -265,6 +275,7 @@ h1 span, h2 span, h3 span, h4 span, h5 span {
   font-family: var(--font-sans);
   outline: none;
   transition: var(--transition-smooth);
+  width: 100%;
 }
 .form-control:focus {
   border-color: #818cf8;
@@ -284,6 +295,7 @@ select.form-control {
   padding: 3px 8px;
   border-radius: 6px;
   text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .badge-new { background: #eff6ff; color: #1e40af; }
@@ -302,6 +314,14 @@ select.form-control {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
+}
+
+/* Table Wrapper for Horizontal Scroll on Touch & Mobile Devices */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
 }
 
 /* Global Generic Tables */
@@ -332,6 +352,7 @@ th {
   color: var(--color-text-dim);
   letter-spacing: 0.05em;
   background-color: #fafbfe;
+  white-space: nowrap;
 }
 
 /* Animations */
@@ -341,7 +362,7 @@ th {
 }
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; }
 }
 
 .animate-fade {
@@ -354,4 +375,56 @@ th {
 
 body, aside, header, .glass-panel, .btn, .form-control, button, input, select, textarea {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+/* Global Responsive Media Queries */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 16px;
+    padding-top: 84px;
+  }
+
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .view-header .btn {
+    width: 100%;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  th, td {
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 16px;
+  }
+
+  h2 {
+    font-size: 14px;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
