@@ -47,13 +47,26 @@ export const HostingsDominios: React.FC = () => {
 
   // Load catalog options once
   useEffect(() => {
+    console.log('[HostingsDominios] Cargando empresas y proveedores...');
     apiClient.get<Empresa[]>('/empresas')
-      .then(res => setEmpresas(res))
-      .catch(err => console.error('Error al cargar empresas:', err));
+      .then(res => {
+        console.log('[HostingsDominios] Empresas obtenidas:', res);
+        setEmpresas(Array.isArray(res) ? res : []);
+      })
+      .catch(err => {
+        console.error('[HostingsDominios] Error al cargar empresas:', err);
+        setEmpresas([]);
+      });
 
     inventoryService.getProveedores()
-      .then(res => setProveedores(res))
-      .catch(err => console.error('Error al cargar proveedores:', err));
+      .then(res => {
+        console.log('[HostingsDominios] Proveedores obtenidos:', res);
+        setProveedores(Array.isArray(res) ? res : []);
+      })
+      .catch(err => {
+        console.error('[HostingsDominios] Error al cargar proveedores:', err);
+        setProveedores([]);
+      });
   }, []);
 
   // Debounce search
@@ -69,14 +82,21 @@ export const HostingsDominios: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log(`[HostingsDominios] Solicitando datos - activeTab: ${activeTab}, empresaId: ${selectedEmpresaId}, search: "${debouncedSearch}"`);
       const data = await hostingDominioService.getHostingsDominios(
         activeTab,
         selectedEmpresaId || undefined,
         debouncedSearch || undefined
       );
-      setItems(data);
+      console.log('[HostingsDominios] Datos recibidos del servidor:', data);
+      const safeData = Array.isArray(data) ? data : [];
+      setItems(safeData);
+      if (!Array.isArray(data)) {
+        console.warn('[HostingsDominios] La respuesta no fue un arreglo válido:', data);
+      }
     } catch (err: any) {
-      console.error('Error al cargar hostings y dominios:', err);
+      console.error('[HostingsDominios] Error al cargar hostings y dominios:', err);
+      setItems([]);
       setError(err.message || 'Error al obtener la lista de registros.');
     } finally {
       setLoading(false);
@@ -88,12 +108,13 @@ export const HostingsDominios: React.FC = () => {
   }, [activeTab, selectedEmpresaId, debouncedSearch]);
 
   // Stats calculation
-  const totalHostings = items.filter(i => i.tipo === 'HOSTING').length;
-  const totalDominios = items.filter(i => i.tipo === 'DOMINIO').length;
+  const safeItems = Array.isArray(items) ? items : [];
+  const totalHostings = safeItems.filter(i => i.tipo === 'HOSTING').length;
+  const totalDominios = safeItems.filter(i => i.tipo === 'DOMINIO').length;
 
-  const currentTabItems = items;
-  const porVencerCount = currentTabItems.filter(i => i.estado_vencimiento === 'POR_VENCER').length;
-  const vencidosCount = currentTabItems.filter(i => i.estado_vencimiento === 'VENCIDO').length;
+  const currentTabItems = safeItems;
+  const porVencerCount = currentTabItems.filter(i => i?.estado_vencimiento === 'POR_VENCER').length;
+  const vencidosCount = currentTabItems.filter(i => i?.estado_vencimiento === 'VENCIDO').length;
 
   // Open modal to Create
   const handleOpenCreateModal = () => {

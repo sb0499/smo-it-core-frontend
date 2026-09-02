@@ -30,10 +30,17 @@ export const ActasIngreso: React.FC = () => {
   const [detailEgreso, setDetailEgreso] = useState<EgresoBodega | null>(null);
 
   useEffect(() => {
+    console.log('[ActasIngreso] Cargando catálogo de empresas...');
     inventoryService
       .getEmpresas()
-      .then(setEmpresas)
-      .catch(() => []);
+      .then(res => {
+        console.log('[ActasIngreso] Empresas obtenidas:', res);
+        setEmpresas(Array.isArray(res) ? res : []);
+      })
+      .catch(err => {
+        console.error('[ActasIngreso] Error al obtener empresas:', err);
+        setEmpresas([]);
+      });
   }, []);
 
   useEffect(() => {
@@ -47,6 +54,8 @@ export const ActasIngreso: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      console.log(`[ActasIngreso] Consultando actas - tab: ${activeTab}, page: ${page}, search: "${search}", empresaId: ${selectedEmpresaId}, fechaDesde: "${fechaDesde}", fechaHasta: "${fechaHasta}"`);
+
       if (activeTab === "ingresos") {
         const res = await inventoryService.getIngresosBodega(
           page,
@@ -56,8 +65,10 @@ export const ActasIngreso: React.FC = () => {
           fechaHasta,
           selectedEmpresaId,
         );
-        setIngresos(res.data || []);
-        setTotalItems(res.total || 0);
+        console.log('[ActasIngreso] Respuesta getIngresosBodega:', res);
+        const dataArr = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        setIngresos(dataArr);
+        setTotalItems(res?.total ?? dataArr.length ?? 0);
       } else if (activeTab === "recepciones") {
         const res = await inventoryService.getRecepcionesBodega(
           page,
@@ -67,8 +78,10 @@ export const ActasIngreso: React.FC = () => {
           fechaHasta,
           selectedEmpresaId,
         );
-        setRecepciones(res.data || []);
-        setTotalItems(res.total || 0);
+        console.log('[ActasIngreso] Respuesta getRecepcionesBodega:', res);
+        const dataArr = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        setRecepciones(dataArr);
+        setTotalItems(res?.total ?? dataArr.length ?? 0);
       } else {
         const res = await inventoryService.getEgresosBodega(
           page,
@@ -78,11 +91,18 @@ export const ActasIngreso: React.FC = () => {
           fechaHasta,
           selectedEmpresaId,
         );
-        setEgresos(res.data || []);
-        setTotalItems(res.total || 0);
+        console.log('[ActasIngreso] Respuesta getEgresosBodega:', res);
+        const dataArr = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        setEgresos(dataArr);
+        setTotalItems(res?.total ?? dataArr.length ?? 0);
       }
     } catch (err: any) {
-      showAlert("Error al cargar actas de bodega");
+      console.error('[ActasIngreso] Error al cargar actas de bodega:', err);
+      setIngresos([]);
+      setRecepciones([]);
+      setEgresos([]);
+      setTotalItems(0);
+      showAlert("Error al cargar actas de bodega: " + (err.message || 'Error del servidor'));
     } finally {
       setLoading(false);
     }
