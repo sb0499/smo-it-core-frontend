@@ -95,10 +95,13 @@ export const Usuarios: React.FC = () => {
 
   const fetchEmpresas = async () => {
     try {
+      console.log('[Usuarios] Cargando empresas...');
       const empresasData = await apiClient.get<Empresa[]>('/empresas');
-      setEmpresas(empresasData);
+      console.log('[Usuarios] Empresas obtenidas:', empresasData);
+      setEmpresas(Array.isArray(empresasData) ? empresasData : []);
     } catch (err: any) {
-      console.error('Error al cargar empresas:', err);
+      console.error('[Usuarios] Error al cargar empresas:', err);
+      setEmpresas([]);
     }
   };
 
@@ -124,13 +127,18 @@ export const Usuarios: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log(`[Usuarios] Consultando usuarios - page: ${pageNumber}, search: "${searchVal}"`);
       const res = await apiClient.get<{ total: number; page: number; limit: number; data: Usuario[] }>(
         `/usuarios?page=${pageNumber}&limit=10&search=${encodeURIComponent(searchVal)}`
       );
-      setUsuarios(res.data);
-      setTotalPages(Math.ceil(res.total / res.limit));
-      setTotalItems(res.total);
+      console.log('[Usuarios] Respuesta recibida:', res);
+      const dataArr = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      setUsuarios(dataArr);
+      setTotalPages(Math.ceil((res?.total || 0) / (res?.limit || 10)) || 1);
+      setTotalItems(res?.total || 0);
     } catch (err: any) {
+      console.error('[Usuarios] Error al cargar usuarios:', err);
+      setUsuarios([]);
       setError(err.message || 'Error al cargar los usuarios.');
     } finally {
       setLoading(false);

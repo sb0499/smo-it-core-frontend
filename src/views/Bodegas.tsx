@@ -37,12 +37,15 @@ export const Bodegas: React.FC = () => {
 
   // Load empresas once on mount
   useEffect(() => {
+    console.log('[Bodegas] Cargando empresas...');
     apiClient.get<Empresa[]>('/empresas')
       .then(res => {
-        setEmpresas(res);
+        console.log('[Bodegas] Empresas obtenidas:', res);
+        setEmpresas(Array.isArray(res) ? res : []);
       })
       .catch(err => {
-        console.error('Error al cargar empresas:', err);
+        console.error('[Bodegas] Error al cargar empresas:', err);
+        setEmpresas([]);
       });
   }, []);
 
@@ -64,15 +67,20 @@ export const Bodegas: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log(`[Bodegas] Consultando bodegas - page: ${page}, limit: ${limit}, sedeFilter: ${selectedSedeFilter}, search: "${debouncedSearch}"`);
       const result = await inventoryService.getBodegas(
         page, 
         limit, 
         debouncedSearch, 
         selectedSedeFilter > 0 ? selectedSedeFilter : undefined
       );
-      setBodegas(result.data || []);
-      setTotal(result.total || 0);
+      console.log('[Bodegas] Respuesta recibida:', result);
+      const dataArr = Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
+      setBodegas(dataArr);
+      setTotal(result?.total || dataArr.length || 0);
     } catch (err: any) {
+      console.error('[Bodegas] Error al cargar bodegas:', err);
+      setBodegas([]);
       setError(err.message || 'Error al cargar los datos de bodegas.');
     } finally {
       setLoading(false);

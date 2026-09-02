@@ -50,12 +50,15 @@ export const EntregaCredenciales: React.FC = () => {
 
   // Load empresas once on mount
   useEffect(() => {
+    console.log('[EntregaCredenciales] Cargando empresas...');
     apiClient.get<Empresa[]>('/empresas')
       .then(res => {
-        setEmpresas(res);
+        console.log('[EntregaCredenciales] Empresas obtenidas:', res);
+        setEmpresas(Array.isArray(res) ? res : []);
       })
       .catch(err => {
-        console.error('Error al cargar empresas:', err);
+        console.error('[EntregaCredenciales] Error al cargar empresas:', err);
+        setEmpresas([]);
       });
   }, []);
 
@@ -93,10 +96,15 @@ export const EntregaCredenciales: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log(`[EntregaCredenciales] Consultando entregas - page: ${page}, limit: ${limit}, search: "${debouncedSearch}"`);
       const res = await credencialService.getEntregas(page, limit, debouncedSearch);
-      setEntregas(res.data || []);
-      setTotal(res.total || 0);
+      console.log('[EntregaCredenciales] Respuesta recibida:', res);
+      const dataArr = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      setEntregas(dataArr);
+      setTotal(res?.total || dataArr.length || 0);
     } catch (err: any) {
+      console.error('[EntregaCredenciales] Error al cargar entregas:', err);
+      setEntregas([]);
       setError(err.message || 'Error al cargar datos de credenciales.');
     } finally {
       setLoading(false);

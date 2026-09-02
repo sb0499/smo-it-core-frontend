@@ -53,10 +53,13 @@ export const Personas: React.FC = () => {
 
   const fetchEmpresas = async () => {
     try {
+      console.log('[Personas] Cargando empresas...');
       const empresasData = await apiClient.get<Empresa[]>('/empresas');
-      setEmpresas(empresasData);
+      console.log('[Personas] Empresas obtenidas:', empresasData);
+      setEmpresas(Array.isArray(empresasData) ? empresasData : []);
     } catch (err: any) {
-      console.error('Error al cargar empresas:', err);
+      console.error('[Personas] Error al cargar empresas:', err);
+      setEmpresas([]);
     }
   };
 
@@ -82,13 +85,18 @@ export const Personas: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log(`[Personas] Consultando personas - page: ${pageNumber}, search: "${searchVal}"`);
       const res = await apiClient.get<{ total: number; page: number; limit: number; data: Persona[] }>(
         `/personas?page=${pageNumber}&limit=10&search=${encodeURIComponent(searchVal)}`
       );
-      setPersonas(res.data);
-      setTotalPages(Math.ceil(res.total / res.limit));
-      setTotalItems(res.total);
+      console.log('[Personas] Respuesta recibida:', res);
+      const dataArr = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      setPersonas(dataArr);
+      setTotalPages(Math.ceil((res?.total || 0) / (res?.limit || 10)) || 1);
+      setTotalItems(res?.total || 0);
     } catch (err: any) {
+      console.error('[Personas] Error al cargar empleados:', err);
+      setPersonas([]);
       setError(err.message || 'Error al cargar los empleados.');
     } finally {
       setLoading(false);

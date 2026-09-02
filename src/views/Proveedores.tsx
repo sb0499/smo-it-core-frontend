@@ -59,13 +59,18 @@ export const Proveedores: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log(`[Proveedores] Consultando proveedores - page: ${pageNumber}, search: "${searchVal}"`);
       const res = await apiClient.get<{ total: number; page: number; limit: number; data: Proveedor[] }>(
         `/proveedores?page=${pageNumber}&limit=10&search=${encodeURIComponent(searchVal)}`
       );
-      setProveedores(res.data);
-      setTotalPages(Math.ceil(res.total / res.limit));
-      setTotalItems(res.total);
+      console.log('[Proveedores] Respuesta recibida:', res);
+      const dataArr = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      setProveedores(dataArr);
+      setTotalPages(Math.ceil((res?.total || 0) / (res?.limit || 10)) || 1);
+      setTotalItems(res?.total || 0);
     } catch (err: any) {
+      console.error('[Proveedores] Error al cargar proveedores:', err);
+      setProveedores([]);
       setError(err.message || 'Error al cargar proveedores.');
     } finally {
       setLoading(false);
