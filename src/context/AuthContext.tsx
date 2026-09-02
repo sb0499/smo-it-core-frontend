@@ -40,37 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
 
-        // Try to restore private key from sessionStorage or fetch from server
-        let savedKeyJwk = sessionStorage.getItem(`smo_priv_key_${parsedUser.id}`);
-        
-        if (!savedKeyJwk) {
-          try {
-            const keys = await apiClient.get<any>(`/usuarios/${parsedUser.id}/keys`, {
-              headers: { Authorization: `Bearer ${savedToken}` }
-            });
-            if (keys && keys.private_key) {
-              savedKeyJwk = JSON.stringify(keys.private_key);
-              sessionStorage.setItem(`smo_priv_key_${parsedUser.id}`, savedKeyJwk);
-            }
-          } catch (fetchErr) {
-            console.error('Failed to fetch E2EE keys on session init:', fetchErr);
-          }
-        }
-
-        if (savedKeyJwk) {
-          try {
-            const importedPrivKey = await window.crypto.subtle.importKey(
-              'jwk',
-              JSON.parse(savedKeyJwk),
-              { name: 'RSA-OAEP', hash: 'SHA-256' },
-              false,
-              ['decrypt']
-            );
-            setUserPrivateKey(importedPrivKey);
-          } catch (err) {
-            console.error('Failed to import private key:', err);
-          }
-        }
+        // Restablecer estado de sesión
       }
       setLoading(false);
     };
@@ -106,33 +76,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       localStorage.setItem('smo_token', data.access_token);
       localStorage.setItem('smo_user', JSON.stringify(userSession));
-      
-      // Fetch E2EE keys from backend (decrypted automatically by the server!)
-      let privateKey: CryptoKey | null = null;
-      try {
-        const keys = await apiClient.get<any>(`/usuarios/${data.user_id}/keys`, {
-          headers: { Authorization: `Bearer ${data.access_token}` }
-        });
-        
-        if (keys && keys.private_key) {
-          privateKey = await window.crypto.subtle.importKey(
-            'jwk',
-            keys.private_key,
-            { name: 'RSA-OAEP', hash: 'SHA-256' },
-            false,
-            ['decrypt']
-          );
-          
-          // Store private key JWK string in sessionStorage
-          sessionStorage.setItem(`smo_priv_key_${data.user_id}`, JSON.stringify(keys.private_key));
-        }
-      } catch (err) {
-        console.error("Failed to load/import E2EE keys on login:", err);
-      }
 
       setToken(data.access_token);
       setUser(userSession);
-      setUserPrivateKey(privateKey);
+      setUserPrivateKey(null);
     } catch (error) {
       localStorage.removeItem('smo_token');
       localStorage.removeItem('smo_user');

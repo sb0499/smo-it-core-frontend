@@ -14,12 +14,24 @@ function base64ToArrayBuffer(base64: string): Uint8Array {
   return bytes;
 }
 
+function getSubtle(): SubtleCrypto | null {
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+    return window.crypto.subtle;
+  }
+  return null;
+}
+
 // Derive a symmetric key from password using PBKDF2 with email as unique salt
 export async function deriveMasterKey(password: string, email: string): Promise<CryptoKey> {
+  const subtle = getSubtle();
+  if (!subtle) {
+    throw new Error('Web Crypto API no disponible en este entorno HTTP.');
+  }
+
   const passwordBytes = new TextEncoder().encode(password);
   const salt = new TextEncoder().encode(email.toLowerCase().trim() + '-smo-salt');
 
-  const keyMaterial = await window.crypto.subtle.importKey(
+  const keyMaterial = await subtle.importKey(
     'raw',
     passwordBytes,
     'PBKDF2',
@@ -27,7 +39,7 @@ export async function deriveMasterKey(password: string, email: string): Promise<
     ['deriveBits', 'deriveKey']
   );
 
-  return window.crypto.subtle.deriveKey(
+  return subtle.deriveKey(
     {
       name: 'PBKDF2',
       salt: salt,
@@ -43,7 +55,12 @@ export async function deriveMasterKey(password: string, email: string): Promise<
 
 // Generate new RSA-OAEP asymmetric key pair for a user
 export async function generateUserKeyPair(): Promise<CryptoKeyPair> {
-  return window.crypto.subtle.generateKey(
+  const subtle = getSubtle();
+  if (!subtle) {
+    throw new Error('Web Crypto API no disponible en este entorno HTTP.');
+  }
+
+  return subtle.generateKey(
     {
       name: 'RSA-OAEP',
       modulusLength: 2048,
