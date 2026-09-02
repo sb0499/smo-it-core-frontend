@@ -5,11 +5,16 @@ const getDynamicApiUrl = (): string => {
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
   
   if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-    if (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
+    if (!envUrl || !envUrl.startsWith('http') || envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
       return `http://${currentHost}:5006/api/v1`;
     }
   }
-  return envUrl || `http://${currentHost}:5006/api/v1`;
+
+  if (envUrl && envUrl.startsWith('http')) {
+    return envUrl;
+  }
+
+  return `http://${currentHost}:5006/api/v1`;
 };
 
 export const API_BASE_URL = getDynamicApiUrl();
