@@ -755,10 +755,16 @@ export const Inventario: React.FC = () => {
   // Fetch assigned assets for selected employee and sede in Recepcion (Devolucion) modal
   useEffect(() => {
     if (showRecepcionModal && recepcionPersonaId > 0) {
-      inventoryService.getActivos(1, 1000, '', 'Asignado', recepcionPersonaId, recepcionEmpresaId > 0 ? recepcionEmpresaId : undefined)
+      inventoryService.getActivos(1, 1000, '', 'Asignado', recepcionPersonaId)
         .then(res => {
           const list = Array.isArray(res) ? res : (res.data || []);
-          setPersonaAssignedActivos(list);
+          const strictlyAssigned = list.filter(a => {
+            const isPersonaMatch = a.persona_id === recepcionPersonaId || (a as any).custodio_id === recepcionPersonaId || (a as any).egreso_custodio_id === recepcionPersonaId;
+            const isEstadoMatch = a.estado === 'Asignado';
+            const isEmpresaMatch = recepcionEmpresaId <= 0 || a.empresa_id === recepcionEmpresaId;
+            return isPersonaMatch && isEstadoMatch && isEmpresaMatch;
+          });
+          setPersonaAssignedActivos(strictlyAssigned);
           setSelectedRecepcionAssetIds([]);
         })
         .catch(err => {
