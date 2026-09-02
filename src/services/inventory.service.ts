@@ -131,11 +131,18 @@ export interface EgresoBodega {
 }
 
 export const inventoryService = {
-  // Activos (Hardware)
-  async getActivos(page = 1, limit = 10, search = '', estado = ''): Promise<{ total: number; page: number; limit: number; data: Activo[] }> {
-    return apiClient.get('/inventarios', {
-      params: { page, limit, search, estado }
-    });
+  async getActivos(
+    page = 1, 
+    limit = 10, 
+    search = '', 
+    estado = '', 
+    custodio_id?: number, 
+    empresa_id?: number
+  ): Promise<{ total: number; page: number; limit: number; data: Activo[] }> {
+    const params: any = { page, limit, search, estado };
+    if (custodio_id && custodio_id > 0) params.custodio_id = custodio_id;
+    if (empresa_id && empresa_id > 0) params.empresa_id = empresa_id;
+    return apiClient.get('/inventarios', { params });
   },
 
   async createActivo(payload: Partial<Activo>): Promise<Activo> {
