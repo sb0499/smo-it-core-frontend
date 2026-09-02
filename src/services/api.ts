@@ -32,8 +32,10 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers.set('Content-Type', 'application/json');
   }
 
-  // Construct URL with query parameters
-  let url = `${API_BASE_URL}${path}`;
+  // Construct URL with query parameters cleanly
+  const cleanBaseUrl = API_BASE_URL.replace(/\/+$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  let url = `${cleanBaseUrl}${cleanPath}`;
   if (options.params) {
     const searchParams = new URLSearchParams();
     Object.entries(options.params).forEach(([key, val]) => {
