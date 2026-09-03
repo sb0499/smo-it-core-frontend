@@ -27,6 +27,15 @@ export const guardService = {
     });
   },
 
+  async programarTurno(fechas: string[], tecnicoId: number, observaciones?: string, empresaIds?: (number | null)[]): Promise<any> {
+    return apiClient.post('/guardias/programar-turno', {
+      fechas,
+      tecnico_id: tecnicoId,
+      observaciones,
+      empresa_ids: empresaIds
+    });
+  },
+
   async deleteGuardia(guardiaId: number): Promise<{ message: string }> {
     return apiClient.delete<{ message: string }>(`/guardias/${guardiaId}`);
   }

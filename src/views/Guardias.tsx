@@ -23,7 +23,7 @@ export const Guardias: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newFecha, setNewFecha] = useState('');
   const [newTechId, setNewTechId] = useState<number>(0);
-  const [newEmpresaId, setNewEmpresaId] = useState<number>(0);
+  const [newEmpresaIds, setNewEmpresaIds] = useState<number[]>([0]); // 0 = Global
   const [newObs, setNewObs] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [guardType, setGuardType] = useState<'feriado' | 'fin_de_semana'>('feriado');
@@ -192,6 +192,22 @@ export const Guardias: React.FC = () => {
     }, 100);
   };
 
+  const toggleEmpresaSelect = (id: number) => {
+    if (id === 0) {
+      setNewEmpresaIds([0]);
+      return;
+    }
+    setNewEmpresaIds(prev => {
+      const withoutGlobal = prev.filter(x => x !== 0);
+      if (withoutGlobal.includes(id)) {
+        const next = withoutGlobal.filter(x => x !== id);
+        return next.length === 0 ? [0] : next;
+      } else {
+        return [...withoutGlobal, id];
+      }
+    });
+  };
+
   const handleCreateGuardia = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFecha || newTechId <= 0) {
@@ -201,7 +217,10 @@ export const Guardias: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      const empIdVal = newEmpresaId > 0 ? newEmpresaId : null;
+      const isGlobal = newEmpresaIds.length === 0 || newEmpresaIds.includes(0);
+      const targetEmpresas = isGlobal ? [null] : newEmpresaIds;
+
+      let fechas: string[] = [];
       if (guardType === 'fin_de_semana') {
         const satDate = newFecha;
         const [yr, mo, dy] = satDate.split('-').map(Number);
@@ -215,18 +234,22 @@ export const Guardias: React.FC = () => {
         const sunDy = String(sunDateObj.getDate()).padStart(2, '0');
         const sunDate = `${sunYr}-${sunMo}-${sunDy}`;
 
-        // Create Saturday
-        await guardService.createGuardia(satDate, newTechId, newObs || 'Guardia de Fin de Semana (Sábado)', empIdVal);
-        // Create Sunday
-        await guardService.createGuardia(sunDate, newTechId, newObs || 'Guardia de Fin de Semana (Domingo)', empIdVal);
+        fechas = [satDate, sunDate];
       } else {
-        await guardService.createGuardia(newFecha, newTechId, newObs || 'Guardia de Feriado', empIdVal);
+        fechas = [newFecha];
       }
+
+      await guardService.programarTurno(
+        fechas,
+        newTechId,
+        newObs || (guardType === 'fin_de_semana' ? 'Guardia de Fin de Semana' : 'Guardia de Feriado'),
+        targetEmpresas
+      );
       
       setShowAddModal(false);
       setNewFecha('');
       setNewTechId(0);
-      setNewEmpresaId(0);
+      setNewEmpresaIds([0]);
       setNewObs('');
       setGuardType('feriado');
 
@@ -470,17 +493,31 @@ export const Guardias: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">SEDE (DONDE ESTARÁ DE TURNO)</label>
-                <select
-                  className="form-control"
-                  value={newEmpresaId}
-                  onChange={(e) => setNewEmpresaId(Number(e.target.value))}
-                >
-                  <option value="0">Todas las sedes (Global)</option>
-                  {empresas.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.nombre}</option>
-                  ))}
-                </select>
+                <label className="form-label">SEDES DE TURNO (PUEDES SELECCIONAR UNA O VARIAS)</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${newEmpresaIds.includes(0) ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => toggleEmpresaSelect(0)}
+                    style={{ fontSize: '11.5px', padding: '4px 10px' }}
+                  >
+                    {newEmpresaIds.includes(0) ? '✓ Todas las sedes (Global)' : 'Todas las sedes (Global)'}
+                  </button>
+                  {empresas.map(emp => {
+                    const selected = newEmpresaIds.includes(emp.id);
+                    return (
+                      <button
+                        key={emp.id}
+                        type="button"
+                        className={`btn btn-sm ${selected ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => toggleEmpresaSelect(emp.id)}
+                        style={{ fontSize: '11.5px', padding: '4px 10px' }}
+                      >
+                        {selected ? `✓ ${emp.nombre}` : emp.nombre}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="form-group">
