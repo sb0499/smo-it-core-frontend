@@ -10,6 +10,9 @@ export interface Activo {
   estado: 'Stock' | 'Asignado' | 'Mantenimiento' | 'Baja' | 'Reciclaje';
   persona_id: number | null;
   persona_nombre?: string;
+  persona_cedula?: string;
+  persona_departamento?: string;
+  persona_cargo?: string;
   proveedor_id: number | null;
   proveedor_nombre?: string;
   tipo_equipo_id?: number | null;

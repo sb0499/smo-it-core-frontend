@@ -1022,6 +1022,21 @@ export const Inventario: React.FC = () => {
     return importTypes;
   };
 
+  const assignedPersona = selectedActivo ? personas.find(p => p.id === selectedActivo.persona_id || p.id === (selectedActivo as any).custodio_id || p.id === (selectedActivo as any).egreso_custodio_id) : null;
+  const latestMov = movimientos.length > 0 ? movimientos[0] : null;
+
+  const drawerCustodioNombre = selectedActivo ? (
+    selectedActivo.persona_nombre || 
+    assignedPersona?.nombre || 
+    latestMov?.persona_recibe_nombre || 
+    (latestMov as any)?.hacia_persona_nombre || 
+    (latestMov as any)?.persona_entrega_nombre || null
+  ) : null;
+
+  const drawerCustodioCedula = selectedActivo ? (selectedActivo.persona_cedula || assignedPersona?.cedula || latestMov?.persona_recibe_cedula) : null;
+  const drawerCustodioCargo = selectedActivo ? (selectedActivo.persona_cargo || assignedPersona?.cargo) : null;
+  const drawerCustodioDepartamento = selectedActivo ? (selectedActivo.persona_departamento || assignedPersona?.departamento) : null;
+
   return (
     <div className="inventario-container animate-fade">
       {/* Tab Switcher */}
@@ -1220,17 +1235,23 @@ export const Inventario: React.FC = () => {
                       </span>
                     </td>
                     <td className="asset-holder">
-                      {a.persona_nombre ? (
-                        <span className="holder-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                          {a.persona_nombre}
-                        </span>
-                      ) : (
-                        <span className="holder-badge-bodega" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>
-                          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                          {a.bodega_nombre || 'Bodega Central'}
-                        </span>
-                      )}
+                      {(() => {
+                        const rowPersonaName = a.persona_nombre || personas.find(p => p.id === a.persona_id || p.id === (a as any).custodio_id || p.id === (a as any).egreso_custodio_id)?.nombre;
+                        if (rowPersonaName) {
+                          return (
+                            <span className="holder-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                              {rowPersonaName}
+                            </span>
+                          );
+                        }
+                        return (
+                          <span className="holder-badge-bodega" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>
+                            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                            {a.bodega_nombre || 'Bodega Central'}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
@@ -1687,6 +1708,56 @@ export const Inventario: React.FC = () => {
                 </form>
               ) : (
                 <>
+                  {/* Custodio / Asignación Banner */}
+                  {(selectedActivo.estado === 'Asignado' || drawerCustodioNombre) && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(59, 130, 246, 0.08) 100%)',
+                      border: '1px solid rgba(99, 102, 241, 0.25)',
+                      borderRadius: '8px',
+                      padding: '12px 14px',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <div style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        background: 'var(--color-primary, #6366f1)',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        flexShrink: 0,
+                        boxShadow: '0 2px 6px rgba(99, 102, 241, 0.3)'
+                      }}>
+                        {drawerCustodioNombre ? drawerCustodioNombre.charAt(0).toUpperCase() : (
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                        <span style={{ fontSize: '10.5px', fontWeight: 'bold', textTransform: 'uppercase', color: '#6366f1', letterSpacing: '0.6px' }}>
+                          Asignado a (Custodio Actual)
+                        </span>
+                        <span style={{ fontSize: '14.5px', fontWeight: '700', color: '#0f172a' }}>
+                          {drawerCustodioNombre || 'Sin nombre asignado'}
+                        </span>
+                        {(drawerCustodioCargo || drawerCustodioCedula || drawerCustodioDepartamento) && (
+                          <span style={{ fontSize: '11.5px', color: '#475569', fontWeight: '500' }}>
+                            {[
+                              drawerCustodioCargo,
+                              drawerCustodioDepartamento,
+                              drawerCustodioCedula ? `C.I: ${drawerCustodioCedula}` : null
+                            ].filter(Boolean).join(' • ')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Top Spec summary */}
                   <div className="asset-spec-box" style={{ border: '1px solid #f1f5f9', background: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '12px' }}>
@@ -1698,9 +1769,19 @@ export const Inventario: React.FC = () => {
                     
                     <div className="spec-details-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div className="spec-item" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
-                        <span style={{ color: '#64748b' }}>Tipo Equipo:</span>
-                        <strong>{selectedActivo.tipo_equipo_nombre || 'N/A'}</strong>
+                        <span style={{ color: '#64748b' }}>Asignado / Custodio:</span>
+                        {drawerCustodioNombre ? (
+                          <strong style={{ color: '#2563eb' }}>{drawerCustodioNombre}</strong>
+                        ) : selectedActivo.estado === 'Asignado' ? (
+                          <strong style={{ color: '#2563eb' }}>Asignado</strong>
+                        ) : (
+                          <span style={{ color: '#94a3b8' }}>En Stock / Bodega</span>
+                        )}
                       </div>
+                        <div className="spec-item" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
+                          <span style={{ color: '#64748b' }}>Tipo Equipo:</span>
+                          <strong>{selectedActivo.tipo_equipo_nombre || 'N/A'}</strong>
+                        </div>
                       <div className="spec-item" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
                         <span style={{ color: '#64748b' }}>Sede (Ubicación):</span>
                         <strong>{selectedActivo.empresa_nombre || 'N/A'}</strong>
