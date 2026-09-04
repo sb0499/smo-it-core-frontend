@@ -1078,7 +1078,7 @@ export const Inventario: React.FC = () => {
               className="form-control search-input"
               placeholder={
                 activeTab === 'activos' 
-                  ? "Buscar activos por código, marca, serial, sede..." 
+                  ? "Buscar por código, marca, serial, responsable, sede..." 
                   : activeTab === 'recepciones'
                     ? "Buscar por código de recepción, custodio o área..."
                     : "Buscar consumibles..."
