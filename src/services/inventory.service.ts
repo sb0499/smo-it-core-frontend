@@ -67,6 +67,8 @@ export interface MovimientoInventario {
   activo_id: number;
   desde_persona_nombre?: string | null;
   hacia_persona_nombre?: string | null;
+  persona_recibe_nombre?: string | null;
+  persona_recibe_cedula?: string | null;
   usuario_nombre: string;
   tipo: string;
   fecha: string;

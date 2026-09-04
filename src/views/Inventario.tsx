@@ -1028,12 +1028,12 @@ export const Inventario: React.FC = () => {
   const drawerCustodioNombre = selectedActivo ? (
     selectedActivo.persona_nombre || 
     assignedPersona?.nombre || 
-    latestMov?.persona_recibe_nombre || 
-    (latestMov as any)?.hacia_persona_nombre || 
+    latestMov?.hacia_persona_nombre || 
+    (latestMov as any)?.persona_recibe_nombre || 
     (latestMov as any)?.persona_entrega_nombre || null
   ) : null;
 
-  const drawerCustodioCedula = selectedActivo ? (selectedActivo.persona_cedula || assignedPersona?.cedula || latestMov?.persona_recibe_cedula) : null;
+  const drawerCustodioCedula = selectedActivo ? (selectedActivo.persona_cedula || assignedPersona?.cedula || (latestMov as any)?.persona_recibe_cedula) : null;
   const drawerCustodioCargo = selectedActivo ? (selectedActivo.persona_cargo || assignedPersona?.cargo) : null;
   const drawerCustodioDepartamento = selectedActivo ? (selectedActivo.persona_departamento || assignedPersona?.departamento) : null;
 
