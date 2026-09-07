@@ -240,12 +240,10 @@ export const Usuarios: React.FC = () => {
   };
 
   const handleToggleNotificacionesCorreo = async (u: Usuario) => {
-    const isCurrentlyEnabled =
-      u.recibir_notificaciones_correo === undefined ||
-      u.recibir_notificaciones_correo === 1 ||
-      u.recibir_notificaciones_correo === true ||
-      u.recibir_notificaciones_correo === "1";
-    const nextVal = !isCurrentlyEnabled ? 1 : 0;
+    const isCurrentlyDisabled =
+      u.recibir_notificaciones_correo === 0 ||
+      u.recibir_notificaciones_correo === false;
+    const nextVal = isCurrentlyDisabled ? 1 : 0;
     try {
       await apiClient.put(`/usuarios/${u.id}`, {
         recibir_notificaciones_correo: nextVal,
@@ -596,59 +594,51 @@ export const Usuarios: React.FC = () => {
                       </span>
                     </td>
                     <td>
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        style={{
-                          padding: "3px 8px",
-                          fontSize: "11px",
-                          borderRadius: "20px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          cursor: "pointer",
-                          transition: "all 0.2s ease",
-                          background:
-                            (u.recibir_notificaciones_correo === 0 ||
-                            u.recibir_notificaciones_correo === false ||
-                            u.recibir_notificaciones_correo === "0")
-                              ? "rgba(148, 163, 184, 0.12)"
-                              : "rgba(34, 197, 94, 0.12)",
-                          color:
-                            (u.recibir_notificaciones_correo === 0 ||
-                            u.recibir_notificaciones_correo === false ||
-                            u.recibir_notificaciones_correo === "0")
-                              ? "#94a3b8"
-                              : "#22c55e",
-                          border:
-                            (u.recibir_notificaciones_correo === 0 ||
-                            u.recibir_notificaciones_correo === false ||
-                            u.recibir_notificaciones_correo === "0")
-                              ? "1px solid rgba(148, 163, 184, 0.25)"
-                              : "1px solid rgba(34, 197, 94, 0.25)",
-                        }}
-                        onClick={() => handleToggleNotificacionesCorreo(u)}
-                        title="Haz clic para activar o desactivar notificaciones por correo"
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="12"
-                          height="12"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                          <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                        {(u.recibir_notificaciones_correo === 0 ||
-                        u.recibir_notificaciones_correo === false ||
-                        u.recibir_notificaciones_correo === "0")
-                          ? "Desactivado (0)"
-                          : "Activo (1)"}
-                      </button>
+                      {(() => {
+                        const isDisabled =
+                          u.recibir_notificaciones_correo === 0 ||
+                          u.recibir_notificaciones_correo === false;
+                        return (
+                          <button
+                            type="button"
+                            className="btn btn-sm"
+                            style={{
+                              padding: "3px 8px",
+                              fontSize: "11px",
+                              borderRadius: "20px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                              background: isDisabled
+                                ? "rgba(148, 163, 184, 0.12)"
+                                : "rgba(34, 197, 94, 0.12)",
+                              color: isDisabled ? "#94a3b8" : "#22c55e",
+                              border: isDisabled
+                                ? "1px solid rgba(148, 163, 184, 0.25)"
+                                : "1px solid rgba(34, 197, 94, 0.25)",
+                            }}
+                            onClick={() => handleToggleNotificacionesCorreo(u)}
+                            title="Haz clic para activar o desactivar notificaciones por correo"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              width="12"
+                              height="12"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                              <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                            {isDisabled ? "Desactivado (0)" : "Activo (1)"}
+                          </button>
+                        );
+                      })()}
                     </td>
                     <td>
                       {u.must_change_password ? (
