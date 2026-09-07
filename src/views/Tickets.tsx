@@ -389,7 +389,7 @@ export const Tickets: React.FC = () => {
             
             <form onSubmit={handleCreateTicket} className="modal-form">
               <div className="form-group">
-                <label className="form-label">TÍTULO DEL SOPORTE / DAÑO</label>
+                <label className="form-label">TÍTULO DEL SOPORTE / DAÑO *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -402,7 +402,7 @@ export const Tickets: React.FC = () => {
 
               <div className="form-row">
                 <div className="form-group half">
-                  <label className="form-label">CATEGORÍA</label>
+                  <label className="form-label">CATEGORÍA *</label>
                   <select className="form-control" value={newCat} onChange={(e) => setNewCat(e.target.value)}>
                     {categoriesList.map(c => (
                       <option key={c.id} value={c.nombre}>{c.nombre}</option>
@@ -411,7 +411,7 @@ export const Tickets: React.FC = () => {
                 </div>
 
                 <div className="form-group half">
-                  <label className="form-label">PRIORIDAD</label>
+                  <label className="form-label">PRIORIDAD *</label>
                   <select 
                     className="form-control" 
                     value={newPrioridad} 
@@ -427,7 +427,7 @@ export const Tickets: React.FC = () => {
 
               <div className="form-row">
                 <div className="form-group half">
-                  <label className="form-label">SEDE / EMPRESA</label>
+                  <label className="form-label">SEDE / EMPRESA *</label>
                   <select 
                     className="form-control" 
                     value={newEmpresaId} 
@@ -440,7 +440,7 @@ export const Tickets: React.FC = () => {
                 </div>
 
                 <div className="form-group half">
-                  <label className="form-label">ÁREA SOLICITANTE</label>
+                  <label className="form-label">ÁREA SOLICITANTE *</label>
                   <input
                     type="text"
                     className="form-control"
@@ -452,7 +452,7 @@ export const Tickets: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">NOMBRE DEL EMPLEADO AFECTADO (SOLICITANTE)</label>
+                <label className="form-label">NOMBRE DEL EMPLEADO AFECTADO (SOLICITANTE) *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -464,7 +464,7 @@ export const Tickets: React.FC = () => {
 
               {isN2 && (
                 <div className="form-group">
-                  <label className="form-label">NIVEL DE SOPORTE</label>
+                  <label className="form-label">NIVEL DE SOPORTE *</label>
                   <select 
                     className="form-control" 
                     value={newNivelSoporte} 
@@ -477,7 +477,7 @@ export const Tickets: React.FC = () => {
               )}
 
               <div className="form-group">
-                <label className="form-label">DESCRIPCIÓN DE LA FALLA O SOLICITUD</label>
+                <label className="form-label">DESCRIPCIÓN DE LA FALLA O SOLICITUD *</label>
                 <textarea
                   className="form-control textarea-field"
                   placeholder="Describe con el mayor detalle posible el inconveniente..."
@@ -541,7 +541,7 @@ export const Tickets: React.FC = () => {
                         </button>
                       ) : (
                         <div className="cierre-rapido-panel animate-fade">
-                          <label className="form-label" style={{ color: '#047857', fontWeight: '600', marginBottom: '8px', display: 'block' }}>OBSERVACIONES DE LA SOLUCIÓN (OBLIGATORIO)</label>
+                          <label className="form-label" style={{ color: '#047857', fontWeight: '600', marginBottom: '8px', display: 'block' }}>OBSERVACIONES DE LA SOLUCIÓN (OBLIGATORIO) *</label>
                           <textarea
                             className="form-control textarea-field"
                             placeholder="Escribe la solución detallada aplicada para poder cerrar el ticket..."
@@ -694,7 +694,7 @@ export const Tickets: React.FC = () => {
             
             <form onSubmit={handleEscalarN2Submit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group">
-                <label className="form-label">SELECCIONE GRUPO N2</label>
+                <label className="form-label">SELECCIONE GRUPO N2 *</label>
                 <select
                   className="form-control"
                   value={escalarGrupo}

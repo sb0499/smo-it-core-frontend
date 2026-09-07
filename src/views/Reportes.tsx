@@ -201,7 +201,7 @@ export const Reportes: React.FC = () => {
             <p className="text-muted font-xs mb-4">Exporta la información en archivos Excel (.xlsx) estructurados por filtros de fecha y técnico.</p>
 
             <div className="form-group mb-3">
-              <label className="form-label">Tipo de Reporte</label>
+              <label className="form-label">Tipo de Reporte *</label>
               <select 
                 className="form-control" 
                 value={tipoReporte} 

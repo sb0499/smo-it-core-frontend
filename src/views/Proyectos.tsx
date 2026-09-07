@@ -864,7 +864,7 @@ export const Proyectos: React.FC = () => {
 
             <form onSubmit={handleCreateProject} className="modal-form">
               <div className="form-group">
-                <label className="form-label">NOMBRE DEL PROYECTO</label>
+                <label className="form-label">NOMBRE DEL PROYECTO *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -877,7 +877,7 @@ export const Proyectos: React.FC = () => {
 
               <div className="form-row">
                 <div className="form-group half">
-                  <label className="form-label">TIPO DE PROYECTO</label>
+                  <label className="form-label">TIPO DE PROYECTO *</label>
                   <select 
                     className="form-control" 
                     value={newProjType} 
@@ -892,7 +892,7 @@ export const Proyectos: React.FC = () => {
                 </div>
 
                 <div className="form-group half">
-                  <label className="form-label">FECHA FIN ESTIMADA</label>
+                  <label className="form-label">FECHA FIN ESTIMADA *</label>
                   <input
                     type="date"
                     className="form-control"
@@ -956,7 +956,7 @@ export const Proyectos: React.FC = () => {
 
             <form onSubmit={handleCreateTask} className="modal-form">
               <div className="form-group">
-                <label className="form-label">TÍTULO DE LA TAREA</label>
+                <label className="form-label">TÍTULO DE LA TAREA *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -980,7 +980,7 @@ export const Proyectos: React.FC = () => {
 
               <div className="form-row">
                 <div className="form-group half">
-                  <label className="form-label">RESPONSABLE</label>
+                  <label className="form-label">RESPONSABLE *</label>
                   <select
                     className="form-control"
                     value={taskResponsableId || ''}
@@ -995,7 +995,7 @@ export const Proyectos: React.FC = () => {
                 </div>
 
                 <div className="form-group half">
-                  <label className="form-label">FECHA LÍMITE</label>
+                  <label className="form-label">FECHA LÍMITE *</label>
                   <input
                     type="date"
                     className="form-control"
@@ -1030,7 +1030,7 @@ export const Proyectos: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">TÍTULO DE LA SUBTAREA</label>
+                <label className="form-label">TÍTULO DE LA SUBTAREA *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -1054,7 +1054,7 @@ export const Proyectos: React.FC = () => {
 
               <div className="form-row">
                 <div className="form-group half">
-                  <label className="form-label">RESPONSABLE</label>
+                  <label className="form-label">RESPONSABLE *</label>
                   <select
                     className="form-control"
                     value={subtaskResponsableId || ''}
@@ -1069,7 +1069,7 @@ export const Proyectos: React.FC = () => {
                 </div>
 
                 <div className="form-group half">
-                  <label className="form-label">FECHA LÍMITE</label>
+                  <label className="form-label">FECHA LÍMITE *</label>
                   <input
                     type="date"
                     className="form-control"

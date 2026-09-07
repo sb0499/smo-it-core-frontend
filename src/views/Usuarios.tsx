@@ -449,7 +449,7 @@ export const Usuarios: React.FC = () => {
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group">
-                <label className="form-label">NOMBRE COMPLETO</label>
+                <label className="form-label">NOMBRE COMPLETO *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -461,7 +461,7 @@ export const Usuarios: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">CORREO ELECTRÓNICO / USUARIO</label>
+                <label className="form-label">CORREO ELECTRÓNICO / USUARIO *</label>
                 <input
                   type="email"
                   className="form-control"
@@ -474,7 +474,7 @@ export const Usuarios: React.FC = () => {
 
               <div className="form-group">
                 <label className="form-label">
-                  CONTRASEÑA {isEditing && <span className="text-dim">(Dejar en blanco para conservar actual)</span>}
+                  CONTRASEÑA {!isEditing ? ' *' : <span className="text-dim">(Dejar en blanco para conservar actual)</span>}
                 </label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input
@@ -512,7 +512,7 @@ export const Usuarios: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">ROL DE ACCESO</label>
+                <label className="form-label">ROL DE ACCESO *</label>
                 <select
                   className="form-control"
                   value={rolId}
@@ -529,7 +529,7 @@ export const Usuarios: React.FC = () => {
               {(Number(rolId) === 2 || Number(rolId) === 4) && (
                 <>
                   <div className="form-group">
-                    <label className="form-label">NIVEL DE SOPORTE (ITIL)</label>
+                    <label className="form-label">NIVEL DE SOPORTE (ITIL) *</label>
                     <select
                       className="form-control"
                       value={nivelSoporte}
@@ -546,7 +546,7 @@ export const Usuarios: React.FC = () => {
 
                   {nivelSoporte === 'N2' && (
                     <div className="form-group">
-                      <label className="form-label">GRUPO N2 (ESPECIALIDAD)</label>
+                      <label className="form-label">GRUPO N2 (ESPECIALIDAD) *</label>
                       <select
                         className="form-control"
                         value={grupoN2}

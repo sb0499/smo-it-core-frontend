@@ -127,7 +127,7 @@ export const Login: React.FC = () => {
                   type="email"
                   id="email"
                   className="pill-control"
-                  placeholder="Correo electrónico"
+                  placeholder="Correo electrónico *"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
@@ -163,7 +163,7 @@ export const Login: React.FC = () => {
                   type="password"
                   id="password"
                   className="pill-control"
-                  placeholder="Contraseña"
+                  placeholder="Contraseña *"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}

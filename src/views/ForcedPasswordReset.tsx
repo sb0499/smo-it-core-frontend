@@ -142,7 +142,7 @@ export const ForcedPasswordReset: React.FC = () => {
                   letterSpacing: "0.05em",
                 }}
               >
-                CONTRASEÑA TEMPORAL / ACTUAL
+                CONTRASEÑA TEMPORAL / ACTUAL *
               </span>
               <div className="input-pill-wrapper">
                 <svg
@@ -190,7 +190,7 @@ export const ForcedPasswordReset: React.FC = () => {
                   letterSpacing: "0.05em",
                 }}
               >
-                NUEVA CONTRASEÑA
+                NUEVA CONTRASEÑA *
               </span>
               <div className="input-pill-wrapper">
                 <svg
@@ -238,7 +238,7 @@ export const ForcedPasswordReset: React.FC = () => {
                   letterSpacing: "0.05em",
                 }}
               >
-                CONFIRMAR NUEVA CONTRASEÑA
+                CONFIRMAR NUEVA CONTRASEÑA *
               </span>
               <div className="input-pill-wrapper">
                 <svg

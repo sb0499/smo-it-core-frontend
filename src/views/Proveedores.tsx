@@ -271,7 +271,7 @@ export const Proveedores: React.FC = () => {
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group">
-                <label className="form-label">RAZÓN SOCIAL / NOMBRE PROVEEDOR</label>
+                <label className="form-label">RAZÓN SOCIAL / NOMBRE PROVEEDOR *</label>
                 <input
                   type="text"
                   className="form-control"

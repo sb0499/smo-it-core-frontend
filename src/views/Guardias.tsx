@@ -454,7 +454,7 @@ export const Guardias: React.FC = () => {
 
             <form onSubmit={handleCreateGuardia} className="modal-form">
               <div className="form-group" style={{ marginBottom: '16px' }}>
-                <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>TIPO DE TURNO DE GUARDIA</label>
+                <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>TIPO DE TURNO DE GUARDIA *</label>
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                     <input
@@ -481,7 +481,7 @@ export const Guardias: React.FC = () => {
 
               <div className="form-group">
                 <label className="form-label">
-                  {guardType === 'fin_de_semana' ? 'SELECCIONAR SÁBADO DEL FIN DE SEMANA' : 'SELECCIONAR FECHA DEL FERIADO'}
+                  {(guardType === 'fin_de_semana' ? 'SELECCIONAR SÁBADO DEL FIN DE SEMANA' : 'SELECCIONAR FECHA DEL FERIADO') + ' *'}
                 </label>
                 <input
                   type="date"
@@ -493,7 +493,7 @@ export const Guardias: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">SEDES DE TURNO (PUEDES SELECCIONAR UNA O VARIAS)</label>
+                <label className="form-label">SEDES DE TURNO (PUEDES SELECCIONAR UNA O VARIAS) *</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
                   <button
                     type="button"
@@ -521,7 +521,7 @@ export const Guardias: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">TÉCNICO DE TURNO</label>
+                <label className="form-label">TÉCNICO DE TURNO *</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <select 
                     className="form-control" 

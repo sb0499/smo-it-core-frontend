@@ -298,7 +298,7 @@ export const Personas: React.FC = () => {
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group">
-                <label className="form-label">CÉDULA / IDENTIFICACIÓN</label>
+                <label className="form-label">CÉDULA / IDENTIFICACIÓN *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -310,7 +310,7 @@ export const Personas: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">NOMBRE COMPLETO</label>
+                <label className="form-label">NOMBRE COMPLETO *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -334,7 +334,7 @@ export const Personas: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">EMPRESA / SEDE ASOCIADA</label>
+                <label className="form-label">EMPRESA / SEDE ASOCIADA *</label>
                 <select
                   className="form-control"
                   value={empresaId}

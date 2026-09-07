@@ -349,7 +349,7 @@ export const SoportesRecurrentes: React.FC = () => {
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group">
-                <label className="form-label">TÍTULO DEL SOPORTE RECURRENTE</label>
+                <label className="form-label">TÍTULO DEL SOPORTE RECURRENTE *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -362,7 +362,7 @@ export const SoportesRecurrentes: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">DESCRIPCIÓN DE LA TAREA PROGRAMADA</label>
+                <label className="form-label">DESCRIPCIÓN DE LA TAREA PROGRAMADA *</label>
                 <textarea
                   className="form-control"
                   placeholder="Describe qué se debe hacer en esta tarea técnica..."
@@ -376,7 +376,7 @@ export const SoportesRecurrentes: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                 <div className="form-group">
-                  <label className="form-label">CATEGORÍA</label>
+                  <label className="form-label">CATEGORÍA *</label>
                   <select
                     className="form-control"
                     value={categoria}
@@ -390,7 +390,7 @@ export const SoportesRecurrentes: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">CENTRO COMERCIAL (CC)</label>
+                  <label className="form-label">CENTRO COMERCIAL (CC) *</label>
                   <select
                     className="form-control"
                     value={empresaId}
@@ -406,7 +406,7 @@ export const SoportesRecurrentes: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                 <div className="form-group">
-                  <label className="form-label">ÁREA SOLICITANTE</label>
+                  <label className="form-label">ÁREA SOLICITANTE *</label>
                   <input
                     type="text"
                     className="form-control"
@@ -418,7 +418,7 @@ export const SoportesRecurrentes: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">SOLICITANTE REF.</label>
+                  <label className="form-label">SOLICITANTE REF. *</label>
                   <input
                     type="text"
                     className="form-control"
@@ -432,7 +432,7 @@ export const SoportesRecurrentes: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                 <div className="form-group">
-                  <label className="form-label">PRIORIDAD</label>
+                  <label className="form-label">PRIORIDAD *</label>
                   <select
                     className="form-control"
                     value={prioridad}
@@ -447,7 +447,7 @@ export const SoportesRecurrentes: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label text-glow">FRECUENCIA DE RECURRENCIA</label>
+                  <label className="form-label text-glow">FRECUENCIA DE RECURRENCIA *</label>
                   <select
                     className="form-control"
                     value={frecuencia}
@@ -466,7 +466,7 @@ export const SoportesRecurrentes: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">FECHA DE INICIO DE PROGRAMACIÓN</label>
+                <label className="form-label">FECHA DE INICIO DE PROGRAMACIÓN *</label>
                 <input
                   type="date"
                   className="form-control"

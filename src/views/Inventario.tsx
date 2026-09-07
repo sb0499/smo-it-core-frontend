@@ -1399,7 +1399,7 @@ export const Inventario: React.FC = () => {
             {editingTipoEquipo ? (
               <form onSubmit={handleUpdateTipoEquipo} className="modal-form">
                 <div className="form-group">
-                  <label className="form-label">Nombre del Tipo de Equipo</label>
+                  <label className="form-label">Nombre del Tipo de Equipo *</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1421,7 +1421,7 @@ export const Inventario: React.FC = () => {
             ) : (
               <form onSubmit={handleCreateTipoEquipo} className="modal-form">
                 <div className="form-group">
-                  <label className="form-label">Nombre del Tipo de Equipo</label>
+                  <label className="form-label">Nombre del Tipo de Equipo *</label>
                   <input
                     type="text"
                     className="form-control"

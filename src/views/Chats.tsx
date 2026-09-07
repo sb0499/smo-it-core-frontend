@@ -1150,7 +1150,7 @@ export const Chats: React.FC = () => {
 
             <form onSubmit={handleCreateChannel} className="modal-form">
               <div className="form-group">
-                <label className="form-label">NOMBRE DEL CANAL</label>
+                <label className="form-label">NOMBRE DEL CANAL *</label>
                 <input
                   type="text"
                   className="form-control"
