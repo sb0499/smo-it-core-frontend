@@ -243,8 +243,9 @@ export const Usuarios: React.FC = () => {
     const isCurrentlyEnabled =
       u.recibir_notificaciones_correo === undefined ||
       u.recibir_notificaciones_correo === 1 ||
-      u.recibir_notificaciones_correo === true;
-    const nextVal = !isCurrentlyEnabled;
+      u.recibir_notificaciones_correo === true ||
+      u.recibir_notificaciones_correo === "1";
+    const nextVal = !isCurrentlyEnabled ? 1 : 0;
     try {
       await apiClient.put(`/usuarios/${u.id}`, {
         recibir_notificaciones_correo: nextVal,
@@ -292,7 +293,7 @@ export const Usuarios: React.FC = () => {
       empresa_ids: selectedEmpresas,
       empresa_inventario_ids: selectedEmpresasInventario,
       must_change_password: mustChangePassword,
-      recibir_notificaciones_correo: recibirNotificacionesCorreo,
+      recibir_notificaciones_correo: recibirNotificacionesCorreo ? 1 : 0,
     };
 
     if (password) {
@@ -608,18 +609,21 @@ export const Usuarios: React.FC = () => {
                           cursor: "pointer",
                           transition: "all 0.2s ease",
                           background:
-                            u.recibir_notificaciones_correo === 0 ||
-                            u.recibir_notificaciones_correo === false
+                            (u.recibir_notificaciones_correo === 0 ||
+                            u.recibir_notificaciones_correo === false ||
+                            u.recibir_notificaciones_correo === "0")
                               ? "rgba(148, 163, 184, 0.12)"
                               : "rgba(34, 197, 94, 0.12)",
                           color:
-                            u.recibir_notificaciones_correo === 0 ||
-                            u.recibir_notificaciones_correo === false
+                            (u.recibir_notificaciones_correo === 0 ||
+                            u.recibir_notificaciones_correo === false ||
+                            u.recibir_notificaciones_correo === "0")
                               ? "#94a3b8"
                               : "#22c55e",
                           border:
-                            u.recibir_notificaciones_correo === 0 ||
-                            u.recibir_notificaciones_correo === false
+                            (u.recibir_notificaciones_correo === 0 ||
+                            u.recibir_notificaciones_correo === false ||
+                            u.recibir_notificaciones_correo === "0")
                               ? "1px solid rgba(148, 163, 184, 0.25)"
                               : "1px solid rgba(34, 197, 94, 0.25)",
                         }}
@@ -639,10 +643,11 @@ export const Usuarios: React.FC = () => {
                           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                           <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
-                        {u.recibir_notificaciones_correo === 0 ||
-                        u.recibir_notificaciones_correo === false
-                          ? "Desactivado"
-                          : "Activo"}
+                        {(u.recibir_notificaciones_correo === 0 ||
+                        u.recibir_notificaciones_correo === false ||
+                        u.recibir_notificaciones_correo === "0")
+                          ? "Desactivado (0)"
+                          : "Activo (1)"}
                       </button>
                     </td>
                     <td>
