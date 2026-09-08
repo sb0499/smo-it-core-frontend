@@ -7,6 +7,8 @@ export interface Ticket {
   categoria: string;
   empresa_id: number | null;
   empresa_nombre?: string;
+  sucursal_id?: number | null;
+  sucursal_nombre?: string;
   area_solicitante: string | null;
   persona_solicitante: string | null;
   medio_solicitud: 'Plataforma' | 'WhatsApp' | 'Llamada' | 'Correo' | 'Presencial' | 'Automático (Recurrente)' | 'Automático (Inventario)';
@@ -31,6 +33,7 @@ export interface CreateTicketPayload {
   descripcion: string;
   categoria: string;
   empresa_id?: number | null;
+  sucursal_id?: number | null;
   area_solicitante?: string | null;
   persona_solicitante?: string | null;
   medio_solicitud?: string;

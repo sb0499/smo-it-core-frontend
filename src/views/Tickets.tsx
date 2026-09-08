@@ -32,6 +32,7 @@ export const Tickets: React.FC = () => {
   const [newCat, setNewCat] = useState('Sistemas');
   const [newPrioridad, setNewPrioridad] = useState<'Baja' | 'Media' | 'Alta' | 'Critica'>('Media');
   const [newEmpresaId, setNewEmpresaId] = useState<number>(0);
+  const [newSucursalId, setNewSucursalId] = useState<number>(0);
   const [newPersonaSol, setNewPersonaSol] = useState('');
   const [newAreaSol, setNewAreaSol] = useState('');
   const [newNivelSoporte, setNewNivelSoporte] = useState<'N1' | 'N2'>('N1');
@@ -44,7 +45,7 @@ export const Tickets: React.FC = () => {
   const [showCierrePanel, setShowCierrePanel] = useState(false);
   const [cierreObs, setCierreObs] = useState('');
 
-  const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
+  const [empresas, setEmpresas] = useState<{ id: number; nombre: string; sucursales?: { id: number; nombre: string; persona_id: number | null; persona_nombre?: string }[] }[]>([]);
   const [categoriesList, setCategoriesList] = useState<{ id: number; nombre: string }[]>([]);
 
   const loggedInTech = technicians.find(t => t.id === user?.id);
@@ -69,14 +70,22 @@ export const Tickets: React.FC = () => {
     const loadMetadata = async () => {
       try {
         const [companiesList, cats, usersList] = await Promise.all([
-          apiClient.get<{ id: number; nombre: string }[]>('/empresas'),
+          apiClient.get<{ id: number; nombre: string; sucursales?: { id: number; nombre: string; persona_id: number | null; persona_nombre?: string }[] }[]>('/empresas'),
           ticketService.getCategorias().catch(() => []),
           projectService.getUsuarios().catch(() => [])
         ]);
 
         setEmpresas(companiesList);
         if (companiesList.length > 0 && newEmpresaId === 0) {
-          setNewEmpresaId(companiesList[0].id);
+          const firstEmp = companiesList[0];
+          setNewEmpresaId(firstEmp.id);
+          const firstSuc = firstEmp.sucursales || [];
+          if (firstSuc.length > 0) {
+            setNewSucursalId(firstSuc[0].id);
+            if (firstSuc[0].persona_nombre) {
+              setNewPersonaSol(firstSuc[0].persona_nombre);
+            }
+          }
         }
 
         setCategoriesList(cats);
@@ -111,6 +120,21 @@ export const Tickets: React.FC = () => {
     fetchTicketsData(page, debouncedSearch, filterEstado);
   }, [page, debouncedSearch, filterEstado]);
 
+  const handleEmpresaSelectChange = (empId: number) => {
+    setNewEmpresaId(empId);
+    const selectedEmp = empresas.find(e => e.id === empId);
+    const sucs = selectedEmp?.sucursales || [];
+    if (sucs.length > 0) {
+      setNewSucursalId(sucs[0].id);
+    } else {
+      setNewSucursalId(0);
+    }
+  };
+
+  const handleSucursalSelectChange = (sucId: number) => {
+    setNewSucursalId(sucId);
+  };
+
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle || !newDesc) {
@@ -125,6 +149,7 @@ export const Tickets: React.FC = () => {
         categoria: newCat,
         prioridad: newPrioridad,
         empresa_id: newEmpresaId,
+        sucursal_id: newSucursalId > 0 ? newSucursalId : undefined,
         persona_solicitante: newPersonaSol || undefined,
         area_solicitante: newAreaSol || undefined,
         medio_solicitud: 'Plataforma',
@@ -137,6 +162,7 @@ export const Tickets: React.FC = () => {
       // Reset
       setNewTitle('');
       setNewDesc('');
+      setNewSucursalId(0);
       setNewPersonaSol('');
       setNewAreaSol('');
       setNewNivelSoporte('N1');
@@ -330,7 +356,10 @@ export const Tickets: React.FC = () => {
                 
                 <div className="ticket-meta mt-3">
                   <div className="meta-tag">{ticket.categoria}</div>
-                  <div className="meta-tag">{ticket.empresa_nombre || 'Sin Sede Asignada'}</div>
+                  <div className="meta-tag">
+                    {ticket.empresa_nombre || 'Sin Sede Asignada'}
+                    {ticket.sucursal_nombre ? ` (${ticket.sucursal_nombre})` : ''}
+                  </div>
                 </div>
               </div>
 
@@ -431,7 +460,7 @@ export const Tickets: React.FC = () => {
                   <select 
                     className="form-control" 
                     value={newEmpresaId} 
-                    onChange={(e) => setNewEmpresaId(Number(e.target.value))}
+                    onChange={(e) => handleEmpresaSelectChange(Number(e.target.value))}
                   >
                     {empresas.map(c => (
                       <option key={c.id} value={c.id}>{c.nombre}</option>
@@ -450,6 +479,31 @@ export const Tickets: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Combobox de Sucursal si la empresa seleccionada posee sucursales */}
+              {(() => {
+                const currentEmpObj = empresas.find(e => e.id === newEmpresaId);
+                const sucs = currentEmpObj?.sucursales || [];
+                if (sucs.length > 0) {
+                  return (
+                    <div className="form-group animate-fade">
+                      <label className="form-label">SUCURSAL DE LA EMPRESA *</label>
+                      <select
+                        className="form-control"
+                        value={newSucursalId}
+                        onChange={(e) => handleSucursalSelectChange(Number(e.target.value))}
+                      >
+                        {sucs.map(s => (
+                          <option key={s.id} value={s.id}>
+                            📍 {s.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               <div className="form-group">
                 <label className="form-label">NOMBRE DEL EMPLEADO AFECTADO (SOLICITANTE) *</label>
@@ -511,7 +565,7 @@ export const Tickets: React.FC = () => {
                 <h3>{selectedTicket.titulo}</h3>
                 <p className="ticket-detail-desc">{selectedTicket.descripcion}</p>
                 <div className="ticket-detail-meta text-muted">
-                  <span>Sede: <strong>{selectedTicket.empresa_nombre || 'CONDADO'}</strong></span>
+                  <span>Sede: <strong>{selectedTicket.empresa_nombre || 'CONDADO'}{selectedTicket.sucursal_nombre ? ` (${selectedTicket.sucursal_nombre})` : ''}</strong></span>
                   <span>Categoría: <strong>{selectedTicket.categoria}</strong></span>
                   <span>Prioridad: <strong>{selectedTicket.prioridad}</strong></span>
                   <span>Nivel: <strong className={`badge badge-level-${selectedTicket.nivel_soporte?.toLowerCase() || 'n1'}`} style={{ display: 'inline-block', padding: '2px 6px', fontSize: '10px', verticalAlign: 'middle', marginLeft: '4px' }}>{selectedTicket.nivel_soporte || 'N1'} {selectedTicket.nivel_soporte === 'N2' && selectedTicket.grupo_n2 ? `(${selectedTicket.grupo_n2})` : ''}</strong></span>

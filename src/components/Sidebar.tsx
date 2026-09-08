@@ -28,7 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (['inventario', 'movimientos', 'actas', 'bodegas', 'hostings-dominios'].includes(activeView)) {
       setInventarioOpen(true);
     }
-    if (['personas', 'proveedores', 'usuarios', 'credenciales'].includes(activeView)) {
+    if (['personas', 'proveedores', 'usuarios', 'credenciales', 'empresas', 'categorias'].includes(activeView)) {
       setAdminOpen(true);
     }
   }, [activeView]);
@@ -294,7 +294,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               <div className={`accordion-group ${adminOpen ? 'open' : ''}`}>
                 <button
-                  className={`accordion-header ${['personas', 'proveedores', 'usuarios', 'credenciales'].includes(activeView) ? 'active' : ''}`}
+                  className={`accordion-header ${['personas', 'proveedores', 'usuarios', 'credenciales', 'empresas', 'categorias'].includes(activeView) ? 'active' : ''}`}
                   onClick={() => setAdminOpen(!adminOpen)}
                 >
                   <div className="accordion-header-left">
@@ -304,6 +304,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <svg className="accordion-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" /></svg>
                 </button>
                 <div className="accordion-content">
+                  <button
+                    className={`sub-nav-item ${activeView === 'empresas' ? 'active' : ''}`}
+                    onClick={() => handleNav('empresas')}
+                  >
+                    <span>• Empresas & Sucursales</span>
+                  </button>
+                  <button
+                    className={`sub-nav-item ${activeView === 'categorias' ? 'active' : ''}`}
+                    onClick={() => handleNav('categorias')}
+                  >
+                    <span>• Categorías Soporte</span>
+                  </button>
                   <button
                     className={`sub-nav-item ${activeView === 'personas' ? 'active' : ''}`}
                     onClick={() => handleNav('personas')}

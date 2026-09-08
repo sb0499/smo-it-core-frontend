@@ -48,11 +48,16 @@ interface Usuario {
   empresa_nombres: string[];
   empresa_inventario_ids: number[];
   empresa_inventario_nombres: string[];
+  sucursal_ids?: number[];
+  sucursal_nombres?: string[];
+  sucursal_inventario_ids?: number[];
+  sucursal_inventario_nombres?: string[];
 }
 
 interface Empresa {
   id: number;
   nombre: string;
+  sucursales?: { id: number; nombre: string }[];
 }
 
 export const Usuarios: React.FC = () => {
@@ -86,7 +91,11 @@ export const Usuarios: React.FC = () => {
     "",
   );
   const [selectedEmpresas, setSelectedEmpresas] = useState<number[]>([]);
+  const [selectedSucursales, setSelectedSucursales] = useState<number[]>([]);
   const [selectedEmpresasInventario, setSelectedEmpresasInventario] = useState<
+    number[]
+  >([]);
+  const [selectedSucursalesInventario, setSelectedSucursalesInventario] = useState<
     number[]
   >([]);
   const [mustChangePassword, setMustChangePassword] = useState(true);
@@ -190,7 +199,9 @@ export const Usuarios: React.FC = () => {
     setNivelSoporte("N1");
     setGrupoN2("");
     setSelectedEmpresas([]);
+    setSelectedSucursales([]);
     setSelectedEmpresasInventario([]);
+    setSelectedSucursalesInventario([]);
     setMustChangePassword(true);
     setRecibirNotificacionesCorreo(true);
     setGeneratedPassword(null);
@@ -209,7 +220,9 @@ export const Usuarios: React.FC = () => {
     setNivelSoporte(u.nivel_soporte || "N1");
     setGrupoN2(u.grupo_n2 || "");
     setSelectedEmpresas(u.empresa_ids || []);
+    setSelectedSucursales(u.sucursal_ids || []);
     setSelectedEmpresasInventario(u.empresa_inventario_ids || []);
+    setSelectedSucursalesInventario(u.sucursal_inventario_ids || []);
     setMustChangePassword(!!u.must_change_password);
     setRecibirNotificacionesCorreo(
       u.recibir_notificaciones_correo === undefined
@@ -224,8 +237,21 @@ export const Usuarios: React.FC = () => {
   const handleEmpresaToggle = (empId: number) => {
     if (selectedEmpresas.includes(empId)) {
       setSelectedEmpresas(selectedEmpresas.filter((id) => id !== empId));
+      const empObj = empresas.find(e => e.id === empId);
+      if (empObj?.sucursales) {
+        const sucIds = empObj.sucursales.map(s => s.id);
+        setSelectedSucursales(selectedSucursales.filter(id => !sucIds.includes(id)));
+      }
     } else {
       setSelectedEmpresas([...selectedEmpresas, empId]);
+    }
+  };
+
+  const handleSucursalToggle = (sucId: number) => {
+    if (selectedSucursales.includes(sucId)) {
+      setSelectedSucursales(selectedSucursales.filter((id) => id !== sucId));
+    } else {
+      setSelectedSucursales([...selectedSucursales, sucId]);
     }
   };
 
@@ -234,6 +260,11 @@ export const Usuarios: React.FC = () => {
       setSelectedEmpresasInventario(
         selectedEmpresasInventario.filter((id) => id !== empId),
       );
+      const empObj = empresas.find(e => e.id === empId);
+      if (empObj?.sucursales) {
+        const sucIds = empObj.sucursales.map(s => s.id);
+        setSelectedSucursalesInventario(selectedSucursalesInventario.filter(id => !sucIds.includes(id)));
+      }
     } else {
       setSelectedEmpresasInventario([...selectedEmpresasInventario, empId]);
     }
@@ -289,7 +320,9 @@ export const Usuarios: React.FC = () => {
           ? grupoN2 || null
           : null,
       empresa_ids: selectedEmpresas,
+      sucursal_ids: selectedSucursales,
       empresa_inventario_ids: selectedEmpresasInventario,
+      sucursal_inventario_ids: selectedSucursalesInventario,
       must_change_password: mustChangePassword,
       recibir_notificaciones_correo: recibirNotificacionesCorreo ? 1 : 0,
     };
@@ -548,6 +581,22 @@ export const Usuarios: React.FC = () => {
                             —
                           </span>
                         )}
+                        {u.sucursal_nombres && u.sucursal_nombres.length > 0 && (
+                          u.sucursal_nombres.map((sucName, sIdx) => (
+                            <span
+                              key={`suc-${sIdx}`}
+                              className="badge badge-process"
+                              style={{
+                                fontSize: "9px",
+                                background: "rgba(139,92,246,0.1)",
+                                color: "#8b5cf6",
+                                border: "1px solid rgba(139,92,246,0.2)",
+                              }}
+                            >
+                              📍 {sucName}
+                            </span>
+                          ))
+                        )}
                       </div>
                     </td>
                     <td>
@@ -582,6 +631,22 @@ export const Usuarios: React.FC = () => {
                           >
                             —
                           </span>
+                        )}
+                        {u.sucursal_inventario_nombres && u.sucursal_inventario_nombres.length > 0 && (
+                          u.sucursal_inventario_nombres.map((sucName, sIdx) => (
+                            <span
+                              key={`suc-inv-${sIdx}`}
+                              className="badge badge-process"
+                              style={{
+                                fontSize: "9px",
+                                background: "rgba(16,185,129,0.1)",
+                                color: "#10b981",
+                                border: "1px solid rgba(16,185,129,0.2)",
+                              }}
+                            >
+                              📍 {sucName}
+                            </span>
+                          ))
                         )}
                       </div>
                     </td>
@@ -1051,10 +1116,10 @@ export const Usuarios: React.FC = () => {
                 </p>
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
+                    display: "flex",
+                    flexDirection: "column",
                     gap: "8px",
-                    maxHeight: "110px",
+                    maxHeight: "180px",
                     overflowY: "auto",
                     padding: "10px",
                     background: "var(--overlay-05)",
@@ -1062,25 +1127,59 @@ export const Usuarios: React.FC = () => {
                   }}
                 >
                   {empresas.map((emp) => (
-                    <label
-                      key={emp.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        fontSize: "12px",
-                        cursor: "pointer",
-                        userSelect: "none",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedEmpresas.includes(emp.id)}
-                        onChange={() => handleEmpresaToggle(emp.id)}
-                        disabled={submitting}
-                      />
-                      {emp.nombre}
-                    </label>
+                    <div key={emp.id} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          fontSize: "12px",
+                          cursor: "pointer",
+                          fontWeight: "600",
+                          userSelect: "none",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedEmpresas.includes(emp.id)}
+                          onChange={() => handleEmpresaToggle(emp.id)}
+                          disabled={submitting}
+                        />
+                        {emp.nombre}
+                      </label>
+
+                      {emp.sucursales && emp.sucursales.length > 0 && selectedEmpresas.includes(emp.id) && (
+                        <div style={{ marginLeft: "22px", marginTop: "2px", marginBottom: "6px" }}>
+                          <label style={{ fontSize: "11px", color: "#8b5cf6", fontWeight: "600", display: "block", marginBottom: "3px" }}>
+                            Sucursal asignada de {emp.nombre}:
+                          </label>
+                          <select
+                            className="form-control"
+                            style={{ fontSize: "12px", padding: "4px 8px" }}
+                            value={
+                              emp.sucursales.find(s => selectedSucursales.includes(s.id))?.id || 0
+                            }
+                            onChange={(e) => {
+                              const sucId = Number(e.target.value);
+                              const empSucIds = emp.sucursales!.map(s => s.id);
+                              const nextSucursales = selectedSucursales.filter(id => !empSucIds.includes(id));
+                              if (sucId > 0) {
+                                nextSucursales.push(sucId);
+                              }
+                              setSelectedSucursales(nextSucursales);
+                            }}
+                            disabled={submitting}
+                          >
+                            <option value="0">Sin sucursal específica (Toda la empresa)</option>
+                            {emp.sucursales.map(suc => (
+                              <option key={suc.id} value={suc.id}>
+                                📍 {suc.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -1103,10 +1202,10 @@ export const Usuarios: React.FC = () => {
                 </p>
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
+                    display: "flex",
+                    flexDirection: "column",
                     gap: "8px",
-                    maxHeight: "110px",
+                    maxHeight: "180px",
                     overflowY: "auto",
                     padding: "10px",
                     background: "var(--overlay-05)",
@@ -1114,25 +1213,59 @@ export const Usuarios: React.FC = () => {
                   }}
                 >
                   {empresas.map((emp) => (
-                    <label
-                      key={emp.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        fontSize: "12px",
-                        cursor: "pointer",
-                        userSelect: "none",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedEmpresasInventario.includes(emp.id)}
-                        onChange={() => handleEmpresaInventarioToggle(emp.id)}
-                        disabled={submitting}
-                      />
-                      {emp.nombre}
-                    </label>
+                    <div key={emp.id} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          fontSize: "12px",
+                          cursor: "pointer",
+                          fontWeight: "600",
+                          userSelect: "none",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedEmpresasInventario.includes(emp.id)}
+                          onChange={() => handleEmpresaInventarioToggle(emp.id)}
+                          disabled={submitting}
+                        />
+                        {emp.nombre}
+                      </label>
+
+                      {emp.sucursales && emp.sucursales.length > 0 && selectedEmpresasInventario.includes(emp.id) && (
+                        <div style={{ marginLeft: "22px", marginTop: "2px", marginBottom: "6px" }}>
+                          <label style={{ fontSize: "11px", color: "#10b981", fontWeight: "600", display: "block", marginBottom: "3px" }}>
+                            Sucursal asignada para inventario de {emp.nombre}:
+                          </label>
+                          <select
+                            className="form-control"
+                            style={{ fontSize: "12px", padding: "4px 8px" }}
+                            value={
+                              emp.sucursales.find(s => selectedSucursalesInventario.includes(s.id))?.id || 0
+                            }
+                            onChange={(e) => {
+                              const sucId = Number(e.target.value);
+                              const empSucIds = emp.sucursales!.map(s => s.id);
+                              const nextSucursales = selectedSucursalesInventario.filter(id => !empSucIds.includes(id));
+                              if (sucId > 0) {
+                                nextSucursales.push(sucId);
+                              }
+                              setSelectedSucursalesInventario(nextSucursales);
+                            }}
+                            disabled={submitting}
+                          >
+                            <option value="0">Sin sucursal específica (Toda la empresa)</option>
+                            {emp.sucursales.map(suc => (
+                              <option key={suc.id} value={suc.id}>
+                                📍 {suc.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

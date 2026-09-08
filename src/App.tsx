@@ -20,6 +20,8 @@ import { Bodegas } from './views/Bodegas';
 import { EntregaCredenciales } from './views/EntregaCredenciales';
 import { ActasIngreso } from './views/ActasIngreso';
 import { HostingsDominios } from './views/HostingsDominios';
+import { Empresas } from './views/Empresas';
+import { Categorias } from './views/Categorias';
 import { AlertContainer } from './components/AlertContainer';
 import './App.css';
 
@@ -60,6 +62,16 @@ function AppContent() {
         return <Dashboard key={refreshKey} />;
       case 'tickets':
         return <Tickets key={refreshKey} />;
+      case 'empresas':
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') {
+          return <Empresas key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
+      case 'categorias':
+        if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') {
+          return <Categorias key={refreshKey} />;
+        }
+        return user?.rol === 'USUARIO' ? <Tickets key={refreshKey} /> : <Dashboard key={refreshKey} />;
       case 'inventario':
         if (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || (user?.rol === 'TECNICO' && user?.has_inventory_access)) {
           return <Inventario key={refreshKey} />;
