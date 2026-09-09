@@ -42,17 +42,19 @@ export const BaseConocimiento: React.FC = () => {
 
   // Pagination State
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalArticulos, setTotalArticulos] = useState(0);
 
   const fetchArticulos = async (
     pageNum = page,
     searchVal = debouncedSearch,
     catVal = selectedCat,
+    limitVal = limit,
   ) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await kbService.getArticulos(searchVal, catVal, pageNum, 10);
+      const res = await kbService.getArticulos(searchVal, catVal, pageNum, limitVal);
       setArticulos(res.data);
       setTotalArticulos(res.total);
     } catch (err: any) {
@@ -83,11 +85,11 @@ export const BaseConocimiento: React.FC = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, selectedCat]);
+  }, [debouncedSearch, selectedCat, limit]);
 
   useEffect(() => {
-    fetchArticulos(page, debouncedSearch, selectedCat);
-  }, [page, debouncedSearch, selectedCat]);
+    fetchArticulos(page, debouncedSearch, selectedCat, limit);
+  }, [page, limit, debouncedSearch, selectedCat]);
 
   const openCreateModal = () => {
     setIsEditing(false);
@@ -505,57 +507,84 @@ export const BaseConocimiento: React.FC = () => {
           })}
 
           {/* Pagination Controls */}
-          {totalArticulos > 10 && (
+          {totalArticulos > 0 && (
             <div
-              className="pagination-container"
+              className="pagination-card glass-panel"
               style={{
                 display: "flex",
-                justifyContent: "center",
+                justifyContent: "space-between",
                 alignItems: "center",
-                gap: "8px",
+                padding: "12px 20px",
                 marginTop: "20px",
-                padding: "10px 0",
+                borderRadius: "10px",
+                flexWrap: "wrap",
+                gap: "12px"
               }}
             >
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                style={{
-                  cursor: page === 1 ? "not-allowed" : "pointer",
-                  padding: "6px 12px",
-                  fontSize: "12px",
-                }}
-              >
-                Anterior
-              </button>
-              <span
-                style={{
-                  fontSize: "13px",
-                  color: "var(--color-text)",
-                  fontWeight: "500",
-                }}
-              >
-                Página {page} de {Math.ceil(totalArticulos / 10)} (
-                {totalArticulos} artículos)
-              </span>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                disabled={page >= Math.ceil(totalArticulos / 10)}
-                onClick={() => setPage(page + 1)}
-                style={{
-                  cursor:
-                    page >= Math.ceil(totalArticulos / 10)
-                      ? "not-allowed"
-                      : "pointer",
-                  padding: "6px 12px",
-                  fontSize: "12px",
-                }}
-              >
-                Siguiente
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "13px", color: "var(--color-text-dim)" }}>
+                  Mostrar
+                </span>
+                <select
+                  className="form-control"
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  style={{ width: "70px", padding: "4px 8px", fontSize: "13px" }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+                <span style={{ fontSize: "13px", color: "var(--color-text-dim)" }}>
+                  artículos por página (Total: {totalArticulos})
+                </span>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                  style={{
+                    cursor: page === 1 ? "not-allowed" : "pointer",
+                    padding: "6px 12px",
+                    fontSize: "12px",
+                  }}
+                >
+                  Anterior
+                </button>
+                <span
+                  style={{
+                    fontSize: "13px",
+                    color: "var(--color-text)",
+                    fontWeight: "600",
+                    padding: "0 6px"
+                  }}
+                >
+                  Página {page} de {Math.ceil(totalArticulos / limit) || 1}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  disabled={page >= (Math.ceil(totalArticulos / limit) || 1)}
+                  onClick={() => setPage(page + 1)}
+                  style={{
+                    cursor:
+                      page >= (Math.ceil(totalArticulos / limit) || 1)
+                        ? "not-allowed"
+                        : "pointer",
+                    padding: "6px 12px",
+                    fontSize: "12px",
+                  }}
+                >
+                  Siguiente
+                </button>
+              </div>
             </div>
           )}
         </div>

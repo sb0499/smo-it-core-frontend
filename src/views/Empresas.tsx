@@ -32,6 +32,10 @@ export const Empresas: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
   // Modal / Form state
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -204,6 +208,10 @@ export const Empresas: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
   const filteredEmpresas = empresas.filter(
     (emp) =>
       emp.nombre.toLowerCase().includes(search.toLowerCase()) ||
@@ -219,6 +227,9 @@ export const Empresas: React.FC = () => {
               s.usuario_nombre.toLowerCase().includes(search.toLowerCase())),
         )),
   );
+
+  const totalPages = Math.ceil(filteredEmpresas.length / limit) || 1;
+  const paginatedEmpresas = filteredEmpresas.slice((page - 1) * limit, page * limit);
 
   return (
     <div className="inventario-view animate-fade">
@@ -338,7 +349,7 @@ export const Empresas: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredEmpresas.map((emp) => {
+              {paginatedEmpresas.map((emp) => {
                 const hasSuc = emp.sucursales && emp.sucursales.length > 0;
                 return (
                   <tr key={emp.id} className="table-row-hover">
@@ -456,6 +467,68 @@ export const Empresas: React.FC = () => {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Pagination Footer */}
+      {!loading && filteredEmpresas.length > 0 && (
+        <div
+          className="pagination-card glass-panel"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "12px 20px",
+            marginTop: "16px",
+            borderRadius: "10px",
+            flexWrap: "wrap",
+            gap: "12px"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "13px", color: "var(--color-text-dim)" }}>
+              Mostrar
+            </span>
+            <select
+              className="form-control"
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setPage(1);
+              }}
+              style={{ width: "70px", padding: "4px 8px", fontSize: "13px" }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span style={{ fontSize: "13px", color: "var(--color-text-dim)" }}>
+              registros por página (Total: {filteredEmpresas.length})
+            </span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              style={{ padding: "6px 12px", fontSize: "12px" }}
+            >
+              Anterior
+            </button>
+            <span style={{ fontSize: "13px", fontWeight: "600", padding: "0 6px" }}>
+              Página {page} de {totalPages}
+            </span>
+            <button
+              className="btn btn-secondary btn-sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              style={{ padding: "6px 12px", fontSize: "12px" }}
+            >
+              Siguiente
+            </button>
+          </div>
         </div>
       )}
 
