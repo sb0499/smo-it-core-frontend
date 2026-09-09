@@ -6,12 +6,16 @@ import { recurrenciaService, SoporteRecurrente } from '../services/recurrencia.s
 import { ticketService } from '../services/ticket.service';
 import './Inventario.css';
 
+import { useAuth } from '../context/AuthContext';
+import { projectService } from '../services/project.service';
+
 interface Empresa {
   id: number;
   nombre: string;
 }
 
 export const SoportesRecurrentes: React.FC = () => {
+  const { user } = useAuth();
   const [soportes, setSoportes] = useState<SoporteRecurrente[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [categoriesList, setCategoriesList] = useState<{ id: number; nombre: string }[]>([]);
@@ -66,14 +70,23 @@ export const SoportesRecurrentes: React.FC = () => {
   useEffect(() => {
     const loadMetadata = async () => {
       try {
-        const [empresasData, catsData] = await Promise.all([
+        const [empresasData, catsData, usersData] = await Promise.all([
           apiClient.get<Empresa[]>('/empresas'),
-          ticketService.getCategorias().catch(() => [])
+          ticketService.getCategorias().catch(() => []),
+          projectService.getUsuarios().catch(() => [])
         ]);
-        setEmpresas(empresasData);
+
+        const me = usersData.find((u: any) => u.id === user?.id);
+        let finalEmpresas = empresasData;
+        if (user?.rol !== 'ADMIN' && user?.rol !== 'SUPERVISOR' && me?.empresa_ids?.length) {
+          const allowed = empresasData.filter(e => me.empresa_ids!.includes(e.id));
+          if (allowed.length > 0) finalEmpresas = allowed;
+        }
+
+        setEmpresas(finalEmpresas);
         setCategoriesList(catsData);
-        if (empresasData.length > 0 && !empresaId) {
-          setEmpresaId(empresasData[0].id);
+        if (finalEmpresas.length > 0 && !empresaId) {
+          setEmpresaId(finalEmpresas[0].id);
         }
         if (catsData.length > 0 && !categoria) {
           setCategoria(catsData[0].nombre);
@@ -83,7 +96,7 @@ export const SoportesRecurrentes: React.FC = () => {
       }
     };
     loadMetadata();
-  }, []);
+  }, [user]);
 
   // Debounce search input
   useEffect(() => {

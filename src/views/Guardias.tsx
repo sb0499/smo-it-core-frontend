@@ -11,7 +11,7 @@ export const Guardias: React.FC = () => {
   const [guardias, setGuardias] = useState<GuardiaFeriado[]>([]);
   const [allGuardias, setAllGuardias] = useState<GuardiaFeriado[]>([]);
   const [technicians, setTechnicians] = useState<User[]>([]);
-  const [empresas, setEmpresas] = useState<{ id: number; nombre: string; tecnico_principal_id?: number | null; tecnico_principal_nombre?: string | null }[]>([]);
+  const [empresas, setEmpresas] = useState<{ id: number; nombre: string; tecnico_principal_id?: number | null; tecnico_principal_nombre?: string | null; sucursales?: { id: number; nombre: string; usuario_id?: number | null; usuario_nombre?: string | null }[] }[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Pagination States
@@ -283,6 +283,59 @@ export const Guardias: React.FC = () => {
     }
   };
 
+  const getPlantSupportItems = () => {
+    const items: { key: string; label: string; techName: string }[] = [];
+
+    empresas.forEach(emp => {
+      const sucs = emp.sucursales || [];
+
+      if (sucs.length > 0) {
+        sucs.forEach(suc => {
+          let assignedTechName = '';
+
+          if (suc.usuario_nombre) {
+            assignedTechName = suc.usuario_nombre.split(' ')[0];
+          } else if (suc.usuario_id) {
+            const t = technicians.find(tech => tech.id === suc.usuario_id);
+            if (t) assignedTechName = t.nombre_completo.split(' ')[0];
+          }
+
+          if (!assignedTechName) {
+            const sucTech = technicians.find(t => t.sucursal_ids?.includes(suc.id) || t.empresa_ids?.includes(emp.id));
+            if (sucTech) {
+              assignedTechName = sucTech.nombre_completo.split(' ')[0];
+            } else if (emp.tecnico_principal_nombre) {
+              assignedTechName = emp.tecnico_principal_nombre.split(' ')[0];
+            } else {
+              assignedTechName = 'Sin N1';
+            }
+          }
+
+          items.push({
+            key: `suc-${suc.id}`,
+            label: `${emp.nombre} - ${suc.nombre}`,
+            techName: assignedTechName
+          });
+        });
+      } else {
+        const shift = getActiveTechForSede(emp);
+        const shiftName = shift?.nombre || 'Equipo TI General';
+        const firstTech = shiftName.split(',')[0].trim();
+        const shortName = (firstTech.startsWith('Equipo') || firstTech.startsWith('Sin'))
+          ? firstTech
+          : firstTech.split(' ')[0];
+
+        items.push({
+          key: `emp-${emp.id}`,
+          label: emp.nombre,
+          techName: shortName
+        });
+      }
+    });
+
+    return items;
+  };
+
   return (
     <div className="guardias-container animate-fade">
       {/* Calendar Header Control Panel */}
@@ -303,19 +356,13 @@ export const Guardias: React.FC = () => {
         <h3 style={{ fontSize: '10.5px', fontWeight: 'bold', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
           Soporte Técnico de Planta (L-V)
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
-          {empresas.map(emp => {
-            const shift = getActiveTechForSede(emp);
-            const shiftName = shift?.nombre || 'Equipo TI General';
-            const firstTech = shiftName.split(',')[0].trim();
-            const shortName = (firstTech.startsWith('Equipo') || firstTech.startsWith('Sin')) ? firstTech : firstTech.split(' ')[0];
-            return (
-              <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '6px 10px', borderRadius: '4px', border: '1px solid #f1f5f9', fontSize: '11.5px' }}>
-                <span style={{ fontWeight: '700', color: '#2563eb', fontSize: '11px' }}>{emp.nombre}</span>
-                <span style={{ color: '#475569', fontWeight: '500' }}>{shortName}</span>
-              </div>
-            );
-          })}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+          {getPlantSupportItems().map(item => (
+            <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '6px 10px', borderRadius: '4px', border: '1px solid #f1f5f9', fontSize: '11.5px' }}>
+              <span style={{ fontWeight: '700', color: '#2563eb', fontSize: '11px' }}>{item.label}</span>
+              <span style={{ color: '#475569', fontWeight: '500' }}>{item.techName}</span>
+            </div>
+          ))}
         </div>
       </div>
 

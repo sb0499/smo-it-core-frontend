@@ -5,9 +5,23 @@ import {
   EgresoBodega,
 } from "../services/inventory.service";
 import { showAlert } from "../utils/alerts";
+import { useAuth } from "../context/AuthContext";
+import { projectService, User } from "../services/project.service";
 import "./Inventario.css";
 
 export const ActasIngreso: React.FC = () => {
+  const { user } = useAuth();
+  const [loggedInTech, setLoggedInTech] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      projectService.getUsuarios().then(users => {
+        const me = users.find(u => u.id === user.id);
+        if (me) setLoggedInTech(me);
+      }).catch(() => {});
+    }
+  }, [user]);
+
   const [activeTab, setActiveTab] = useState<
     "ingresos" | "egresos" | "entrega" | "recepciones"
   >("ingresos");
@@ -15,6 +29,12 @@ export const ActasIngreso: React.FC = () => {
   const [egresos, setEgresos] = useState<EgresoBodega[]>([]);
   const [recepciones, setRecepciones] = useState<any[]>([]);
   const [empresas, setEmpresas] = useState<any[]>([]);
+
+  const userEmpresaIds = loggedInTech?.empresa_ids || [];
+  const isManagementRole = user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR';
+  const allowedEmpresas = isManagementRole || !userEmpresaIds.length
+    ? empresas
+    : empresas.filter((c) => userEmpresaIds.includes(c.id));
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
   const [selectedEmpresaId, setSelectedEmpresaId] = useState<number>(0);
@@ -239,7 +259,7 @@ export const ActasIngreso: React.FC = () => {
               style={{ height: "40px" }}
             >
               <option value="0">Todas las Sedes</option>
-              {empresas.map((emp) => (
+              {allowedEmpresas.map((emp) => (
                 <option key={emp.id} value={emp.id}>
                   {emp.nombre}
                 </option>

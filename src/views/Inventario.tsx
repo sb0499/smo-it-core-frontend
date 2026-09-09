@@ -12,6 +12,7 @@ import {
   HistorialCambio,
   Bodega
 } from '../services/inventory.service';
+import { projectService, User } from '../services/project.service';
 import { apiClient } from '../services/api';
 import './Inventario.css';
 
@@ -24,12 +25,29 @@ interface TipoEquipo {
 
 export const Inventario: React.FC = () => {
   const { user } = useAuth();
+  const [loggedInTech, setLoggedInTech] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      projectService.getUsuarios().then(users => {
+        const me = users.find(u => u.id === user.id);
+        if (me) setLoggedInTech(me);
+      }).catch(() => {});
+    }
+  }, [user]);
+
   const [activeTab, setActiveTab] = useState<'activos' | 'consumibles' | 'tipos_equipo' | 'recepciones'>('activos');
   const [activos, setActivos] = useState<Activo[]>([]);
   const [consumibles, setConsumibles] = useState<Consumible[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [empresas, setEmpresas] = useState<{ id: number; nombre: string; sucursales?: { id: number; nombre: string }[] }[]>([]);
+
+  const userEmpresaIds = loggedInTech?.empresa_ids || [];
+  const isManagementRole = user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR';
+  const allowedEmpresas = isManagementRole || !userEmpresaIds.length
+    ? empresas
+    : empresas.filter((c) => userEmpresaIds.includes(c.id));
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [tipoEquipos, setTipoEquipos] = useState<TipoEquipo[]>([]);
   
@@ -272,11 +290,8 @@ export const Inventario: React.FC = () => {
 
   // Fetch assigned assets for selected persona and selected empresa in reception modal
   useEffect(() => {
-    if (recepcionPersonaId > 0 && showRecepcionModal) {
-      const params: any = { custodio_id: recepcionPersonaId, estado: 'Asignado', limit: 100 };
-      if (recepcionEmpresaId > 0) {
-        params.empresa_id = recepcionEmpresaId;
-      }
+    if (recepcionPersonaId > 0 && recepcionEmpresaId > 0 && showRecepcionModal) {
+      const params: any = { custodio_id: recepcionPersonaId, empresa_id: recepcionEmpresaId, estado: 'Asignado', limit: 100 };
       apiClient.get<any>('/inventarios', { params })
         .then(res => {
           const list = Array.isArray(res) ? res : (res.data || []);
@@ -818,31 +833,7 @@ export const Inventario: React.FC = () => {
     fetchTipoEquiposPage(pageTipoEquipos, debouncedSearchTipoEquipo);
   }, [pageTipoEquipos, debouncedSearchTipoEquipo]);
 
-  // Fetch assigned assets for selected employee and sede in Recepcion (Devolucion) modal
-  useEffect(() => {
-    if (showRecepcionModal && recepcionPersonaId > 0) {
-      inventoryService.getActivos(1, 1000, '', 'Asignado', recepcionPersonaId)
-        .then(res => {
-          const list = Array.isArray(res) ? res : (res.data || []);
-          const strictlyAssigned = list.filter(a => {
-            const isPersonaMatch = a.persona_id === recepcionPersonaId || (a as any).custodio_id === recepcionPersonaId || (a as any).egreso_custodio_id === recepcionPersonaId;
-            const isEstadoMatch = a.estado === 'Asignado';
-            const isEmpresaMatch = recepcionEmpresaId <= 0 || a.empresa_id === recepcionEmpresaId;
-            return isPersonaMatch && isEstadoMatch && isEmpresaMatch;
-          });
-          setPersonaAssignedActivos(strictlyAssigned);
-          setSelectedRecepcionAssetIds([]);
-        })
-        .catch(err => {
-          console.error('Error fetching assigned assets for recepcion:', err);
-          setPersonaAssignedActivos([]);
-          setSelectedRecepcionAssetIds([]);
-        });
-    } else {
-      setPersonaAssignedActivos([]);
-      setSelectedRecepcionAssetIds([]);
-    }
-  }, [showRecepcionModal, recepcionPersonaId, recepcionEmpresaId]);
+
 
 
 
@@ -1170,17 +1161,6 @@ export const Inventario: React.FC = () => {
                   <option value="Asignado">Asignado</option>
                   <option value="Mantenimiento">Mantenimiento</option>
                   <option value="Baja">Baja</option>
-                </select>
-                <select 
-                  className="form-control filter-select"
-                  value={filterSucursalId}
-                  onChange={(e) => setFilterSucursalId(Number(e.target.value))}
-                  style={{ width: '180px' }}
-                >
-                  <option value={0}>Todas las Sucursales</option>
-                  {empresas.flatMap(e => (e.sucursales || []).map(s => ({ ...s, empresaNombre: e.nombre }))).map(s => (
-                    <option key={s.id} value={s.id}>{s.empresaNombre} - {s.nombre}</option>
-                  ))}
                 </select>
               </>
             )}
@@ -2318,6 +2298,7 @@ export const Inventario: React.FC = () => {
                             <th style={{ width: '40px' }}>#</th>
                             <th>CÓDIGO</th>
                             <th>EQUIPO</th>
+                            <th>SEDE ORIGEN</th>
                             <th>MARCA / MODELO</th>
                             <th>SERIE</th>
                           </tr>
@@ -2354,6 +2335,7 @@ export const Inventario: React.FC = () => {
                                   </td>
                                   <td style={{ fontWeight: '700' }}>{a.codigo}</td>
                                   <td>{a.tipo_equipo_nombre || '-'}</td>
+                                  <td><span style={{ fontSize: '11px', background: 'rgba(99,102,241,0.1)', color: 'var(--color-primary)', padding: '2px 6px', borderRadius: '4px', fontWeight: '500' }}>{a.empresa_nombre || 'General'}</span></td>
                                   <td>{a.marca} {a.modelo}</td>
                                   <td>{a.serial || 'NA'}</td>
                                 </tr>
@@ -2581,7 +2563,7 @@ export const Inventario: React.FC = () => {
                       required
                     >
                       <option value="0">Seleccionar sede...</option>
-                      {empresas.map(emp => (
+                      {allowedEmpresas.map(emp => (
                         <option key={emp.id} value={emp.id}>{emp.nombre}</option>
                       ))}
                     </select>
@@ -3548,7 +3530,7 @@ export const Inventario: React.FC = () => {
                       required
                     >
                       <option value="0">Seleccionar sede...</option>
-                      {empresas.map(emp => (
+                      {allowedEmpresas.map(emp => (
                         <option key={emp.id} value={emp.id}>{emp.nombre}</option>
                       ))}
                     </select>

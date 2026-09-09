@@ -3,6 +3,8 @@ import { hostingDominioService, HostingDominio } from '../services/hostingDomini
 import { inventoryService, Proveedor } from '../services/inventory.service';
 import { apiClient } from '../services/api';
 import { showAlert, showConfirm } from '../utils/alerts';
+import { useAuth } from '../context/AuthContext';
+import { projectService, User } from '../services/project.service';
 import './HostingsDominios.css';
 
 interface Empresa {
@@ -11,11 +13,29 @@ interface Empresa {
 }
 
 export const HostingsDominios: React.FC = () => {
+  const { user } = useAuth();
+  const [loggedInTech, setLoggedInTech] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      projectService.getUsuarios().then(users => {
+        const me = users.find(u => u.id === user.id);
+        if (me) setLoggedInTech(me);
+      }).catch(() => {});
+    }
+  }, [user]);
+
   // Active Tab: 'HOSTING' | 'DOMINIO'
   const [activeTab, setActiveTab] = useState<'HOSTING' | 'DOMINIO'>('HOSTING');
 
   const [items, setItems] = useState<HostingDominio[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
+
+  const userEmpresaIds = loggedInTech?.empresa_ids || [];
+  const isManagementRole = user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR';
+  const allowedEmpresas = isManagementRole || !userEmpresaIds.length
+    ? empresas
+    : empresas.filter((c) => userEmpresaIds.includes(c.id));
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -367,7 +387,7 @@ export const HostingsDominios: React.FC = () => {
             style={{ width: '100%' }}
           >
             <option value={0}>Todas las Sedes / Empresas</option>
-            {empresas.map((emp) => (
+            {allowedEmpresas.map((emp) => (
               <option key={emp.id} value={emp.id}>{emp.nombre}</option>
             ))}
           </select>
@@ -543,7 +563,7 @@ export const HostingsDominios: React.FC = () => {
                       onChange={(e) => setFormEmpresaId(e.target.value ? Number(e.target.value) : '')}
                     >
                       <option value="">-- Toda la Empresa (Global) --</option>
-                      {empresas.map(emp => (
+                      {allowedEmpresas.map(emp => (
                         <option key={emp.id} value={emp.id}>{emp.nombre}</option>
                       ))}
                     </select>

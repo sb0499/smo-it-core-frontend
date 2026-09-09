@@ -319,7 +319,7 @@ export const Usuarios: React.FC = () => {
       nivel_soporte:
         Number(rolId) === 2 || Number(rolId) === 4 ? nivelSoporte : undefined,
       grupo_n2:
-        (Number(rolId) === 2 || Number(rolId) === 4) && nivelSoporte === "N2"
+        Number(rolId) === 2 || Number(rolId) === 4
           ? grupoN2 || null
           : null,
       empresa_ids: selectedEmpresas,
@@ -1060,14 +1060,13 @@ export const Usuarios: React.FC = () => {
                 <>
                   <div className="form-group">
                     <label className="form-label">
-                      NIVEL DE SOPORTE (ITIL) *
+                      NIVEL DE SOPORTE PRINCIPAL (ITIL) *
                     </label>
                     <select
                       className="form-control"
                       value={nivelSoporte}
                       onChange={(e) => {
                         setNivelSoporte(e.target.value as any);
-                        if (e.target.value === "N1") setGrupoN2("");
                       }}
                       disabled={submitting}
                     >
@@ -1080,24 +1079,22 @@ export const Usuarios: React.FC = () => {
                     </select>
                   </div>
 
-                  {nivelSoporte === "N2" && (
-                    <div className="form-group">
-                      <label className="form-label">
-                        GRUPO N2 (ESPECIALIDAD) *
-                      </label>
-                      <select
-                        className="form-control"
-                        value={grupoN2}
-                        onChange={(e) => setGrupoN2(e.target.value as any)}
-                        disabled={submitting}
-                        required
-                      >
-                        <option value="">Seleccione Especialidad...</option>
-                        <option value="Infraestructura">Infraestructura</option>
-                        <option value="Desarrollo">Desarrollo</option>
-                      </select>
-                    </div>
-                  )}
+                  <div className="form-group">
+                    <label className="form-label">
+                      GRUPO N2 / ESPECIALIDAD {nivelSoporte === "N2" ? "*" : "(OPCIONAL PARA N1)"}
+                    </label>
+                    <select
+                      className="form-control"
+                      value={grupoN2}
+                      onChange={(e) => setGrupoN2(e.target.value as any)}
+                      disabled={submitting}
+                      required={nivelSoporte === "N2"}
+                    >
+                      <option value="">{nivelSoporte === "N2" ? "Seleccione Especialidad..." : "Sin Rol N2 Adicional"}</option>
+                      <option value="Infraestructura">Infraestructura</option>
+                      <option value="Desarrollo">Desarrollo</option>
+                    </select>
+                  </div>
                 </>
               )}
 

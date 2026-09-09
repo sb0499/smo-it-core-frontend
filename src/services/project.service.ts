@@ -99,6 +99,8 @@ export interface User {
   empresa_nombres?: string[];
   empresa_inventario_ids?: number[];
   empresa_inventario_nombres?: string[];
+  sucursal_ids?: number[];
+  sucursal_nombres?: string[];
 }
 
 export const projectService = {

@@ -223,6 +223,22 @@ export const Tickets: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (showCreateModal && empresas.length > 0) {
+      const userEmpresaIds = loggedInTech?.empresa_ids || [];
+      const isManagementRole = user?.rol === "ADMIN" || user?.rol === "SUPERVISOR";
+      const allowed = isManagementRole || !userEmpresaIds.length
+        ? empresas
+        : empresas.filter((c) => userEmpresaIds.includes(c.id));
+
+      if (allowed.length > 0) {
+        const isCurrentValid = allowed.some((e) => e.id === newEmpresaId);
+        const validId = isCurrentValid ? newEmpresaId : allowed[0].id;
+        handleEmpresaSelectChange(validId);
+      }
+    }
+  }, [showCreateModal]);
+
   const handleSucursalSelectChange = (sucId: number) => {
     setNewSucursalId(sucId);
   };
@@ -731,65 +747,89 @@ export const Tickets: React.FC = () => {
               </div>
 
               <div className="form-row">
-                <div className="form-group half">
-                  <label className="form-label">SEDE / EMPRESA *</label>
-                  <select
-                    className="form-control"
-                    value={newEmpresaId}
-                    onChange={(e) =>
-                      handleEmpresaSelectChange(Number(e.target.value))
-                    }
-                  >
-                    {empresas.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group half">
-                  <label className="form-label">ÁREA SOLICITANTE *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ej: Contabilidad, Caja 3, etc."
-                    value={newAreaSol}
-                    onChange={(e) => setNewAreaSol(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Combobox de Sucursal si la empresa seleccionada posee sucursales */}
               {(() => {
-                const currentEmpObj = empresas.find(
-                  (e) => e.id === newEmpresaId,
+                const userEmpresaIds = loggedInTech?.empresa_ids || [];
+                const isManagementRole = user?.rol === "ADMIN" || user?.rol === "SUPERVISOR";
+
+                const allowedEmpresas = isManagementRole || !userEmpresaIds.length
+                  ? empresas
+                  : empresas.filter((c) => userEmpresaIds.includes(c.id));
+
+                return (
+                  <div className="form-group half">
+                    <label className="form-label">SEDE / EMPRESA *</label>
+                    <select
+                      className="form-control"
+                      value={newEmpresaId}
+                      onChange={(e) =>
+                        handleEmpresaSelectChange(Number(e.target.value))
+                      }
+                    >
+                      {allowedEmpresas.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 );
-                const sucs = currentEmpObj?.sucursales || [];
-                if (sucs.length > 0) {
-                  return (
-                    <div className="form-group animate-fade">
-                      <label className="form-label">
-                        SUCURSAL DE LA EMPRESA *
-                      </label>
-                      <select
-                        className="form-control"
-                        value={newSucursalId}
-                        onChange={(e) =>
-                          handleSucursalSelectChange(Number(e.target.value))
-                        }
-                      >
-                        {sucs.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  );
-                }
-                return null;
               })()}
+
+              <div className="form-group half">
+                <label className="form-label">ÁREA SOLICITANTE *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ej: Contabilidad, Caja 3, etc."
+                  value={newAreaSol}
+                  onChange={(e) => setNewAreaSol(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Combobox de Sucursal si la empresa seleccionada posee sucursales */}
+            {(() => {
+              const userSucursalIds = loggedInTech?.sucursal_ids || [];
+              const isManagementRole = user?.rol === "ADMIN" || user?.rol === "SUPERVISOR";
+
+              const currentEmpObj = empresas.find(
+                (e) => e.id === newEmpresaId,
+              );
+              const sucs = currentEmpObj?.sucursales || [];
+              if (!sucs || sucs.length === 0) {
+                return null;
+              }
+
+              const allowedSucursales = isManagementRole || !userSucursalIds.length
+                ? sucs
+                : sucs.filter((s) => userSucursalIds.includes(s.id));
+
+              const displaySucursales = allowedSucursales.length > 0 ? allowedSucursales : sucs;
+
+              if (displaySucursales.length > 0) {
+                return (
+                  <div className="form-group animate-fade">
+                    <label className="form-label">
+                      SUCURSAL DE LA EMPRESA *
+                    </label>
+                    <select
+                      className="form-control"
+                      value={newSucursalId}
+                      onChange={(e) =>
+                        handleSucursalSelectChange(Number(e.target.value))
+                      }
+                    >
+                      {displaySucursales.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
               <div className="form-group">
                 <label className="form-label">
