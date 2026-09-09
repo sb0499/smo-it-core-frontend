@@ -244,6 +244,7 @@ export const inventoryService = {
 
   async createIngresoBodega(payload: {
     empresa_id: number;
+    sucursal_id?: number;
     proveedor_id?: number;
     nro_orden_compra: string;
     nro_factura?: string;
@@ -278,6 +279,7 @@ export const inventoryService = {
 
   async createEgresoBodega(payload: {
     empresa_id: number;
+    sucursal_id?: number;
     custodio_id: number;
     area?: string;
     observaciones?: string;
@@ -313,6 +315,7 @@ export const inventoryService = {
 
   async createRecepcionBodega(payload: {
     empresa_id: number;
+    sucursal_id?: number;
     persona_entrega_id: number;
     area?: string;
     bodega_id?: number;

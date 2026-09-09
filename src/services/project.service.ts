@@ -91,6 +91,7 @@ export interface User {
   id: number;
   email: string;
   nombre_completo: string;
+  is_active?: boolean | number;
   rol: 'ADMIN' | 'SUPERVISOR' | 'TECNICO' | 'USUARIO';
   nivel_soporte?: 'N1' | 'N2';
   grupo_n2?: 'Infraestructura' | 'Desarrollo';

@@ -709,7 +709,7 @@ export const BaseConocimiento: React.FC = () => {
                   display: "flex",
                   justifyContent: "flex-end",
                   gap: "10px",
-                  pt: "10px",
+                  paddingTop: "10px",
                   borderTop: "1px solid #e2e8f0",
                 }}
               >
