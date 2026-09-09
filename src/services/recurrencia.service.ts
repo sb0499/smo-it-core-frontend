@@ -15,6 +15,8 @@ export interface SoporteRecurrente {
   siguiente_ejecucion: string;
   ultima_ejecucion: string | null;
   is_active: number | boolean;
+  creador_id?: number | null;
+  creador_nombre?: string | null;
 }
 
 export const recurrenciaService = {

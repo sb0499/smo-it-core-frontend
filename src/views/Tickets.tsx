@@ -1,65 +1,144 @@
-import { showAlert, showConfirm } from '../utils/alerts';
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { ticketService, Ticket, CreateTicketPayload } from '../services/ticket.service';
-import { projectService, User } from '../services/project.service';
-import { apiClient } from '../services/api';
-import './Tickets.css';
+import { showAlert, showConfirm } from "../utils/alerts";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import {
+  ticketService,
+  Ticket,
+  CreateTicketPayload,
+} from "../services/ticket.service";
+import { projectService, User } from "../services/project.service";
+import { kbService } from "../services/kb.service";
+import { apiClient } from "../services/api";
+import "./Tickets.css";
 
 export const Tickets: React.FC = () => {
   const { user } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [technicians, setTechnicians] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterEstado, setFilterEstado] = useState<string>('todos');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filterEstado, setFilterEstado] = useState<string>("todos");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Pagination states
   const [page, setPage] = useState(1);
   const [totalTickets, setTotalTickets] = useState(0);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [showEscalarModal, setShowEscalarModal] = useState(false);
-  const [escalarGrupo, setEscalarGrupo] = useState<'Infraestructura' | 'Desarrollo'>('Infraestructura');
+  const [escalarGrupo, setEscalarGrupo] = useState<
+    "Infraestructura" | "Desarrollo"
+  >("Infraestructura");
   const [escalarTechId, setEscalarTechId] = useState<number>(0);
 
   // New ticket state
-  const [newTitle, setNewTitle] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [newCat, setNewCat] = useState('Sistemas');
-  const [newPrioridad, setNewPrioridad] = useState<'Baja' | 'Media' | 'Alta' | 'Critica'>('Media');
+  const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [newCat, setNewCat] = useState("Sistemas");
+  const [newPrioridad, setNewPrioridad] = useState<
+    "Baja" | "Media" | "Alta" | "Critica"
+  >("Media");
   const [newEmpresaId, setNewEmpresaId] = useState<number>(0);
   const [newSucursalId, setNewSucursalId] = useState<number>(0);
-  const [newPersonaSol, setNewPersonaSol] = useState('');
-  const [newAreaSol, setNewAreaSol] = useState('');
-  const [newNivelSoporte, setNewNivelSoporte] = useState<'N1' | 'N2'>('N1');
+  const [newPersonaSol, setNewPersonaSol] = useState("");
+  const [newAreaSol, setNewAreaSol] = useState("");
+  const [newNivelSoporte, setNewNivelSoporte] = useState<"N1" | "N2">("N1");
 
   // Ticket edit state
-  const [editEstado, setEditEstado] = useState<string>('');
-  const [editObs, setEditObs] = useState<string>('');
+  const [editEstado, setEditEstado] = useState<string>("");
+  const [editObs, setEditObs] = useState<string>("");
   const [editTechId, setEditTechId] = useState<number>(0);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showCierrePanel, setShowCierrePanel] = useState(false);
-  const [cierreObs, setCierreObs] = useState('');
+  const [cierreObs, setCierreObs] = useState("");
 
-  const [empresas, setEmpresas] = useState<{ id: number; nombre: string; sucursales?: { id: number; nombre: string; persona_id: number | null; persona_nombre?: string }[] }[]>([]);
-  const [categoriesList, setCategoriesList] = useState<{ id: number; nombre: string }[]>([]);
+  // Knowledge Base publish states
+  const [showKBModal, setShowKBModal] = useState(false);
+  const [kbTitle, setKbTitle] = useState("");
+  const [kbCat, setKbCat] = useState("Sistemas");
+  const [kbSteps, setKbSteps] = useState("");
+  const [kbTicketId, setKbTicketId] = useState<number | null>(null);
+  const [isPublishingKB, setIsPublishingKB] = useState(false);
 
-  const loggedInTech = technicians.find(t => t.id === user?.id);
-  const isN2 = loggedInTech?.nivel_soporte === 'N2';
+  const handleOpenKBFromTicket = (t: Ticket) => {
+    setKbTitle(t.titulo);
+    setKbCat(t.categoria || "Sistemas");
+    const initialSteps = t.observaciones
+      ? `Diagnóstico / Solución del Ticket #${t.id}:\n${t.observaciones}`
+      : `Paso a paso para resolver (Ticket #${t.id}):\n${t.descripcion}`;
+    setKbSteps(initialSteps);
+    setKbTicketId(t.id);
+    setShowKBModal(true);
+  };
 
-  const fetchTicketsData = async (pageNumber = page, searchVal = debouncedSearch, estadoVal = filterEstado) => {
+  const handlePublishKB = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!kbTitle.trim() || !kbSteps.trim()) {
+      showAlert(
+        "Por favor completa el título y las instrucciones paso a paso.",
+      );
+      return;
+    }
+    try {
+      setIsPublishingKB(true);
+      await kbService.createArticulo({
+        titulo: kbTitle,
+        categoria: kbCat,
+        pasos_solucion: kbSteps,
+        ticket_origen_id: kbTicketId,
+      });
+      showAlert("¡Solución publicada con éxito en la Base de Conocimientos!");
+      setShowKBModal(false);
+    } catch (err: any) {
+      showAlert(
+        "Error al publicar en la Base de Conocimientos: " +
+          (err.message || "Error desconocido"),
+      );
+    } finally {
+      setIsPublishingKB(false);
+    }
+  };
+
+  const [empresas, setEmpresas] = useState<
+    {
+      id: number;
+      nombre: string;
+      sucursales?: {
+        id: number;
+        nombre: string;
+        persona_id: number | null;
+        persona_nombre?: string;
+      }[];
+    }[]
+  >([]);
+  const [categoriesList, setCategoriesList] = useState<
+    { id: number; nombre: string }[]
+  >([]);
+
+  const loggedInTech = technicians.find((t) => t.id === user?.id);
+  const isN2 = loggedInTech?.nivel_soporte === "N2";
+
+  const fetchTicketsData = async (
+    pageNumber = page,
+    searchVal = debouncedSearch,
+    estadoVal = filterEstado,
+  ) => {
     try {
       setLoading(true);
-      const res = await ticketService.getTicketsPaginated(pageNumber, 10, undefined, estadoVal, searchVal);
-      console.log('fetchTicketsData response:', res);
+      const res = await ticketService.getTicketsPaginated(
+        pageNumber,
+        10,
+        undefined,
+        estadoVal,
+        searchVal,
+      );
+      console.log("fetchTicketsData response:", res);
       setTickets(res.data);
       setTotalTickets(res.total);
     } catch (e) {
-      console.error('Error fetching support tickets', e);
+      console.error("Error fetching support tickets", e);
     } finally {
       setLoading(false);
     }
@@ -70,9 +149,20 @@ export const Tickets: React.FC = () => {
     const loadMetadata = async () => {
       try {
         const [companiesList, cats, usersList] = await Promise.all([
-          apiClient.get<{ id: number; nombre: string; sucursales?: { id: number; nombre: string; persona_id: number | null; persona_nombre?: string }[] }[]>('/empresas'),
+          apiClient.get<
+            {
+              id: number;
+              nombre: string;
+              sucursales?: {
+                id: number;
+                nombre: string;
+                persona_id: number | null;
+                persona_nombre?: string;
+              }[];
+            }[]
+          >("/empresas"),
           ticketService.getCategorias().catch(() => []),
-          projectService.getUsuarios().catch(() => [])
+          projectService.getUsuarios().catch(() => []),
         ]);
 
         setEmpresas(companiesList);
@@ -93,10 +183,12 @@ export const Tickets: React.FC = () => {
           setNewCat(cats[0].nombre);
         }
 
-        const techs = usersList.filter(u => u.rol === 'TECNICO' || u.rol === 'SUPERVISOR');
+        const techs = usersList.filter(
+          (u) => u.rol === "TECNICO" || u.rol === "SUPERVISOR",
+        );
         setTechnicians(techs);
       } catch (err) {
-        console.error('Error loading metadata', err);
+        console.error("Error loading metadata", err);
       }
     };
     loadMetadata();
@@ -122,7 +214,7 @@ export const Tickets: React.FC = () => {
 
   const handleEmpresaSelectChange = (empId: number) => {
     setNewEmpresaId(empId);
-    const selectedEmp = empresas.find(e => e.id === empId);
+    const selectedEmp = empresas.find((e) => e.id === empId);
     const sucs = selectedEmp?.sucursales || [];
     if (sucs.length > 0) {
       setNewSucursalId(sucs[0].id);
@@ -138,7 +230,7 @@ export const Tickets: React.FC = () => {
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle || !newDesc) {
-      showAlert('Por favor completa el título y descripción.');
+      showAlert("Por favor completa el título y descripción.");
       return;
     }
 
@@ -152,57 +244,57 @@ export const Tickets: React.FC = () => {
         sucursal_id: newSucursalId > 0 ? newSucursalId : undefined,
         persona_solicitante: newPersonaSol || undefined,
         area_solicitante: newAreaSol || undefined,
-        medio_solicitud: 'Plataforma',
+        medio_solicitud: "Plataforma",
         nivel_soporte: isN2 ? newNivelSoporte : undefined,
       };
 
       await ticketService.createTicket(payload);
       setShowCreateModal(false);
-      
+
       // Reset
-      setNewTitle('');
-      setNewDesc('');
+      setNewTitle("");
+      setNewDesc("");
       setNewSucursalId(0);
-      setNewPersonaSol('');
-      setNewAreaSol('');
-      setNewNivelSoporte('N1');
-      
+      setNewPersonaSol("");
+      setNewAreaSol("");
+      setNewNivelSoporte("N1");
+
       fetchTicketsData();
     } catch (err: any) {
-      showAlert('Error al crear el ticket: ' + err.message);
+      showAlert("Error al crear el ticket: " + err.message);
     }
   };
 
   const handleOpenEditModal = (ticket: Ticket) => {
     setSelectedTicket(ticket);
     setEditEstado(ticket.estado);
-    setEditObs(ticket.observaciones || '');
+    setEditObs(ticket.observaciones || "");
     setEditTechId(ticket.tecnico_id || 0);
     setShowCierrePanel(false);
-    setCierreObs('');
+    setCierreObs("");
   };
 
   const handleCerrarTicketConfirmado = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!selectedTicket) return;
     if (!cierreObs.trim()) {
-      showAlert('Por favor ingresa las observaciones finales de la solución.');
+      showAlert("Por favor ingresa las observaciones finales de la solución.");
       return;
     }
 
     try {
       setIsUpdating(true);
       await ticketService.updateTicket(selectedTicket.id, {
-        estado: 'Finalizada',
+        estado: "Finalizada",
         observaciones: cierreObs,
         tecnico_id: editTechId > 0 ? editTechId : user?.id,
       });
 
       setSelectedTicket(null);
       fetchTicketsData();
-      showAlert('Ticket cerrado y finalizado exitosamente.');
+      showAlert("Ticket cerrado y finalizado exitosamente.");
     } catch (err: any) {
-      showAlert('Error al finalizar el ticket: ' + err.message);
+      showAlert("Error al finalizar el ticket: " + err.message);
     } finally {
       setIsUpdating(false);
     }
@@ -216,14 +308,80 @@ export const Tickets: React.FC = () => {
       setIsUpdating(true);
       await ticketService.escalarTicketAN2(selectedTicket.id, {
         grupo_n2: escalarGrupo,
-        tecnico_id: escalarTechId > 0 ? escalarTechId : null
+        tecnico_id: escalarTechId > 0 ? escalarTechId : null,
       });
       setShowEscalarModal(false);
       setSelectedTicket(null);
       fetchTicketsData();
-      showAlert('Ticket escalado a Nivel 2 exitosamente.');
+      showAlert("Ticket escalado a Nivel 2 exitosamente.");
     } catch (err: any) {
-      showAlert('Error al escalar el ticket: ' + err.message);
+      showAlert("Error al escalar el ticket: " + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleEscalarAProveedor = async () => {
+    if (!selectedTicket) return;
+    if (
+      !(await showConfirm(
+        "¿Estás seguro de elevar este soporte a Proveedor (N3)? El SLA del ticket será pausado.",
+      ))
+    )
+      return;
+
+    try {
+      setIsUpdating(true);
+      await ticketService.escalarTicketAProveedor(selectedTicket.id);
+      setSelectedTicket(null);
+      fetchTicketsData();
+      showAlert("Ticket escalado a Proveedor (N3) exitosamente. SLA Pausado.");
+    } catch (err: any) {
+      showAlert("Error al elevar a Proveedor: " + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleEscalarAProyecto = async () => {
+    if (!selectedTicket) return;
+    if (
+      !(await showConfirm(
+        "¿Deseas elevar este ticket a Proyecto? Se creará automáticamente un nuevo proyecto en el módulo de proyectos asignándote como responsable.",
+      ))
+    )
+      return;
+
+    try {
+      setIsUpdating(true);
+      const res = await ticketService.escalarTicketAProyecto(selectedTicket.id);
+      setSelectedTicket(null);
+      fetchTicketsData();
+      showAlert(
+        `¡Proyecto creado exitosamente!\n\nID Proyecto: #${res.proyecto_id}\nNombre: ${res.proyecto_nombre}\n\nSe te ha asignado como responsable en el módulo de proyectos.`,
+      );
+    } catch (err: any) {
+      showAlert("Error al elevar a Proyecto: " + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handlePasarAEnProceso = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!selectedTicket) return;
+    try {
+      setIsUpdating(true);
+      const updated = await ticketService.updateTicket(selectedTicket.id, {
+        estado: "En Proceso",
+        tecnico_id: editTechId > 0 ? editTechId : user?.id,
+      });
+      setSelectedTicket(updated);
+      setEditEstado("En Proceso");
+      fetchTicketsData();
+      showAlert('El ticket ha pasado a estado "En Proceso".');
+    } catch (err: any) {
+      showAlert("Error al actualizar a En Proceso: " + err.message);
     } finally {
       setIsUpdating(false);
     }
@@ -244,7 +402,7 @@ export const Tickets: React.FC = () => {
       setSelectedTicket(null);
       fetchTicketsData();
     } catch (err: any) {
-      showAlert('Error al actualizar el ticket: ' + err.message);
+      showAlert("Error al actualizar el ticket: " + err.message);
     } finally {
       setIsUpdating(false);
     }
@@ -252,16 +410,23 @@ export const Tickets: React.FC = () => {
 
   const handleDownloadReport = () => {
     const url = ticketService.getReporteUrl();
-    window.open(url, '_blank');
+    window.open(url, "_blank");
   };
 
   const handleTriggerCierreDiario = async () => {
-    if (!await showConfirm('¿Deseas enviar alertas de cierre diario a todos los técnicos con tickets pendientes?')) return;
+    if (
+      !(await showConfirm(
+        "¿Deseas enviar alertas de cierre diario a todos los técnicos con tickets pendientes?",
+      ))
+    )
+      return;
     try {
-      const res = await ticketService.triggerCierreDiario() as any;
-      showAlert(`Éxito: ${res.message || 'Recordatorios enviados'}\n\nTécnicos alertados: ${res.totalTecnicosAlertados}\nTickets pendientes reportados: ${res.totalTicketsRemitidos}`);
+      const res = (await ticketService.triggerCierreDiario()) as any;
+      showAlert(
+        `Éxito: ${res.message || "Recordatorios enviados"}\n\nTécnicos alertados: ${res.totalTecnicosAlertados}\nTickets pendientes reportados: ${res.totalTicketsRemitidos}`,
+      );
     } catch (err: any) {
-      showAlert('Error enviando recordatorios: ' + err.message);
+      showAlert("Error enviando recordatorios: " + err.message);
     }
   };
 
@@ -279,7 +444,7 @@ export const Tickets: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <select 
+          <select
             className="form-control filter-select"
             value={filterEstado}
             onChange={(e) => setFilterEstado(e.target.value)}
@@ -294,23 +459,32 @@ export const Tickets: React.FC = () => {
             <option value="Escalado a Proveedor">Escalado a Proveedor</option>
           </select>
         </div>
- 
+
         <div className="controls-right-buttons">
-          {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && (
+          {(user?.rol === "ADMIN" || user?.rol === "SUPERVISOR") && (
             <>
-              <button 
-                className="btn btn-secondary" 
-                style={{ border: '1px solid var(--color-critical)', color: 'var(--color-critical)' }} 
+              <button
+                className="btn btn-secondary"
+                style={{
+                  border: "1px solid var(--color-critical)",
+                  color: "var(--color-critical)",
+                }}
                 onClick={handleTriggerCierreDiario}
               >
                 Alertas Cierre Diario
               </button>
-              <button className="btn btn-secondary excel-btn" onClick={handleDownloadReport}>
+              <button
+                className="btn btn-secondary excel-btn"
+                onClick={handleDownloadReport}
+              >
                 Reporte Semanal Excel
               </button>
             </>
           )}
-          <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowCreateModal(true)}
+          >
             Reportar Soporte / Ticket
           </button>
         </div>
@@ -324,56 +498,117 @@ export const Tickets: React.FC = () => {
         </div>
       ) : filteredTickets.length === 0 ? (
         <div className="empty-panel glass-panel text-center py-5">
-          <span className="empty-big-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-dim)' }}><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path><line x1="13" y1="5" x2="13" y2="19"></line></svg>
+          <span
+            className="empty-big-icon"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="48"
+              height="48"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ color: "var(--color-text-dim)" }}
+            >
+              <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path>
+              <line x1="13" y1="5" x2="13" y2="19"></line>
+            </svg>
           </span>
           <h3>No se encontraron tickets</h3>
-          <p className="text-muted">Ajusta tus filtros o crea un nuevo reporte para empezar.</p>
+          <p className="text-muted">
+            Ajusta tus filtros o crea un nuevo reporte para empezar.
+          </p>
         </div>
       ) : (
         <div className="tickets-grid">
           {filteredTickets.map((ticket) => (
-            <div 
-              key={ticket.id} 
+            <div
+              key={ticket.id}
               className="ticket-card glass-panel glass-panel-interactive animate-slide-up"
               onClick={() => handleOpenEditModal(ticket)}
             >
               <div className="ticket-card-header">
-                <span className={`badge badge-priority-${ticket.prioridad.toLowerCase()}`}>
+                <span
+                  className={`badge badge-priority-${ticket.prioridad.toLowerCase()}`}
+                >
                   {ticket.prioridad}
                 </span>
-                <span className={`badge badge-level-${ticket.nivel_soporte?.toLowerCase() || 'n1'}`}>
-                  Nivel {ticket.nivel_soporte || 'N1'} {ticket.nivel_soporte === 'N2' && ticket.grupo_n2 ? `(${ticket.grupo_n2})` : ''}
+                <span
+                  className={`badge badge-level-${ticket.nivel_soporte?.toLowerCase() || "n1"}`}
+                >
+                  Nivel {ticket.nivel_soporte || "N1"}{" "}
+                  {ticket.nivel_soporte === "N2" && ticket.grupo_n2
+                    ? `(${ticket.grupo_n2})`
+                    : ""}
                 </span>
-                <span className={`badge badge-${ticket.estado.toLowerCase().replace(/\s+/g, '')}`}>
+                <span
+                  className={`badge badge-${ticket.estado.toLowerCase().replace(/\s+/g, "")}`}
+                >
                   {ticket.estado}
                 </span>
               </div>
 
               <div className="ticket-card-body">
                 <h3 className="ticket-title">{ticket.titulo}</h3>
-                <p className="ticket-desc text-muted">{ticket.descripcion.substring(0, 110)}{ticket.descripcion.length > 110 ? '...' : ''}</p>
-                
+                <p className="ticket-desc text-muted">
+                  {ticket.descripcion.substring(0, 110)}
+                  {ticket.descripcion.length > 110 ? "..." : ""}
+                </p>
+
                 <div className="ticket-meta mt-3">
                   <div className="meta-tag">{ticket.categoria}</div>
                   <div className="meta-tag">
-                    {ticket.empresa_nombre || 'Sin Sede Asignada'}
-                    {ticket.sucursal_nombre ? ` (${ticket.sucursal_nombre})` : ''}
+                    {ticket.empresa_nombre || "Sin Sede Asignada"}
+                    {ticket.sucursal_nombre
+                      ? ` (${ticket.sucursal_nombre})`
+                      : ""}
                   </div>
                 </div>
               </div>
 
               <div className="ticket-card-footer">
                 <div className="assignee-info">
-                  <span className="assignee-avatar" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', borderRadius: '50%', width: '32px', height: '32px' }}>
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#475569" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  <span
+                    className="assignee-avatar"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "#e2e8f0",
+                      borderRadius: "50%",
+                      width: "32px",
+                      height: "32px",
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="#475569"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
                   </span>
                   <div className="assignee-text">
                     <span className="assignee-label">Técnico Asignado:</span>
-                    <span className="assignee-name">{ticket.tecnico_nombre || 'Asignación automática...'}</span>
+                    <span className="assignee-name">
+                      {ticket.tecnico_nombre || "Asignación automática..."}
+                    </span>
                   </div>
                 </div>
-
               </div>
             </div>
           ))}
@@ -382,25 +617,53 @@ export const Tickets: React.FC = () => {
 
       {/* Pagination Controls */}
       {totalTickets > 10 && (
-        <div className="pagination-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '24px', padding: '12px 0' }}>
-          <button 
+        <div
+          className="pagination-container"
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "8px",
+            marginTop: "24px",
+            padding: "12px 0",
+          }}
+        >
+          <button
             type="button"
             className="btn btn-secondary btn-sm"
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
-            style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+            style={{
+              cursor: page === 1 ? "not-allowed" : "pointer",
+              padding: "6px 12px",
+              fontSize: "12px",
+            }}
           >
             Anterior
           </button>
-          <span style={{ fontSize: '13px', color: 'var(--color-text)', fontWeight: '500' }}>
-            Página {page} de {Math.ceil(totalTickets / 10)} ({totalTickets} registros)
+          <span
+            style={{
+              fontSize: "13px",
+              color: "var(--color-text)",
+              fontWeight: "500",
+            }}
+          >
+            Página {page} de {Math.ceil(totalTickets / 10)} ({totalTickets}{" "}
+            registros)
           </span>
-          <button 
+          <button
             type="button"
             className="btn btn-secondary btn-sm"
             disabled={page === Math.ceil(totalTickets / 10)}
             onClick={() => setPage(page + 1)}
-            style={{ cursor: page === Math.ceil(totalTickets / 10) ? 'not-allowed' : 'pointer', padding: '6px 12px', fontSize: '12px' }}
+            style={{
+              cursor:
+                page === Math.ceil(totalTickets / 10)
+                  ? "not-allowed"
+                  : "pointer",
+              padding: "6px 12px",
+              fontSize: "12px",
+            }}
           >
             Siguiente
           </button>
@@ -413,12 +676,19 @@ export const Tickets: React.FC = () => {
           <div className="modal-container glass-panel animate-slide-up">
             <div className="modal-header">
               <h2>Reportar Nuevo Soporte Técnico</h2>
-              <button className="modal-close-btn" onClick={() => setShowCreateModal(false)}>×</button>
+              <button
+                className="modal-close-btn"
+                onClick={() => setShowCreateModal(false)}
+              >
+                ×
+              </button>
             </div>
-            
+
             <form onSubmit={handleCreateTicket} className="modal-form">
               <div className="form-group">
-                <label className="form-label">TÍTULO DEL SOPORTE / DAÑO *</label>
+                <label className="form-label">
+                  TÍTULO DEL SOPORTE / DAÑO *
+                </label>
                 <input
                   type="text"
                   className="form-control"
@@ -432,18 +702,24 @@ export const Tickets: React.FC = () => {
               <div className="form-row">
                 <div className="form-group half">
                   <label className="form-label">CATEGORÍA *</label>
-                  <select className="form-control" value={newCat} onChange={(e) => setNewCat(e.target.value)}>
-                    {categoriesList.map(c => (
-                      <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                  <select
+                    className="form-control"
+                    value={newCat}
+                    onChange={(e) => setNewCat(e.target.value)}
+                  >
+                    {categoriesList.map((c) => (
+                      <option key={c.id} value={c.nombre}>
+                        {c.nombre}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="form-group half">
                   <label className="form-label">PRIORIDAD *</label>
-                  <select 
-                    className="form-control" 
-                    value={newPrioridad} 
+                  <select
+                    className="form-control"
+                    value={newPrioridad}
                     onChange={(e) => setNewPrioridad(e.target.value as any)}
                   >
                     <option value="Baja">Baja</option>
@@ -457,13 +733,17 @@ export const Tickets: React.FC = () => {
               <div className="form-row">
                 <div className="form-group half">
                   <label className="form-label">SEDE / EMPRESA *</label>
-                  <select 
-                    className="form-control" 
-                    value={newEmpresaId} 
-                    onChange={(e) => handleEmpresaSelectChange(Number(e.target.value))}
+                  <select
+                    className="form-control"
+                    value={newEmpresaId}
+                    onChange={(e) =>
+                      handleEmpresaSelectChange(Number(e.target.value))
+                    }
                   >
-                    {empresas.map(c => (
-                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    {empresas.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -482,20 +762,26 @@ export const Tickets: React.FC = () => {
 
               {/* Combobox de Sucursal si la empresa seleccionada posee sucursales */}
               {(() => {
-                const currentEmpObj = empresas.find(e => e.id === newEmpresaId);
+                const currentEmpObj = empresas.find(
+                  (e) => e.id === newEmpresaId,
+                );
                 const sucs = currentEmpObj?.sucursales || [];
                 if (sucs.length > 0) {
                   return (
                     <div className="form-group animate-fade">
-                      <label className="form-label">SUCURSAL DE LA EMPRESA *</label>
+                      <label className="form-label">
+                        SUCURSAL DE LA EMPRESA *
+                      </label>
                       <select
                         className="form-control"
                         value={newSucursalId}
-                        onChange={(e) => handleSucursalSelectChange(Number(e.target.value))}
+                        onChange={(e) =>
+                          handleSucursalSelectChange(Number(e.target.value))
+                        }
                       >
-                        {sucs.map(s => (
+                        {sucs.map((s) => (
                           <option key={s.id} value={s.id}>
-                            📍 {s.nombre}
+                            {s.nombre}
                           </option>
                         ))}
                       </select>
@@ -506,7 +792,9 @@ export const Tickets: React.FC = () => {
               })()}
 
               <div className="form-group">
-                <label className="form-label">NOMBRE DEL EMPLEADO AFECTADO (SOLICITANTE) *</label>
+                <label className="form-label">
+                  NOMBRE DEL EMPLEADO AFECTADO (SOLICITANTE) *
+                </label>
                 <input
                   type="text"
                   className="form-control"
@@ -519,19 +807,27 @@ export const Tickets: React.FC = () => {
               {isN2 && (
                 <div className="form-group">
                   <label className="form-label">NIVEL DE SOPORTE *</label>
-                  <select 
-                    className="form-control" 
-                    value={newNivelSoporte} 
-                    onChange={(e) => setNewNivelSoporte(e.target.value as 'N1' | 'N2')}
+                  <select
+                    className="form-control"
+                    value={newNivelSoporte}
+                    onChange={(e) =>
+                      setNewNivelSoporte(e.target.value as "N1" | "N2")
+                    }
                   >
-                    <option value="N1">Nivel 1 (N1) - Asignar a Centro Comercial</option>
-                    <option value="N2">Nivel 2 (N2) - Mi nivel (Asignado a mí)</option>
+                    <option value="N1">
+                      Nivel 1 (N1) - Asignar a Centro Comercial
+                    </option>
+                    <option value="N2">
+                      Nivel 2 (N2) - Mi nivel (Asignado a mí)
+                    </option>
                   </select>
                 </div>
               )}
 
               <div className="form-group">
-                <label className="form-label">DESCRIPCIÓN DE LA FALLA O SOLICITUD *</label>
+                <label className="form-label">
+                  DESCRIPCIÓN DE LA FALLA O SOLICITUD *
+                </label>
                 <textarea
                   className="form-control textarea-field"
                   placeholder="Describe con el mayor detalle posible el inconveniente..."
@@ -543,8 +839,16 @@ export const Tickets: React.FC = () => {
               </div>
 
               <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary">Registrar Soporte</button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Registrar Soporte
+                </button>
               </div>
             </form>
           </div>
@@ -557,136 +861,333 @@ export const Tickets: React.FC = () => {
           <div className="modal-container glass-panel animate-slide-up">
             <div className="modal-header">
               <h2>Detalle del Soporte #{selectedTicket.id}</h2>
-              <button className="modal-close-btn" onClick={() => setSelectedTicket(null)}>×</button>
+              <button
+                className="modal-close-btn"
+                onClick={() => setSelectedTicket(null)}
+              >
+                ×
+              </button>
             </div>
 
             <form onSubmit={handleUpdateTicket} className="modal-form">
               <div className="ticket-detail-summary">
                 <h3>{selectedTicket.titulo}</h3>
-                <p className="ticket-detail-desc">{selectedTicket.descripcion}</p>
+                <p className="ticket-detail-desc">
+                  {selectedTicket.descripcion}
+                </p>
                 <div className="ticket-detail-meta text-muted">
-                  <span>Sede: <strong>{selectedTicket.empresa_nombre || 'CONDADO'}{selectedTicket.sucursal_nombre ? ` (${selectedTicket.sucursal_nombre})` : ''}</strong></span>
-                  <span>Categoría: <strong>{selectedTicket.categoria}</strong></span>
-                  <span>Prioridad: <strong>{selectedTicket.prioridad}</strong></span>
-                  <span>Nivel: <strong className={`badge badge-level-${selectedTicket.nivel_soporte?.toLowerCase() || 'n1'}`} style={{ display: 'inline-block', padding: '2px 6px', fontSize: '10px', verticalAlign: 'middle', marginLeft: '4px' }}>{selectedTicket.nivel_soporte || 'N1'} {selectedTicket.nivel_soporte === 'N2' && selectedTicket.grupo_n2 ? `(${selectedTicket.grupo_n2})` : ''}</strong></span>
+                  <span>
+                    Sede:{" "}
+                    <strong>
+                      {selectedTicket.empresa_nombre || "CONDADO"}
+                      {selectedTicket.sucursal_nombre
+                        ? ` (${selectedTicket.sucursal_nombre})`
+                        : ""}
+                    </strong>
+                  </span>
+                  <span>
+                    Categoría: <strong>{selectedTicket.categoria}</strong>
+                  </span>
+                  <span>
+                    Prioridad: <strong>{selectedTicket.prioridad}</strong>
+                  </span>
+                  <span>
+                    Nivel:{" "}
+                    <strong
+                      className={`badge badge-level-${selectedTicket.nivel_soporte?.toLowerCase() || "n1"}`}
+                      style={{
+                        display: "inline-block",
+                        padding: "2px 6px",
+                        fontSize: "10px",
+                        verticalAlign: "middle",
+                        marginLeft: "4px",
+                      }}
+                    >
+                      {selectedTicket.nivel_soporte || "N1"}{" "}
+                      {selectedTicket.nivel_soporte === "N2" &&
+                      selectedTicket.grupo_n2
+                        ? `(${selectedTicket.grupo_n2})`
+                        : ""}
+                    </strong>
+                  </span>
                   {selectedTicket.sla_paused_at && (
-                    <span style={{ color: '#ec4899', fontWeight: 600 }}>[SLA PAUSADO]</span>
+                    <span style={{ color: "#ec4899", fontWeight: 600 }}>
+                      [SLA PAUSADO]
+                    </span>
                   )}
-                  <span>Fecha: {new Date(selectedTicket.created_at).toLocaleDateString()}</span>
+                  <span>
+                    Fecha:{" "}
+                    {new Date(selectedTicket.created_at).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
 
               {/* Editable Fields for Admin / Technical Staff */}
-              {user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO' ? (
+              {user?.rol === "ADMIN" ||
+              user?.rol === "SUPERVISOR" ||
+              user?.rol === "TECNICO" ? (
                 <div className="admin-editable-section">
-                  <h4 className="section-title gradient-text mt-3 mb-2">Administrar Operación TI</h4>
+                  <h4 className="section-title gradient-text mt-3 mb-2">
+                    Administrar Operación TI
+                  </h4>
 
-                  {selectedTicket.estado !== 'Finalizada' && (
-                    <div className="cierre-rapido-container mb-3" style={{ border: '1px solid rgba(16,185,129,0.2)', background: 'rgba(16,185,129,0.04)', padding: '16px', borderRadius: '12px' }}>
-                      {!showCierrePanel ? (
+                  {selectedTicket.estado !== "Finalizada" && (
+                    <div className="cierre-rapido-container mb-3">
+                      {selectedTicket.estado === "Nuevo" ||
+                      selectedTicket.estado === "Pendiente" ? (
                         <button
                           type="button"
-                          className="btn btn-success"
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#10b981', border: 'none', color: 'white', fontWeight: '600', padding: '10px' }}
-                          onClick={() => setShowCierrePanel(true)}
+                          className="btn"
+                          style={{
+                            width: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "8px",
+                            background: "#f59e0b",
+                            border: "none",
+                            color: "white",
+                            fontWeight: "600",
+                            padding: "12px",
+                            fontSize: "14px",
+                            borderRadius: "10px",
+                          }}
+                          onClick={handlePasarAEnProceso}
+                          disabled={isUpdating}
                         >
-                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                          Finalizar / Cerrar Ticket con Solución
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                          </svg>
+                          {isUpdating
+                            ? "Actualizando..."
+                            : "Iniciar Atención / Pasar a En Proceso"}
                         </button>
+                      ) : selectedTicket.estado === "Escalado a Proyecto" ? (
+                        <div
+                          style={{
+                            border: "1px solid rgba(59,130,246,0.3)",
+                            background: "rgba(59,130,246,0.06)",
+                            padding: "16px",
+                            borderRadius: "12px",
+                            color: "#1d4ed8",
+                            fontSize: "13px",
+                          }}
+                        >
+                          <strong>🚀 Elevado a Proyecto:</strong> Este ticket
+                          fue elevado a proyecto. Se finaliza de forma 100%
+                          automática una vez concluido el proyecto en el módulo
+                          correspondiente.
+                        </div>
                       ) : (
-                        <div className="cierre-rapido-panel animate-fade">
-                          <label className="form-label" style={{ color: '#047857', fontWeight: '600', marginBottom: '8px', display: 'block' }}>OBSERVACIONES DE LA SOLUCIÓN (OBLIGATORIO) *</label>
-                          <textarea
-                            className="form-control textarea-field"
-                            placeholder="Escribe la solución detallada aplicada para poder cerrar el ticket..."
-                            rows={3}
-                            value={cierreObs}
-                            onChange={(e) => setCierreObs(e.target.value)}
-                            required
-                            style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', marginBottom: '12px' }}
-                          />
-                          <div style={{ display: 'flex', gap: '10px' }}>
+                        <div
+                          style={{
+                            border: "1px solid rgba(16,185,129,0.2)",
+                            background: "rgba(16,185,129,0.04)",
+                            padding: "16px",
+                            borderRadius: "12px",
+                          }}
+                        >
+                          {!showCierrePanel ? (
                             <button
                               type="button"
                               className="btn btn-success"
-                              onClick={handleCerrarTicketConfirmado}
-                              disabled={isUpdating}
-                              style={{ flex: 1, background: '#10b981', border: 'none', color: 'white', fontWeight: '600', padding: '8px' }}
+                              style={{
+                                width: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "8px",
+                                background: "#10b981",
+                                border: "none",
+                                color: "white",
+                                fontWeight: "600",
+                                padding: "10px",
+                              }}
+                              onClick={() => setShowCierrePanel(true)}
                             >
-                              {isUpdating ? 'Cerrando...' : 'Confirmar Cierre (Finalizado)'}
+                              <svg
+                                viewBox="0 0 24 24"
+                                width="16"
+                                height="16"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                              {selectedTicket.estado === "Escalado a Proveedor"
+                                ? "Finalizar / Cerrar Ticket con Solución (SLA Pausado)"
+                                : "Finalizar / Cerrar Ticket con Solución"}
                             </button>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              onClick={() => { setShowCierrePanel(false); setCierreObs(''); }}
-                              style={{ flex: 0.5, padding: '8px' }}
-                            >
-                              Cancelar
-                            </button>
-                          </div>
+                          ) : (
+                            <div className="cierre-rapido-panel animate-fade">
+                              <label
+                                className="form-label"
+                                style={{
+                                  color: "#047857",
+                                  fontWeight: "600",
+                                  marginBottom: "8px",
+                                  display: "block",
+                                }}
+                              >
+                                OBSERVACIONES DE LA SOLUCIÓN (OBLIGATORIO) *
+                              </label>
+                              <textarea
+                                className="form-control textarea-field"
+                                placeholder="Escribe la solución detallada aplicada para poder cerrar el ticket..."
+                                rows={3}
+                                value={cierreObs}
+                                onChange={(e) => setCierreObs(e.target.value)}
+                                required
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  borderRadius: "6px",
+                                  border: "1px solid #d1d5db",
+                                  marginBottom: "12px",
+                                }}
+                              />
+                              <div style={{ display: "flex", gap: "10px" }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-success"
+                                  onClick={handleCerrarTicketConfirmado}
+                                  disabled={isUpdating}
+                                  style={{
+                                    flex: 1,
+                                    background: "#10b981",
+                                    border: "none",
+                                    color: "white",
+                                    fontWeight: "600",
+                                    padding: "8px",
+                                  }}
+                                >
+                                  {isUpdating
+                                    ? "Cerrando..."
+                                    : "Confirmar Cierre (Finalizado)"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  onClick={() => {
+                                    setShowCierrePanel(false);
+                                    setCierreObs("");
+                                  }}
+                                  style={{ flex: 0.5, padding: "8px" }}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   )}
 
                   <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">ESTADO DEL SOPORTE</label>
-                      <select 
-                        className="form-control" 
-                        value={editEstado} 
-                        onChange={(e) => setEditEstado(e.target.value)}
-                      >
-                        <option value="Nuevo">Nuevo</option>
-                        <option value="En Proceso">En Proceso</option>
-                        <option value="Pendiente">Pendiente</option>
-                        <option value="Pruebas">Pruebas</option>
-                        <option value="Finalizada">Finalizada</option>
-                        {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || isN2) && (
-                          <>
-                            <option value="Escalado a Proyecto">Escalado a Proyecto</option>
-                            <option value="Escalado a Proveedor">Escalado a Proveedor (SLA Pausado)</option>
-                          </>
-                        )}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
                     <div className="form-group half">
                       <label className="form-label">TÉCNICO TI ASIGNADO</label>
-                      {user.rol === 'ADMIN' || user.rol === 'SUPERVISOR' ? (
-                        <select 
-                          className="form-control" 
-                          value={editTechId} 
-                          onChange={(e) => setEditTechId(Number(e.target.value))}
+                      {user.rol === "ADMIN" || user.rol === "SUPERVISOR" ? (
+                        <select
+                          className="form-control"
+                          value={editTechId}
+                          onChange={(e) =>
+                            setEditTechId(Number(e.target.value))
+                          }
                         >
                           <option value="0">Seleccionar Técnico...</option>
-                          {technicians.map(t => (
+                          {technicians.map((t) => (
                             <option key={t.id} value={t.id}>
-                              {t.nombre_completo} {t.nivel_soporte ? `(${t.nivel_soporte})` : ''}
+                              {t.nombre_completo}{" "}
+                              {t.nivel_soporte ? `(${t.nivel_soporte})` : ""}
                             </option>
                           ))}
                         </select>
                       ) : (
-                        <div className="static-field-value" style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                          {technicians.find(t => t.id === editTechId)?.nombre_completo || 'Sin técnico asignado'}
+                        <div
+                          className="static-field-value"
+                          style={{
+                            fontWeight: "600",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            style={{ flexShrink: 0 }}
+                          >
+                            <rect
+                              x="2"
+                              y="3"
+                              width="20"
+                              height="14"
+                              rx="2"
+                              ry="2"
+                            ></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                          </svg>
+                          {technicians.find((t) => t.id === editTechId)
+                            ?.nombre_completo || "Sin técnico asignado"}
                         </div>
                       )}
                     </div>
 
                     <div className="form-group half">
                       <label className="form-label">ÁREA / SOLICITANTE</label>
-                      <div className="static-field-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        {selectedTicket.persona_solicitante || 'Sin especificar'} ({selectedTicket.area_solicitante || 'General'})
+                      <div
+                        className="static-field-value"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="14"
+                          height="14"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{ flexShrink: 0 }}
+                        >
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        {selectedTicket.persona_solicitante ||
+                          "Sin especificar"}{" "}
+                        ({selectedTicket.area_solicitante || "General"})
                       </div>
                     </div>
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">OBSERVACIONES / BITÁCORA TÉCNICA</label>
+                    <label className="form-label">
+                      OBSERVACIONES / BITÁCORA TÉCNICA
+                    </label>
                     <textarea
                       className="form-control textarea-field"
                       placeholder="Agrega notas sobre la solución aplicada o la bitácora de soporte..."
@@ -700,7 +1201,13 @@ export const Tickets: React.FC = () => {
                 <div className="user-view-only-section">
                   <h4 className="section-title mt-3">Estado de la Solución</h4>
                   <div className="static-progress-details mt-2">
-                    <span>Técnico Responsable: <strong>{selectedTicket.tecnico_nombre || 'Asignación automática programada'}</strong></span>
+                    <span>
+                      Técnico Responsable:{" "}
+                      <strong>
+                        {selectedTicket.tecnico_nombre ||
+                          "Asignación automática programada"}
+                      </strong>
+                    </span>
                   </div>
                   {selectedTicket.observaciones && (
                     <div className="observations-box mt-3">
@@ -712,41 +1219,171 @@ export const Tickets: React.FC = () => {
               )}
 
               <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setSelectedTicket(null)}>Cerrar</button>
-                {selectedTicket.nivel_soporte === 'N1' && (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && selectedTicket.estado !== 'Finalizada' && (
-                  <button
-                    type="button"
-                    className="btn btn-warning"
-                    style={{ background: '#8b5cf6', borderColor: '#8b5cf6', color: 'white' }}
-                    onClick={() => {
-                      setEscalarGrupo('Infraestructura');
-                      setEscalarTechId(0);
-                      setShowEscalarModal(true);
-                    }}
-                    disabled={isUpdating}
-                  >
-                    Escalar a N2 (Especialista)
-                  </button>
-                )}
-                {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && (
-                  <button type="submit" className="btn btn-primary" disabled={isUpdating}>
-                    {isUpdating ? 'Guardando...' : 'Actualizar Estado'}
-                  </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setSelectedTicket(null)}
+                >
+                  Cerrar
+                </button>
+
+                {/* Escalar a N2 (Solo para tickets N1 activos) */}
+                {(selectedTicket.nivel_soporte === "N1" ||
+                  !selectedTicket.nivel_soporte) &&
+                  (user?.rol === "ADMIN" ||
+                    user?.rol === "SUPERVISOR" ||
+                    user?.rol === "TECNICO") &&
+                  selectedTicket.estado !== "Finalizada" &&
+                  selectedTicket.estado !== "Escalado a Proyecto" &&
+                  selectedTicket.estado !== "Escalado a Proveedor" && (
+                    <button
+                      type="button"
+                      className="btn btn-warning"
+                      style={{
+                        background: "#8b5cf6",
+                        borderColor: "#8b5cf6",
+                        color: "white",
+                      }}
+                      onClick={() => {
+                        setEscalarGrupo("Infraestructura");
+                        setEscalarTechId(0);
+                        setShowEscalarModal(true);
+                      }}
+                      disabled={isUpdating}
+                    >
+                      Escalar a N2 (Especialista)
+                    </button>
+                  )}
+
+                {/* Elevar a N3 / Proyecto (Solo para tickets N2 activos) */}
+                {selectedTicket.nivel_soporte === "N2" &&
+                  (isN2 ||
+                    user?.rol === "ADMIN" ||
+                    user?.rol === "SUPERVISOR") &&
+                  selectedTicket.estado !== "Escalado a Proveedor" &&
+                  selectedTicket.estado !== "Escalado a Proyecto" &&
+                  selectedTicket.estado !== "Finalizada" && (
+                    <>
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{
+                          background: "#d97706",
+                          borderColor: "#d97706",
+                          color: "white",
+                        }}
+                        onClick={handleEscalarAProveedor}
+                        disabled={isUpdating}
+                      >
+                        Elevar a Proveedor (N3)
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{
+                          background: "#2563eb",
+                          borderColor: "#2563eb",
+                          color: "white",
+                        }}
+                        onClick={handleEscalarAProyecto}
+                        disabled={isUpdating}
+                      >
+                        Elevar a Proyecto
+                      </button>
+                    </>
+                  )}
+
+                {(user?.rol === "ADMIN" ||
+                  user?.rol === "SUPERVISOR" ||
+                  user?.rol === "TECNICO") && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{
+                        background: "rgba(37,99,235,0.08)",
+                        color: "#2563eb",
+                        border: "1px solid rgba(37,99,235,0.2)",
+                        fontWeight: "600",
+                      }}
+                      onClick={() => handleOpenKBFromTicket(selectedTicket)}
+                      title="Convertir esta solución en una guía para la Base de Conocimientos"
+                    >
+                      Publicar en Base de Conocimientos
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? "Guardando..." : "Guardar Cambios"}
+                    </button>
+                  </>
                 )}
               </div>
             </form>
           </div>
         </div>
       )}
+
       {showEscalarModal && (
-        <div className="modal-backdrop animate-fade" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div className="glass-panel animate-slide-up" style={{ width: '100%', maxWidth: '420px', padding: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h4 style={{ margin: 0, fontSize: '16px' }}>Escalar Ticket a Nivel 2</h4>
-              <button type="button" onClick={() => setShowEscalarModal(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '20px', cursor: 'pointer' }}>×</button>
+        <div
+          className="modal-backdrop animate-fade"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1100,
+          }}
+        >
+          <div
+            className="glass-panel animate-slide-up"
+            style={{
+              width: "100%",
+              maxWidth: "420px",
+              padding: "24px",
+              background: "var(--bg-panel)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <h4 style={{ margin: 0, fontSize: "16px" }}>
+                Escalar Ticket a Nivel 2
+              </h4>
+              <button
+                type="button"
+                onClick={() => setShowEscalarModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--color-text-muted)",
+                  fontSize: "20px",
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
             </div>
-            
-            <form onSubmit={handleEscalarN2Submit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+            <form
+              onSubmit={handleEscalarN2Submit}
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
               <div className="form-group">
                 <label className="form-label">SELECCIONE GRUPO N2 *</label>
                 <select
@@ -765,7 +1402,9 @@ export const Tickets: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">ASIGNAR A TÉCNICO ESPECÍFICO</label>
+                <label className="form-label">
+                  ASIGNAR A TÉCNICO ESPECÍFICO
+                </label>
                 <select
                   className="form-control"
                   value={escalarTechId}
@@ -774,20 +1413,210 @@ export const Tickets: React.FC = () => {
                 >
                   <option value="0">Auto-asignación (Balanceo de Carga)</option>
                   {technicians
-                    .filter(t => t.nivel_soporte === 'N2' && t.grupo_n2 === escalarGrupo)
-                    .map(t => (
-                      <option key={t.id} value={t.id}>{t.nombre_completo}</option>
-                    ))
-                  }
+                    .filter(
+                      (t) =>
+                        t.nivel_soporte === "N2" && t.grupo_n2 === escalarGrupo,
+                    )
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.nombre_completo}
+                      </option>
+                    ))}
                 </select>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowEscalarModal(false)} disabled={isUpdating}>
+              <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                  onClick={() => setShowEscalarModal(false)}
+                  disabled={isUpdating}
+                >
                   Cancelar
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#8b5cf6', borderColor: '#8b5cf6', color: 'white' }} disabled={isUpdating}>
-                  {isUpdating ? 'Escalando...' : 'Confirmar Escalación'}
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    flex: 1,
+                    background: "#8b5cf6",
+                    borderColor: "#8b5cf6",
+                    color: "white",
+                  }}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? "Escalando..." : "Confirmar Escalación"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Publishing Ticket Solution to Knowledge Base */}
+      {showKBModal && (
+        <div
+          className="modal-backdrop animate-fade"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(15,23,42,0.6)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1200,
+            padding: "20px",
+          }}
+        >
+          <div
+            className="modal-container glass-panel animate-slide-up"
+            style={{
+              width: "100%",
+              maxWidth: "620px",
+              background: "#ffffff",
+              borderRadius: "12px",
+              overflow: "hidden",
+              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.15)",
+            }}
+          >
+            <div
+              style={{
+                padding: "16px 20px",
+                borderBottom: "1px solid #e2e8f0",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "#f8fafc",
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  color: "#0f172a",
+                }}
+              >
+                Publicar en la Base de Conocimientos
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowKBModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "18px",
+                  cursor: "pointer",
+                  color: "#64748b",
+                }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handlePublishKB} style={{ padding: "20px" }}>
+              <div className="form-group" style={{ marginBottom: "14px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    color: "#334155",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Título del Artículo *
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={kbTitle}
+                  onChange={(e) => setKbTitle(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: "14px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    color: "#334155",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Categoría *
+                </label>
+                <select
+                  className="form-control"
+                  value={kbCat}
+                  onChange={(e) => setKbCat(e.target.value)}
+                  required
+                >
+                  {categoriesList.map((c) => (
+                    <option key={c.id} value={c.nombre}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    color: "#334155",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Paso a Paso / Solución Detallada *
+                </label>
+                <textarea
+                  className="form-control"
+                  rows={8}
+                  value={kbSteps}
+                  onChange={(e) => setKbSteps(e.target.value)}
+                  required
+                  style={{
+                    resize: "vertical",
+                    fontFamily: "inherit",
+                    fontSize: "13px",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "10px",
+                  pt: "10px",
+                  borderTop: "1px solid #e2e8f0",
+                }}
+              >
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowKBModal(false)}
+                  disabled={isPublishingKB}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isPublishingKB}
+                  style={{ background: "#2563eb" }}
+                >
+                  {isPublishingKB ? "Publicando..." : "Publicar Guía Global"}
                 </button>
               </div>
             </form>

@@ -242,6 +242,7 @@ export const SoportesRecurrentes: React.FC = () => {
                 <tr>
                   <th>Título Tarea</th>
                   <th>CC / Centro Comercial</th>
+                  <th>Creado por</th>
                   <th>Área / Solicitante</th>
                   <th>Frecuencia</th>
                   <th>Próxima Ejecución</th>
@@ -253,7 +254,7 @@ export const SoportesRecurrentes: React.FC = () => {
               <tbody>
                 {filteredSoportes.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-dim)' }}>
+                    <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-dim)' }}>
                       No se encontraron soportes recurrentes programados.
                     </td>
                   </tr>
@@ -267,6 +268,11 @@ export const SoportesRecurrentes: React.FC = () => {
                       <td>
                         <span className="badge badge-process" style={{ fontSize: '10px', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)' }}>
                           {s.empresa_nombre || 'Todas las Sedes'}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '11.5px', color: '#475569', fontWeight: '500' }}>
+                          {s.creador_nombre || 'Sistema / ADMIN'}
                         </span>
                       </td>
                       <td>{s.area_solicitante || 'TI'}</td>

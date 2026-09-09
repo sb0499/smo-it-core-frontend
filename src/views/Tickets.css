@@ -309,11 +309,14 @@
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
   border-top: 1px solid var(--overlay-05);
   padding-top: 20px;
   margin-top: 10px;
 }
+
 
 /* Detail Box */
 .ticket-detail-summary {

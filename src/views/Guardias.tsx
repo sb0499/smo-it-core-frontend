@@ -11,7 +11,7 @@ export const Guardias: React.FC = () => {
   const [guardias, setGuardias] = useState<GuardiaFeriado[]>([]);
   const [allGuardias, setAllGuardias] = useState<GuardiaFeriado[]>([]);
   const [technicians, setTechnicians] = useState<User[]>([]);
-  const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
+  const [empresas, setEmpresas] = useState<{ id: number; nombre: string; tecnico_principal_id?: number | null; tecnico_principal_nombre?: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Pagination States
@@ -62,7 +62,7 @@ export const Guardias: React.FC = () => {
     }
   };
 
-  const getActiveTechForSede = (empresaId: number, empresaNombre: string) => {
+  const getActiveTechForSede = (emp: { id: number; nombre: string; tecnico_principal_id?: number | null; tecnico_principal_nombre?: string | null }) => {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
@@ -70,7 +70,7 @@ export const Guardias: React.FC = () => {
     // 1. Check if there's a registered weekend/holiday guard today for this Sede or globally
     const activeGuard = allGuardias.find(g => 
       g.fecha.split('T')[0] === todayStr && 
-      (g.empresa_id === empresaId || g.empresa_id === null || g.empresa_id === undefined)
+      (g.empresa_id === emp.id || g.empresa_id === null || g.empresa_id === undefined)
     );
     if (activeGuard) {
       return {
@@ -81,7 +81,7 @@ export const Guardias: React.FC = () => {
     }
 
     // 2. Regular Workday logic
-    const isSpecialSede = ['GAMETOWN', 'TEATRO', 'APPARCA'].some(name => empresaNombre.toUpperCase().includes(name));
+    const isSpecialSede = ['GAMETOWN', 'TEATRO', 'APPARCA'].some(name => emp.nombre.toUpperCase().includes(name));
     
     // Gametown, El Teatro, Apparca work Tuesday (2) to Saturday (6).
     // Other companies work Monday (1) to Friday (5).
@@ -98,16 +98,28 @@ export const Guardias: React.FC = () => {
       };
     }
 
-    // Working day. Find technicians assigned to this Sede.
+    // 3. Priority: Primary technician / Encargado N1 for this sede
+    if (emp.tecnico_principal_id) {
+      const primaryTech = technicians.find(t => t.id === emp.tecnico_principal_id && t.is_active);
+      if (primaryTech) {
+        return {
+          nombre: primaryTech.nombre_completo,
+          tipo: isSpecialSede ? 'Encargado Especialista (M-S)' : 'Técnico Principal (L-V)',
+          isWeekendGuard: false
+        };
+      }
+    }
+
+    // 4. Working day fallback. Find technicians assigned to this Sede.
     const assignedTechs = technicians.filter(tech => {
-      const belongs = tech.empresa_ids?.includes(empresaId);
+      const belongs = tech.empresa_ids?.includes(emp.id);
       if (!belongs) return false;
       if (isSpecialSede) return true; // N1 vs N2 doesn't matter
       return tech.nivel_soporte === 'N1'; // Prefer N1 for normal sites
     });
 
     if (assignedTechs.length === 0) {
-      const anySedeTechs = technicians.filter(tech => tech.empresa_ids?.includes(empresaId));
+      const anySedeTechs = technicians.filter(tech => tech.empresa_ids?.includes(emp.id));
       if (anySedeTechs.length > 0) {
         return {
           nombre: anySedeTechs.map(t => t.nombre_completo).join(', '),
@@ -293,10 +305,10 @@ export const Guardias: React.FC = () => {
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
           {empresas.map(emp => {
-            const shift = getActiveTechForSede(emp.id, emp.nombre);
-            // Show only first name to keep it compact and fine
+            const shift = getActiveTechForSede(emp);
             const shiftName = shift?.nombre || 'Equipo TI General';
-            const shortName = (shiftName.startsWith('Equipo') || shiftName.startsWith('Sin')) ? shiftName : shiftName.split(' ')[0];
+            const firstTech = shiftName.split(',')[0].trim();
+            const shortName = (firstTech.startsWith('Equipo') || firstTech.startsWith('Sin')) ? firstTech : firstTech.split(' ')[0];
             return (
               <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '6px 10px', borderRadius: '4px', border: '1px solid #f1f5f9', fontSize: '11.5px' }}>
                 <span style={{ fontWeight: '700', color: '#2563eb', fontSize: '11px' }}>{emp.nombre}</span>

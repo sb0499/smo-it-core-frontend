@@ -76,6 +76,15 @@ export const ticketService = {
     return apiClient.post<Ticket>(`/tickets/${ticketId}/escalar-n2`, payload);
   },
 
+  async escalarTicketAProveedor(ticketId: number): Promise<Ticket> {
+    return apiClient.post<Ticket>(`/tickets/${ticketId}/escalar-proveedor`);
+  },
+
+  async escalarTicketAProyecto(ticketId: number): Promise<{ ticket: Ticket; proyecto_id: number; proyecto_nombre: string }> {
+    return apiClient.post<{ ticket: Ticket; proyecto_id: number; proyecto_nombre: string }>(`/tickets/${ticketId}/escalar-proyecto`);
+  },
+
+
   async triggerCierreDiario(): Promise<{ message: string }> {
     return apiClient.post<{ message: string }>('/tickets/alertas/cierre-diario');
   },

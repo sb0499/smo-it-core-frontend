@@ -19,6 +19,8 @@ export interface Activo {
   tipo_equipo_nombre?: string;
   empresa_id?: number | null;
   empresa_nombre?: string;
+  sucursal_id?: number | null;
+  sucursal_nombre?: string;
   bodega_id?: number | null;
   bodega_nombre?: string;
   fecha_compra: string | null;
@@ -30,6 +32,8 @@ export interface Bodega {
   nombre: string;
   empresa_id: number;
   empresa_nombre?: string;
+  sucursal_id?: number | null;
+  sucursal_nombre?: string;
   descripcion: string | null;
   created_at?: string;
 }
@@ -52,6 +56,8 @@ export interface Persona {
   cargo: string | null;
   empresa_id: number;
   empresa_nombre?: string;
+  sucursal_id?: number | null;
+  sucursal_nombre?: string;
 }
 
 export interface Proveedor {
@@ -98,6 +104,8 @@ export interface IngresoBodega {
   codigo_ingreso: string;
   empresa_id: number;
   empresa_nombre?: string;
+  sucursal_id?: number | null;
+  sucursal_nombre?: string;
   proveedor_id?: number | null;
   proveedor_nombre?: string;
   nro_orden_compra: string;
@@ -120,6 +128,8 @@ export interface EgresoBodega {
   codigo_egreso: string;
   empresa_id: number;
   empresa_nombre?: string;
+  sucursal_id?: number | null;
+  sucursal_nombre?: string;
   custodio_id: number;
   custodio_nombre?: string;
   custodio_cargo?: string;
@@ -142,11 +152,13 @@ export const inventoryService = {
     search = '', 
     estado = '', 
     custodio_id?: number, 
-    empresa_id?: number
+    empresa_id?: number,
+    sucursal_id?: number
   ): Promise<{ total: number; page: number; limit: number; data: Activo[] }> {
     const params: any = { page, limit, search, estado };
     if (custodio_id && custodio_id > 0) params.custodio_id = custodio_id;
     if (empresa_id && empresa_id > 0) params.empresa_id = empresa_id;
+    if (sucursal_id && sucursal_id > 0) params.sucursal_id = sucursal_id;
     return apiClient.get('/inventarios', { params });
   },
 
@@ -304,6 +316,7 @@ export const inventoryService = {
     persona_entrega_id: number;
     area?: string;
     bodega_id?: number;
+    estado_destino?: 'Stock' | 'Mantenimiento' | 'Baja';
     observaciones?: string;
     revisado_por?: string;
     revisado_por_cargo?: string;

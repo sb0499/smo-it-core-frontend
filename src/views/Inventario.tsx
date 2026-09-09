@@ -29,13 +29,18 @@ export const Inventario: React.FC = () => {
   const [consumibles, setConsumibles] = useState<Consumible[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-  const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
+  const [empresas, setEmpresas] = useState<{ id: number; nombre: string; sucursales?: { id: number; nombre: string }[] }[]>([]);
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [tipoEquipos, setTipoEquipos] = useState<TipoEquipo[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterEstado, setFilterEstado] = useState<string>('todos');
+  const [filterSucursalId, setFilterSucursalId] = useState<number>(0);
+  const [assetSucursalId, setAssetSucursalId] = useState<number>(0);
+  const [egresoSucursalId, setEgresoSucursalId] = useState<number>(0);
+  const [recepcionSucursalId, setRecepcionSucursalId] = useState<number>(0);
+  const [editAssetSucursalId, setEditAssetSucursalId] = useState<number>(0);
 
   // Asset detail & action modals
   const [selectedActivo, setSelectedActivo] = useState<Activo | null>(null);
@@ -93,7 +98,19 @@ export const Inventario: React.FC = () => {
   const [assetNroSolicitudPago, setAssetNroSolicitudPago] = useState('');
   const [assetFechaIngreso, setAssetFechaIngreso] = useState<string>(new Date().toISOString().split('T')[0]);
   const [assetDescripcion, setAssetDescripcion] = useState('');
-  const [extraAssets, setExtraAssets] = useState<Array<{ tipo_equipo_id: number; marca: string; modelo: string; serial: string; especificaciones: string }>>([]);
+  const [assetEsLote, setAssetEsLote] = useState(false);
+  const [assetCantidad, setAssetCantidad] = useState<number>(1);
+  const [extraAssets, setExtraAssets] = useState<Array<{ tipo_equipo_id: number; tipo_equipo_search_text?: string; show_dropdown?: boolean; marca: string; modelo: string; serial: string; especificaciones: string; es_lote?: boolean; cantidad?: number }>>([]);
+
+  // Searchable Proveedor TI & Tipo Equipo in Ingreso
+  const [assetProveedorSearchText, setAssetProveedorSearchText] = useState('');
+  const [showAssetProveedorDropdown, setShowAssetProveedorDropdown] = useState(false);
+  const assetProveedorRef = useRef<HTMLDivElement>(null);
+
+  const [assetTipoEquipoSearchText, setAssetTipoEquipoSearchText] = useState('');
+  const [showAssetTipoEquipoDropdown, setShowAssetTipoEquipoDropdown] = useState(false);
+  const assetTipoEquipoRef = useRef<HTMLDivElement>(null);
+
 
   // Egreso / Multi-Asset Assignment State
   const [showEgresoModal, setShowEgresoModal] = useState(false);
@@ -110,6 +127,7 @@ export const Inventario: React.FC = () => {
   const [recepcionPersonaId, setRecepcionPersonaId] = useState<number>(0);
   const [recepcionArea, setRecepcionArea] = useState<string>('');
   const [recepcionBodegaId, setRecepcionBodegaId] = useState<number>(0);
+  const [recepcionEstadoDestino, setRecepcionEstadoDestino] = useState<'Stock' | 'Mantenimiento' | 'Baja'>('Stock');
   const [recepcionObservaciones, setRecepcionObservaciones] = useState<string>('');
   const [selectedRecepcionAssetIds, setSelectedRecepcionAssetIds] = useState<number[]>([]);
   const [personaAssignedActivos, setPersonaAssignedActivos] = useState<Activo[]>([]);
@@ -127,6 +145,7 @@ export const Inventario: React.FC = () => {
 
   const resetRecepcionModalState = () => {
     setRecepcionEmpresaId(0);
+    setRecepcionSucursalId(0);
     setRecepcionPersonaId(0);
     setRecepcionPersonaSearchText('');
     setShowRecepcionPersonaDropdown(false);
@@ -134,6 +153,7 @@ export const Inventario: React.FC = () => {
     setRecepcionAssetSearchText('');
     setRecepcionArea('');
     setRecepcionBodegaId(0);
+    setRecepcionEstadoDestino('Stock');
     setRecepcionObservaciones('');
     setSelectedRecepcionAssetIds([]);
     setPersonaAssignedActivos([]);
@@ -173,18 +193,40 @@ export const Inventario: React.FC = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (assignPersonaRef.current && !assignPersonaRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (assignPersonaRef.current && !assignPersonaRef.current.contains(target)) {
         setShowAssignPersonaDropdown(false);
       }
-      if (recepcionPersonaRef.current && !recepcionPersonaRef.current.contains(event.target as Node)) {
+      if (recepcionPersonaRef.current && !recepcionPersonaRef.current.contains(target)) {
         setShowRecepcionPersonaDropdown(false);
       }
-      if (egresoPersonaRef.current && !egresoPersonaRef.current.contains(event.target as Node)) {
+      if (egresoPersonaRef.current && !egresoPersonaRef.current.contains(target)) {
         setShowEgresoPersonaDropdown(false);
       }
-      if (egresoTipoEquipoRef.current && !egresoTipoEquipoRef.current.contains(event.target as Node)) {
+      if (egresoTipoEquipoRef.current && !egresoTipoEquipoRef.current.contains(target)) {
         setShowEgresoTipoEquipoDropdown(false);
       }
+      if (assetProveedorRef.current && !assetProveedorRef.current.contains(target)) {
+        setShowAssetProveedorDropdown(false);
+      }
+      if (assetTipoEquipoRef.current && !assetTipoEquipoRef.current.contains(target)) {
+        setShowAssetTipoEquipoDropdown(false);
+      }
+
+      setExtraAssets(prev => {
+        let needsUpdate = false;
+        const nextState = prev.map((item, idx) => {
+          if (item.show_dropdown) {
+            const wrapper = document.getElementById(`extra-asset-tipo-wrapper-${idx}`);
+            if (wrapper && !wrapper.contains(target)) {
+              needsUpdate = true;
+              return { ...item, show_dropdown: false };
+            }
+          }
+          return item;
+        });
+        return needsUpdate ? nextState : prev;
+      });
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -204,6 +246,7 @@ export const Inventario: React.FC = () => {
 
   const resetEgresoModalState = () => {
     setEgresoEmpresaId(0);
+    setEgresoSucursalId(0);
     setEgresoPersonaId(0);
     setEgresoPersonaSearchText('');
     setShowEgresoPersonaDropdown(false);
@@ -357,10 +400,7 @@ export const Inventario: React.FC = () => {
       showAlert('Seleccione la Sede / Ubicación.');
       return;
     }
-    if (!assetNroOrdenCompra.trim()) {
-      showAlert('Ingrese el Nro. Orden de Compra.');
-      return;
-    }
+
     if (!assetFechaCompra || !assetFechaIngreso) {
       showAlert('Ingrese las fechas de compra e ingreso.');
       return;
@@ -385,28 +425,46 @@ export const Inventario: React.FC = () => {
       }
     }
 
-    const allAssets = [
-      {
+    const allAssets: Array<{
+      tipo_equipo_id: number;
+      marca: string;
+      modelo: string;
+      serial: string;
+      especificaciones?: string;
+      bodega_id?: number;
+    }> = [];
+
+    const countActivo1 = (assetEsLote && assetCantidad > 1) ? assetCantidad : 1;
+    for (let c = 0; c < countActivo1; c++) {
+      allAssets.push({
         tipo_equipo_id: assetTipoEquipoId,
         marca: assetMarca.trim(),
         modelo: assetModelo.trim(),
         serial: assetSerial.trim() || 'NA',
         especificaciones: assetEspecificaciones.trim() || undefined,
         bodega_id: assetBodegaId > 0 ? assetBodegaId : undefined
-      },
-      ...extraAssets.map(ext => ({
-        tipo_equipo_id: ext.tipo_equipo_id,
-        marca: ext.marca.trim(),
-        modelo: ext.modelo.trim(),
-        serial: ext.serial.trim() || 'NA',
-        especificaciones: ext.especificaciones.trim() || undefined
-      }))
-    ];
+      });
+    }
+
+    for (let i = 0; i < extraAssets.length; i++) {
+      const ext = extraAssets[i];
+      const countExt = (ext.es_lote && ext.cantidad && ext.cantidad > 1) ? ext.cantidad : 1;
+      for (let c = 0; c < countExt; c++) {
+        allAssets.push({
+          tipo_equipo_id: ext.tipo_equipo_id,
+          marca: ext.marca.trim(),
+          modelo: ext.modelo.trim(),
+          serial: ext.serial.trim() || 'NA',
+          especificaciones: ext.especificaciones.trim() || undefined
+        });
+      }
+    }
 
     try {
       setIsSubmitting(true);
       const createdIngreso = await inventoryService.createIngresoBodega({
         empresa_id: assetEmpresaId,
+        sucursal_id: assetSucursalId > 0 ? assetSucursalId : undefined,
         proveedor_id: assetProveedorId > 0 ? assetProveedorId : undefined,
         nro_orden_compra: assetNroOrdenCompra.trim(),
         nro_factura: assetNroFactura.trim() || undefined,
@@ -425,11 +483,18 @@ export const Inventario: React.FC = () => {
       setAssetMarca('');
       setAssetModelo('');
       setAssetEspecificaciones('');
+      setAssetEsLote(false);
+      setAssetCantidad(1);
       setAssetProveedorId(0);
+      setAssetProveedorSearchText('');
+      setShowAssetProveedorDropdown(false);
       setAssetFechaCompra(new Date().toISOString().split('T')[0]);
       setAssetFechaIngreso(new Date().toISOString().split('T')[0]);
       setAssetEmpresaId(0);
+      setAssetSucursalId(0);
       setAssetTipoEquipoId(0);
+      setAssetTipoEquipoSearchText('');
+      setShowAssetTipoEquipoDropdown(false);
       setAssetBodegaId(0);
       setAssetNroOrdenCompra('');
       setAssetNroFactura('');
@@ -478,6 +543,7 @@ export const Inventario: React.FC = () => {
       setIsSubmitting(true);
       const createdEgreso = await inventoryService.createEgresoBodega({
         empresa_id: egresoEmpresaId,
+        sucursal_id: egresoSucursalId > 0 ? egresoSucursalId : undefined,
         custodio_id: egresoPersonaId,
         area: egresoArea.trim() || undefined,
         observaciones: egresoObservaciones.trim() || undefined,
@@ -633,10 +699,10 @@ export const Inventario: React.FC = () => {
     }
   };
 
-  const fetchActivosPage = async (page = pageActivos, search = debouncedSearch, estado = filterEstado) => {
+  const fetchActivosPage = async (page = pageActivos, search = debouncedSearch, estado = filterEstado, sucursalId = filterSucursalId) => {
     try {
       setLoading(true);
-      const res = await inventoryService.getActivos(page, 10, search, estado);
+      const res = await inventoryService.getActivos(page, 10, search, estado, undefined, sucursalId > 0 ? sucursalId : undefined);
       setActivos(res.data);
       setTotalActivos(res.total);
     } catch (err) {
@@ -727,7 +793,7 @@ export const Inventario: React.FC = () => {
   // When search or filter changes, reset the page number (which will trigger the main fetch useEffect)
   useEffect(() => {
     setPageActivos(1);
-  }, [debouncedSearch, filterEstado]);
+  }, [debouncedSearch, filterEstado, filterSucursalId]);
 
   useEffect(() => {
     setPageConsumibles(1);
@@ -739,8 +805,8 @@ export const Inventario: React.FC = () => {
 
   // Main fetch useEffect for Activos
   useEffect(() => {
-    fetchActivosPage(pageActivos, debouncedSearch, filterEstado);
-  }, [pageActivos, debouncedSearch, filterEstado]);
+    fetchActivosPage(pageActivos, debouncedSearch, filterEstado, filterSucursalId);
+  }, [pageActivos, debouncedSearch, filterEstado, filterSucursalId]);
 
   // Main fetch useEffect for Consumibles
   useEffect(() => {
@@ -805,6 +871,7 @@ export const Inventario: React.FC = () => {
     setEditAssetMarca(selectedActivo?.marca || '');
     setEditAssetModelo(selectedActivo?.modelo || '');
     setEditAssetEmpresaId(selectedActivo?.empresa_id || 0);
+    setEditAssetSucursalId(selectedActivo?.sucursal_id || 0);
     setEditAssetTipoEquipoId(selectedActivo?.tipo_equipo_id || 0);
     setEditAssetProveedorId(selectedActivo?.proveedor_id || 0);
     setEditAssetFechaCompra(selectedActivo?.fecha_compra ? selectedActivo.fecha_compra.split('T')[0] : '');
@@ -828,6 +895,7 @@ export const Inventario: React.FC = () => {
         marca: editAssetMarca,
         modelo: editAssetModelo,
         empresa_id: editAssetEmpresaId,
+        sucursal_id: editAssetSucursalId > 0 ? editAssetSucursalId : null,
         tipo_equipo_id: editAssetTipoEquipoId,
         proveedor_id: editAssetProveedorId > 0 ? editAssetProveedorId : null,
         fecha_compra: editAssetFechaCompra || null,
@@ -896,9 +964,11 @@ export const Inventario: React.FC = () => {
       setIsSubmitting(true);
       const created = await inventoryService.createRecepcionBodega({
         empresa_id: recepcionEmpresaId,
+        sucursal_id: recepcionSucursalId > 0 ? recepcionSucursalId : undefined,
         persona_entrega_id: recepcionPersonaId,
         area: recepcionArea,
         bodega_id: recepcionBodegaId > 0 ? recepcionBodegaId : undefined,
+        estado_destino: recepcionEstadoDestino,
         observaciones: recepcionObservaciones,
         activo_ids: selectedRecepcionAssetIds
       });
@@ -1088,18 +1158,31 @@ export const Inventario: React.FC = () => {
               style={{ flex: 1 }}
             />
             {activeTab === 'activos' && (
-              <select 
-                className="form-control filter-select"
-                value={filterEstado}
-                onChange={(e) => setFilterEstado(e.target.value)}
-                style={{ width: '180px' }}
-              >
-                <option value="todos">Todos los Estados</option>
-                <option value="Stock">Stock (En Bodega)</option>
-                <option value="Asignado">Asignado</option>
-                <option value="Mantenimiento">Mantenimiento</option>
-                <option value="Baja">Baja</option>
-              </select>
+              <>
+                <select 
+                  className="form-control filter-select"
+                  value={filterEstado}
+                  onChange={(e) => setFilterEstado(e.target.value)}
+                  style={{ width: '180px' }}
+                >
+                  <option value="todos">Todos los Estados</option>
+                  <option value="Stock">Stock (En Bodega)</option>
+                  <option value="Asignado">Asignado</option>
+                  <option value="Mantenimiento">Mantenimiento</option>
+                  <option value="Baja">Baja</option>
+                </select>
+                <select 
+                  className="form-control filter-select"
+                  value={filterSucursalId}
+                  onChange={(e) => setFilterSucursalId(Number(e.target.value))}
+                  style={{ width: '180px' }}
+                >
+                  <option value={0}>Todas las Sucursales</option>
+                  {empresas.flatMap(e => (e.sucursales || []).map(s => ({ ...s, empresaNombre: e.nombre }))).map(s => (
+                    <option key={s.id} value={s.id}>{s.empresaNombre} - {s.nombre}</option>
+                  ))}
+                </select>
+              </>
             )}
           </div>
 
@@ -1224,7 +1307,7 @@ export const Inventario: React.FC = () => {
                     <td>
                       <div className="asset-code-group">
                         <span className="asset-brand" style={{ fontWeight: '500' }}>{a.tipo_equipo_nombre || 'N/A'}</span>
-                        <span className="asset-brand text-muted">{a.empresa_nombre || 'N/A'}</span>
+                        <span className="asset-brand text-muted">{a.empresa_nombre || 'N/A'}{a.sucursal_nombre ? ` (${a.sucursal_nombre})` : ''}</span>
                       </div>
                     </td>
                     <td className="asset-serial">{a.serial}</td>
@@ -1587,7 +1670,7 @@ export const Inventario: React.FC = () => {
                         required
                       >
                         <option value="0">Seleccionar...</option>
-                        {tipoEquipos.map(te => (
+                        {(allTipoEquipos.length > 0 ? allTipoEquipos : tipoEquipos).map(te => (
                           <option key={te.id} value={te.id}>{te.nombre}</option>
                         ))}
                       </select>
@@ -1597,7 +1680,10 @@ export const Inventario: React.FC = () => {
                       <select 
                         className="form-control" 
                         value={editAssetEmpresaId} 
-                        onChange={(e) => setEditAssetEmpresaId(Number(e.target.value))}
+                        onChange={(e) => {
+                          setEditAssetEmpresaId(Number(e.target.value));
+                          setEditAssetSucursalId(0);
+                        }}
                         required
                       >
                         <option value="0">Seleccionar...</option>
@@ -1607,6 +1693,28 @@ export const Inventario: React.FC = () => {
                       </select>
                     </div>
                   </div>
+
+                  {(() => {
+                    const selectedEmp = empresas.find(e => e.id === editAssetEmpresaId);
+                    if (selectedEmp && selectedEmp.sucursales && selectedEmp.sucursales.length > 0) {
+                      return (
+                        <div className="form-group">
+                          <label className="form-label font-bold text-xs" style={{ color: '#475569' }}>SUCURSAL *</label>
+                          <select
+                            className="form-control"
+                            value={editAssetSucursalId}
+                            onChange={(e) => setEditAssetSucursalId(Number(e.target.value))}
+                          >
+                            <option value="0">Todas las Sucursales</option>
+                            {selectedEmp.sucursales.map(s => (
+                              <option key={s.id} value={s.id}>{s.nombre}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   <div className="form-group">
                     <label className="form-label font-bold text-xs" style={{ color: '#475569' }}>BODEGA *</label>
@@ -1958,6 +2066,7 @@ export const Inventario: React.FC = () => {
                       value={recepcionEmpresaId}
                       onChange={(e) => {
                         setRecepcionEmpresaId(Number(e.target.value));
+                        setRecepcionSucursalId(0);
                         setRecepcionPersonaId(0);
                         setRecepcionPersonaSearchText('');
                         setShowRecepcionPersonaDropdown(false);
@@ -1970,6 +2079,28 @@ export const Inventario: React.FC = () => {
                       ))}
                     </select>
                   </div>
+
+                  {(() => {
+                    const selectedEmp = empresas.find(e => e.id === recepcionEmpresaId);
+                    if (selectedEmp && selectedEmp.sucursales && selectedEmp.sucursales.length > 0) {
+                      return (
+                        <div className="form-group half">
+                          <label className="form-label">SUCURSAL *</label>
+                          <select
+                            className="form-control"
+                            value={recepcionSucursalId}
+                            onChange={(e) => setRecepcionSucursalId(Number(e.target.value))}
+                          >
+                            <option value="0">Todas las Sucursales</option>
+                            {selectedEmp.sucursales.map(s => (
+                              <option key={s.id} value={s.id}>{s.nombre}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   <div ref={recepcionPersonaRef} className="form-group half" style={{ position: 'relative', width: '100%', opacity: recepcionEmpresaId <= 0 ? 0.65 : 1 }}>
                     <label className="form-label">EMPLEADO / CUSTODIO QUE DEVUELVE *</label>
@@ -2104,6 +2235,22 @@ export const Inventario: React.FC = () => {
                     </select>
                   </div>
                 </div>
+
+                <div className="form-row">
+                  <div className="form-group half">
+                    <label className="form-label">ESTADO FINAL DEL ACTIVO (DESTINO) *</label>
+                    <select
+                      className="form-control"
+                      value={recepcionEstadoDestino}
+                      onChange={(e) => setRecepcionEstadoDestino(e.target.value as any)}
+                      required
+                    >
+                      <option value="Stock">Stock (Bodega - Disponible)</option>
+                      <option value="Mantenimiento">Mantenimiento (En Reparación)</option>
+                      <option value="Baja">Baja (Dado de Baja / Desincorporado)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {/* LISTA DE ACTIVOS ASIGNADOS */}
@@ -2147,7 +2294,7 @@ export const Inventario: React.FC = () => {
                           style={{ height: '38px', width: '100%' }}
                         >
                           <option value="0">Todos los Tipos de Equipo</option>
-                          {tipoEquipos.map(te => (
+                          {(allTipoEquipos.length > 0 ? allTipoEquipos : tipoEquipos).map(te => (
                             <option key={te.id} value={te.id}>{te.nombre}</option>
                           ))}
                         </select>
@@ -2427,7 +2574,10 @@ export const Inventario: React.FC = () => {
                     <select 
                       className="form-control" 
                       value={assetEmpresaId} 
-                      onChange={(e) => setAssetEmpresaId(Number(e.target.value))}
+                      onChange={(e) => {
+                        setAssetEmpresaId(Number(e.target.value));
+                        setAssetSucursalId(0);
+                      }}
                       required
                     >
                       <option value="0">Seleccionar sede...</option>
@@ -2437,31 +2587,139 @@ export const Inventario: React.FC = () => {
                     </select>
                   </div>
 
-                  <div className="form-group half">
-                    <label className="form-label">PROVEEDOR TI</label>
-                    <select
-                      className="form-control"
-                      value={assetProveedorId}
-                      onChange={(e) => setAssetProveedorId(Number(e.target.value))}
-                    >
-                      <option value="0">Seleccionar proveedor...</option>
-                      {proveedores.map((p) => (
-                        <option key={p.id} value={p.id}>{p.nombre}</option>
-                      ))}
-                    </select>
+                  {(() => {
+                    const selectedEmp = empresas.find(e => e.id === assetEmpresaId);
+                    if (selectedEmp && selectedEmp.sucursales && selectedEmp.sucursales.length > 0) {
+                      return (
+                        <div className="form-group half">
+                          <label className="form-label">SUCURSAL *</label>
+                          <select
+                            className="form-control"
+                            value={assetSucursalId}
+                            onChange={(e) => setAssetSucursalId(Number(e.target.value))}
+                          >
+                            <option value="0">Todas las Sucursales</option>
+                            {selectedEmp.sucursales.map(s => (
+                              <option key={s.id} value={s.id}>{s.nombre}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  <div ref={assetProveedorRef} className="form-group half" style={{ position: 'relative' }}>
+                    <label className="form-label">PROVEEDOR TI (OPCIONAL)</label>
+                    <div style={{ position: 'relative', width: '100%' }}>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Buscar proveedor por nombre..."
+                        value={assetProveedorSearchText}
+                        onChange={(e) => {
+                          setAssetProveedorSearchText(e.target.value);
+                          setShowAssetProveedorDropdown(true);
+                          if (assetProveedorId > 0) {
+                            setAssetProveedorId(0);
+                          }
+                        }}
+                        onFocus={() => setShowAssetProveedorDropdown(true)}
+                        style={{ paddingRight: '32px', width: '100%', cursor: 'text' }}
+                      />
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="14"
+                        height="14"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          pointerEvents: 'none',
+                          color: '#64748b'
+                        }}
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </div>
+
+                    {showAssetProveedorDropdown && (
+                      <div 
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          width: '100%',
+                          zIndex: 2000,
+                          maxHeight: '220px',
+                          overflowY: 'auto',
+                          background: '#ffffff',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '8px',
+                          marginTop: '4px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.12)'
+                        }}
+                      >
+                        {proveedores
+                          .filter(p => !assetProveedorSearchText || p.nombre.toLowerCase().includes(assetProveedorSearchText.toLowerCase()))
+                          .length === 0 ? (
+                            <div style={{ padding: '12px 14px', color: '#64748b', fontSize: '12.5px', textAlign: 'center' }}>
+                              No se encontraron proveedores coincidentes
+                            </div>
+                          ) : (
+                            proveedores
+                              .filter(p => !assetProveedorSearchText || p.nombre.toLowerCase().includes(assetProveedorSearchText.toLowerCase()))
+                              .map(p => (
+                                <div
+                                  key={p.id}
+                                  onClick={() => {
+                                    setAssetProveedorId(p.id);
+                                    setAssetProveedorSearchText(p.nombre);
+                                    setShowAssetProveedorDropdown(false);
+                                  }}
+                                  style={{
+                                    padding: '10px 14px',
+                                    cursor: 'pointer',
+                                    borderBottom: '1px solid #f1f5f9',
+                                    background: assetProveedorId === p.id ? '#eff6ff' : '#ffffff',
+                                    fontSize: '12.5px',
+                                    transition: 'background 0.15s ease'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (assetProveedorId !== p.id) e.currentTarget.style.background = '#f8fafc';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (assetProveedorId !== p.id) e.currentTarget.style.background = '#ffffff';
+                                  }}
+                                >
+                                  <strong style={{ color: '#0f172a', display: 'block', fontSize: '13px' }}>{p.nombre}</strong>
+                                  {(p.contacto || p.telefono || p.email) && (
+                                    <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                      {p.contacto ? `Contacto: ${p.contacto}` : (p.telefono || p.email)}
+                                    </span>
+                                  )}
+                                </div>
+                              ))
+                          )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group half">
-                    <label className="form-label">NRO. ORDEN DE COMPRA *</label>
+                    <label className="form-label">NRO. ORDEN DE COMPRA (OPCIONAL)</label>
                     <input
                       type="text"
                       className="form-control"
                       placeholder="Ej: OC-SC-26-0603"
                       value={assetNroOrdenCompra}
                       onChange={(e) => setAssetNroOrdenCompra(e.target.value)}
-                      required
                     />
                   </div>
 
@@ -2546,15 +2804,15 @@ export const Inventario: React.FC = () => {
               </div>
 
               {/* SECCIÓN ACTIVOS DE ESTE INGRESO */}
-              <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.9rem' }}>
-                    Activos a Registrar ({1 + extraAssets.length})
+                  <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#0f172a' }}>
+                    Activos a Registrar ({(assetEsLote ? assetCantidad : 1) + extraAssets.reduce((sum, ext) => sum + (ext.es_lote ? (ext.cantidad || 1) : 1), 0)})
                   </h4>
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
-                    onClick={() => setExtraAssets([...extraAssets, { tipo_equipo_id: 0, marca: '', modelo: '', serial: '', especificaciones: '' }])}
+                    onClick={() => setExtraAssets([...extraAssets, { tipo_equipo_id: 0, tipo_equipo_search_text: '', show_dropdown: false, marca: '', modelo: '', serial: '', especificaciones: '', es_lote: false, cantidad: 1 }])}
                     style={{ fontSize: '0.8rem', padding: '4px 10px' }}
                   >
                     + Agregar más activos a esta compra
@@ -2562,24 +2820,106 @@ export const Inventario: React.FC = () => {
                 </div>
 
                 {/* ACTIVO #1 (PRINCIPAL) */}
-                <div style={{ border: '1px dashed rgba(255,255,255,0.15)', padding: '0.8rem', borderRadius: '6px', marginBottom: '0.8rem', background: 'rgba(0,0,0,0.1)' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#94a3b8', marginBottom: '0.5rem' }}>
+                <div style={{ border: '1px solid #cbd5e1', padding: '0.8rem', borderRadius: '6px', marginBottom: '0.8rem', background: '#ffffff' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.5rem' }}>
                     Activo #1
                   </div>
                   <div className="form-row">
-                    <div className="form-group half">
+                    <div ref={assetTipoEquipoRef} className="form-group half" style={{ position: 'relative' }}>
                       <label className="form-label">TIPO DE EQUIPO *</label>
-                      <select 
-                        className="form-control" 
-                        value={assetTipoEquipoId} 
-                        onChange={(e) => setAssetTipoEquipoId(Number(e.target.value))}
-                        required
-                      >
-                        <option value="0">Seleccionar tipo...</option>
-                        {tipoEquipos.map(te => (
-                          <option key={te.id} value={te.id}>{te.nombre}</option>
-                        ))}
-                      </select>
+                      <div style={{ position: 'relative', width: '100%' }}>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Buscar tipo de equipo..."
+                          value={assetTipoEquipoSearchText}
+                          onChange={(e) => {
+                            setAssetTipoEquipoSearchText(e.target.value);
+                            setShowAssetTipoEquipoDropdown(true);
+                            if (assetTipoEquipoId > 0) {
+                              setAssetTipoEquipoId(0);
+                            }
+                          }}
+                          onFocus={() => setShowAssetTipoEquipoDropdown(true)}
+                          style={{ paddingRight: '32px', width: '100%', cursor: 'text' }}
+                          required={assetTipoEquipoId <= 0}
+                        />
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="14"
+                          height="14"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            pointerEvents: 'none',
+                            color: '#64748b'
+                          }}
+                        >
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </div>
+
+                      {showAssetTipoEquipoDropdown && (
+                        <div 
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            width: '100%',
+                            zIndex: 2000,
+                            maxHeight: '220px',
+                            overflowY: 'auto',
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '8px',
+                            marginTop: '4px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.12)'
+                          }}
+                        >
+                          {(allTipoEquipos.length > 0 ? allTipoEquipos : tipoEquipos)
+                            .filter(te => !assetTipoEquipoSearchText || te.nombre.toLowerCase().includes(assetTipoEquipoSearchText.toLowerCase()))
+                            .length === 0 ? (
+                              <div style={{ padding: '12px 14px', color: '#64748b', fontSize: '12.5px', textAlign: 'center' }}>
+                                No se encontraron tipos de equipo
+                              </div>
+                            ) : (
+                              (allTipoEquipos.length > 0 ? allTipoEquipos : tipoEquipos)
+                                .filter(te => !assetTipoEquipoSearchText || te.nombre.toLowerCase().includes(assetTipoEquipoSearchText.toLowerCase()))
+                                .map(te => (
+                                  <div
+                                    key={te.id}
+                                    onClick={() => {
+                                      setAssetTipoEquipoId(te.id);
+                                      setAssetTipoEquipoSearchText(te.nombre);
+                                      setShowAssetTipoEquipoDropdown(false);
+                                    }}
+                                    style={{
+                                      padding: '10px 14px',
+                                      cursor: 'pointer',
+                                      borderBottom: '1px solid #f1f5f9',
+                                      background: assetTipoEquipoId === te.id ? '#eff6ff' : '#ffffff',
+                                      fontSize: '12.5px',
+                                      transition: 'background 0.15s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (assetTipoEquipoId !== te.id) e.currentTarget.style.background = '#f8fafc';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (assetTipoEquipoId !== te.id) e.currentTarget.style.background = '#ffffff';
+                                    }}
+                                  >
+                                    <strong style={{ color: '#0f172a', display: 'block', fontSize: '13px' }}>{te.nombre}</strong>
+                                  </div>
+                                ))
+                            )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="form-group half">
@@ -2620,7 +2960,7 @@ export const Inventario: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="form-group" style={{ marginBottom: 0 }}>
+                  <div className="form-group" style={{ marginBottom: '0.8rem' }}>
                     <label className="form-label">ESPECIFICACIONES TÉCNICAS</label>
                     <input
                       type="text"
@@ -2630,13 +2970,46 @@ export const Inventario: React.FC = () => {
                       onChange={(e) => setAssetEspecificaciones(e.target.value)}
                     />
                   </div>
+
+                  {/* LOTE / CANTIDAD MULTIPLE ACTIVO #1 */}
+                  <div style={{ marginTop: '0.5rem', background: '#eff6ff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#1e40af', margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={assetEsLote}
+                        onChange={(e) => {
+                          setAssetEsLote(e.target.checked);
+                          if (!e.target.checked) setAssetCantidad(1);
+                        }}
+                        style={{ width: '16px', height: '16px', accentColor: '#2563eb', cursor: 'pointer' }}
+                      />
+                      <span>Ingreso por Lote / Cantidad Múltiple (Sin Seriales individuales)</span>
+                    </label>
+
+                    {assetEsLote && (
+                      <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#1e40af' }}>CANTIDAD *</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min={1}
+                          max={500}
+                          value={assetCantidad}
+                          onChange={(e) => setAssetCantidad(Math.max(1, parseInt(e.target.value) || 1))}
+                          style={{ width: '100px', fontWeight: 'bold', color: '#0f172a', background: '#ffffff', borderColor: '#93c5fd' }}
+                          required
+                        />
+                        <span style={{ fontSize: '0.78rem', color: '#1d4ed8', fontWeight: 500 }}>Se registrarán {assetCantidad} unidades de este activo.</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* ACTIVOS ADICIONALES (EXTRA) */}
                 {extraAssets.map((extra, idx) => (
-                  <div key={idx} style={{ border: '1px dashed rgba(255,255,255,0.15)', padding: '0.8rem', borderRadius: '6px', marginBottom: '0.8rem', background: 'rgba(0,0,0,0.1)', position: 'relative' }}>
+                  <div key={idx} style={{ border: '1px solid #cbd5e1', padding: '0.8rem', borderRadius: '6px', marginBottom: '0.8rem', background: '#ffffff', position: 'relative' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#94a3b8' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>
                         Activo #{idx + 2}
                       </div>
                       <button
@@ -2649,23 +3022,98 @@ export const Inventario: React.FC = () => {
                     </div>
 
                     <div className="form-row">
-                      <div className="form-group half">
+                      <div id={`extra-asset-tipo-wrapper-${idx}`} className="form-group half" style={{ position: 'relative' }}>
                         <label className="form-label">TIPO DE EQUIPO *</label>
-                        <select 
-                          className="form-control" 
-                          value={extra.tipo_equipo_id} 
-                          onChange={(e) => {
-                            const updated = [...extraAssets];
-                            updated[idx].tipo_equipo_id = Number(e.target.value);
-                            setExtraAssets(updated);
-                          }}
-                          required
-                        >
-                          <option value="0">Seleccionar tipo...</option>
-                          {tipoEquipos.map(te => (
-                            <option key={te.id} value={te.id}>{te.nombre}</option>
-                          ))}
-                        </select>
+                        <div style={{ position: 'relative', width: '100%' }}>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Buscar tipo de equipo..."
+                            value={extra.tipo_equipo_search_text || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setExtraAssets(prev => prev.map((item, i) => i === idx ? { ...item, tipo_equipo_search_text: val, show_dropdown: true, tipo_equipo_id: 0 } : item));
+                            }}
+                            onFocus={() => {
+                              setExtraAssets(prev => prev.map((item, i) => i === idx ? { ...item, show_dropdown: true } : item));
+                            }}
+                            style={{ paddingRight: '32px', width: '100%', cursor: 'text' }}
+                            required={extra.tipo_equipo_id <= 0}
+                          />
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              pointerEvents: 'none',
+                              color: '#64748b'
+                            }}
+                          >
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </div>
+
+                        {extra.show_dropdown && (
+                          <div 
+                            style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              right: 0,
+                              width: '100%',
+                              zIndex: 2000,
+                              maxHeight: '220px',
+                              overflowY: 'auto',
+                              background: '#ffffff',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '8px',
+                              marginTop: '4px',
+                              boxShadow: '0 10px 25px rgba(0,0,0,0.12)'
+                            }}
+                          >
+                            {(allTipoEquipos.length > 0 ? allTipoEquipos : tipoEquipos)
+                              .filter(te => !extra.tipo_equipo_search_text || te.nombre.toLowerCase().includes(extra.tipo_equipo_search_text.toLowerCase()))
+                              .length === 0 ? (
+                                <div style={{ padding: '12px 14px', color: '#64748b', fontSize: '12.5px', textAlign: 'center' }}>
+                                  No se encontraron tipos de equipo
+                                </div>
+                              ) : (
+                                (allTipoEquipos.length > 0 ? allTipoEquipos : tipoEquipos)
+                                  .filter(te => !extra.tipo_equipo_search_text || te.nombre.toLowerCase().includes(extra.tipo_equipo_search_text.toLowerCase()))
+                                  .map(te => (
+                                    <div
+                                      key={te.id}
+                                      onClick={() => {
+                                        setExtraAssets(prev => prev.map((item, i) => i === idx ? { ...item, tipo_equipo_id: te.id, tipo_equipo_search_text: te.nombre, show_dropdown: false } : item));
+                                      }}
+                                      style={{
+                                        padding: '10px 14px',
+                                        cursor: 'pointer',
+                                        borderBottom: '1px solid #f1f5f9',
+                                        background: extra.tipo_equipo_id === te.id ? '#eff6ff' : '#ffffff',
+                                        fontSize: '12.5px',
+                                        transition: 'background 0.15s ease'
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (extra.tipo_equipo_id !== te.id) e.currentTarget.style.background = '#f8fafc';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        if (extra.tipo_equipo_id !== te.id) e.currentTarget.style.background = '#ffffff';
+                                      }}
+                                    >
+                                      <strong style={{ color: '#0f172a', display: 'block', fontSize: '13px' }}>{te.nombre}</strong>
+                                    </div>
+                                  ))
+                              )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="form-group half">
@@ -2718,7 +3166,7 @@ export const Inventario: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className="form-group" style={{ marginBottom: '0.8rem' }}>
                       <label className="form-label">ESPECIFICACIONES TÉCNICAS</label>
                       <input
                         type="text"
@@ -2731,6 +3179,45 @@ export const Inventario: React.FC = () => {
                           setExtraAssets(updated);
                         }}
                       />
+                    </div>
+
+                    {/* LOTE / CANTIDAD MULTIPLE EXTRA ASSET */}
+                    <div style={{ marginTop: '0.5rem', background: '#eff6ff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#1e40af', margin: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={extra.es_lote || false}
+                          onChange={(e) => {
+                            const updated = [...extraAssets];
+                            updated[idx].es_lote = e.target.checked;
+                            if (!e.target.checked) updated[idx].cantidad = 1;
+                            setExtraAssets(updated);
+                          }}
+                          style={{ width: '16px', height: '16px', accentColor: '#2563eb', cursor: 'pointer' }}
+                        />
+                        <span>Ingreso por Lote / Cantidad Múltiple (Sin Seriales individuales)</span>
+                      </label>
+
+                      {extra.es_lote && (
+                        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#1e40af' }}>CANTIDAD *</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            min={1}
+                            max={500}
+                            value={extra.cantidad || 1}
+                            onChange={(e) => {
+                              const updated = [...extraAssets];
+                              updated[idx].cantidad = Math.max(1, parseInt(e.target.value) || 1);
+                              setExtraAssets(updated);
+                            }}
+                            style={{ width: '100px', fontWeight: 'bold', color: '#0f172a', background: '#ffffff', borderColor: '#93c5fd' }}
+                            required
+                          />
+                          <span style={{ fontSize: '0.78rem', color: '#1d4ed8', fontWeight: 500 }}>Se registrarán {extra.cantidad || 1} unidades de este activo.</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -3053,6 +3540,7 @@ export const Inventario: React.FC = () => {
                       onChange={(e) => {
                         const empId = Number(e.target.value);
                         setEgresoEmpresaId(empId);
+                        setEgresoSucursalId(0);
                         setEgresoPersonaId(0);
                         setEgresoPersonaSearchText('');
                         setSelectedEgresoAssetIds([]);
@@ -3065,6 +3553,28 @@ export const Inventario: React.FC = () => {
                       ))}
                     </select>
                   </div>
+
+                  {(() => {
+                    const selectedEmp = empresas.find(e => e.id === egresoEmpresaId);
+                    if (selectedEmp && selectedEmp.sucursales && selectedEmp.sucursales.length > 0) {
+                      return (
+                        <div className="form-group half">
+                          <label className="form-label">SUCURSAL *</label>
+                          <select
+                            className="form-control"
+                            value={egresoSucursalId}
+                            onChange={(e) => setEgresoSucursalId(Number(e.target.value))}
+                          >
+                            <option value="0">Todas las Sucursales</option>
+                            {selectedEmp.sucursales.map(s => (
+                              <option key={s.id} value={s.id}>{s.nombre}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   <div ref={egresoPersonaRef} className="form-group half" style={{ position: 'relative', width: '100%' }}>
                     <label className="form-label">USUARIO / CUSTODIO RECEPTOR *</label>
@@ -3374,6 +3884,7 @@ export const Inventario: React.FC = () => {
                   const filteredStock = allStockActivos
                     .filter(a => a.estado === 'Stock')
                     .filter(a => egresoEmpresaId === 0 || a.empresa_id === egresoEmpresaId)
+                    .filter(a => egresoSucursalId === 0 || a.sucursal_id === egresoSucursalId)
                     .filter(a => egresoTipoEquipoId === 0 || a.tipo_equipo_id === egresoTipoEquipoId)
                     .filter(a => {
                       if (!egresoSearchAsset.trim()) return true;
