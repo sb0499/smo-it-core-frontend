@@ -514,7 +514,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Metric 3: Assets Stock */}
-        {(user?.rol === "ADMIN" || user?.has_inventory_access) && (
+        {(user?.rol === "ADMIN" || user?.rol === "SUPERVISOR" || user?.has_inventory_access) && (
           <div className="metric-card glass-panel glass-panel-interactive animate-slide-up">
             <div className="metric-header">
               <span
@@ -611,7 +611,7 @@ export const Dashboard: React.FC = () => {
       <div
         className="operations-grid"
         style={
-          !(user?.rol === "ADMIN" || user?.has_inventory_access)
+          !(user?.rol === "ADMIN" || user?.rol === "SUPERVISOR" || user?.has_inventory_access)
             ? { gridTemplateColumns: "1fr" }
             : undefined
         }
@@ -714,7 +714,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Low Stock Consumibles */}
-        {(user?.rol === "ADMIN" || user?.has_inventory_access) && (
+        {(user?.rol === "ADMIN" || user?.rol === "SUPERVISOR" || user?.has_inventory_access) && (
           <div className="operation-column glass-panel">
             <div className="column-header">
               <h3>Alertas de Consumibles Críticos</h3>

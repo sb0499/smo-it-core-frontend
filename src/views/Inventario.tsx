@@ -1120,7 +1120,7 @@ export const Inventario: React.FC = () => {
         >
           Recepciones y Devoluciones
         </button>
-        {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
+        {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && (
           <button 
             className={`tab-btn ${activeTab === 'tipos_equipo' ? 'active' : ''}`}
             onClick={() => { setActiveTab('tipos_equipo'); setSearchQuery(''); }}
@@ -1166,7 +1166,7 @@ export const Inventario: React.FC = () => {
             )}
           </div>
 
-          {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
+          {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && (
             <div className="controls-right" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <button 
                 className="btn btn-secondary" 
@@ -1376,7 +1376,7 @@ export const Inventario: React.FC = () => {
                   </div>
 
                   {/* Stock quick adjuster */}
-                  {(user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
+                  {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && (
                     <div className="consumable-adjuster-bar mt-4">
                       {adjustingConsumableId === c.id ? (
                         <div className="adjuster-input-group">
@@ -1624,7 +1624,7 @@ export const Inventario: React.FC = () => {
             <div className="drawer-header">
               <h2>{isEditingAsset ? 'Editar Ficha de Activo' : 'Ficha Técnica de Activo TI'}</h2>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                {!isEditingAsset && (user?.rol === 'ADMIN' || user?.rol === 'TECNICO') && (
+                {!isEditingAsset && (user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && (
                   <button 
                     className="btn btn-secondary btn-sm" 
                     onClick={startEditingAsset}
