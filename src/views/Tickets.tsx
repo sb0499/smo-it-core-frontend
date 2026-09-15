@@ -119,6 +119,14 @@ export const Tickets: React.FC = () => {
 
   const loggedInTech = technicians.find((t) => t.id === user?.id);
   const isN2 = loggedInTech?.nivel_soporte === "N2";
+  const isN1 = loggedInTech?.nivel_soporte === "N1" || (!isN2 && user?.rol === "TECNICO");
+
+  const isReadOnlyForUser = Boolean(
+    user?.rol === "TECNICO" &&
+    selectedTicket &&
+    selectedTicket.tecnico_id !== user.id &&
+    (selectedTicket.tecnico_n1_id === user.id || (isN1 && selectedTicket.nivel_soporte !== "N1"))
+  );
 
   const fetchTicketsData = async (
     pageNumber = page,
@@ -963,9 +971,9 @@ export const Tickets: React.FC = () => {
               </div>
 
               {/* Editable Fields for Admin / Technical Staff */}
-              {user?.rol === "ADMIN" ||
+              {(user?.rol === "ADMIN" ||
               user?.rol === "SUPERVISOR" ||
-              user?.rol === "TECNICO" ? (
+              user?.rol === "TECNICO") && !isReadOnlyForUser ? (
                 <div className="admin-editable-section">
                   <h4 className="section-title gradient-text mt-3 mb-2">
                     Administrar Operación TI
@@ -1239,8 +1247,8 @@ export const Tickets: React.FC = () => {
                 </div>
               ) : (
                 <div className="user-view-only-section">
-                  <h4 className="section-title mt-3">Estado de la Solución</h4>
-                  <div className="static-progress-details mt-2">
+                  <h4 className="section-title mt-3">Estado y Bitácora de la Solución</h4>
+                  <div className="static-progress-details mt-2" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <span>
                       Técnico Responsable:{" "}
                       <strong>
@@ -1248,11 +1256,34 @@ export const Tickets: React.FC = () => {
                           "Asignación automática programada"}
                       </strong>
                     </span>
+                    {selectedTicket.tecnico_n1_nombre && (
+                      <span>
+                        Técnico N1 de Origen:{" "}
+                        <strong>{selectedTicket.tecnico_n1_nombre}</strong>
+                      </span>
+                    )}
                   </div>
                   {selectedTicket.observaciones && (
-                    <div className="observations-box mt-3">
-                      <strong>Bitácora de Solución:</strong>
-                      <p>{selectedTicket.observaciones}</p>
+                    <div className="observations-box mt-3" style={{ background: "rgba(255,255,255,0.04)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <strong>Observaciones de Solución / Cierre:</strong>
+                      <p style={{ marginTop: "6px", whiteSpace: "pre-wrap" }}>{selectedTicket.observaciones}</p>
+                    </div>
+                  )}
+
+                  {Array.isArray((selectedTicket as any).bitacora_dinamica) && (selectedTicket as any).bitacora_dinamica.length > 0 && (
+                    <div className="bitacora-timeline mt-3">
+                      <strong style={{ display: 'block', marginBottom: '8px' }}>Historial Completo de Bitácora:</strong>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto', paddingRight: '4px' }}>
+                        {(selectedTicket as any).bitacora_dinamica.map((item: any, idx: number) => (
+                          <div key={idx} style={{ background: 'rgba(139, 92, 246, 0.06)', borderLeft: '3px solid #8b5cf6', padding: '10px 14px', borderRadius: '8px', fontSize: '12px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <span style={{ fontWeight: 600 }}>{item.usuario || 'Sistema'}</span>
+                              <span style={{ fontSize: '10px', opacity: 0.7 }}>{item.fecha ? new Date(item.fecha).toLocaleString() : ''}</span>
+                            </div>
+                            <div>{item.accion}</div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1268,7 +1299,8 @@ export const Tickets: React.FC = () => {
                 </button>
 
                 {/* Escalar a N2 (Solo para tickets N1 activos) */}
-                {(selectedTicket.nivel_soporte === "N1" ||
+                {!isReadOnlyForUser &&
+                  (selectedTicket.nivel_soporte === "N1" ||
                   !selectedTicket.nivel_soporte) &&
                   (user?.rol === "ADMIN" ||
                     user?.rol === "SUPERVISOR" ||
@@ -1296,7 +1328,8 @@ export const Tickets: React.FC = () => {
                   )}
 
                 {/* Elevar a N3 / Proyecto (Solo para tickets N2 activos) */}
-                {selectedTicket.nivel_soporte === "N2" &&
+                {!isReadOnlyForUser &&
+                  selectedTicket.nivel_soporte === "N2" &&
                   (isN2 ||
                     user?.rol === "ADMIN" ||
                     user?.rol === "SUPERVISOR") &&
@@ -1333,7 +1366,8 @@ export const Tickets: React.FC = () => {
                     </>
                   )}
 
-                {(user?.rol === "ADMIN" ||
+                {!isReadOnlyForUser &&
+                  (user?.rol === "ADMIN" ||
                   user?.rol === "SUPERVISOR" ||
                   user?.rol === "TECNICO") && (
                   <>

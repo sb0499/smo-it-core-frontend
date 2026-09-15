@@ -13,6 +13,8 @@ export interface Activo {
   persona_cedula?: string;
   persona_departamento?: string;
   persona_cargo?: string;
+  ultimo_custodio_id?: number | null;
+  ultimo_custodio_nombre?: string;
   proveedor_id: number | null;
   proveedor_nombre?: string;
   tipo_equipo_id?: number | null;
@@ -176,6 +178,10 @@ export const inventoryService = {
 
   async cambiarEstado(activoId: number, nuevoEstado: 'Stock' | 'Asignado' | 'Mantenimiento' | 'Baja'): Promise<Activo> {
     return apiClient.patch<Activo>(`/inventarios/${activoId}/estado`, { nuevo_estado: nuevoEstado });
+  },
+
+  async procesarMantenimiento(activoId: number, payload: { accion: 'Reasignar' | 'Stock' | 'Baja'; persona_id?: number; observaciones?: string }): Promise<any> {
+    return apiClient.post(`/inventarios/${activoId}/procesar-mantenimiento`, payload);
   },
 
   async updateActivo(activoId: number, payload: Partial<Activo>): Promise<Activo> {

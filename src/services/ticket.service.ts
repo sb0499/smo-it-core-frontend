@@ -24,6 +24,8 @@ export interface Ticket {
   creador_id: number;
   tecnico_id: number | null;
   tecnico_nombre?: string;
+  tecnico_n1_id?: number | null;
+  tecnico_n1_nombre?: string;
   created_at: string;
   updated_at: string;
 }

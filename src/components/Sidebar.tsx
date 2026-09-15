@@ -425,7 +425,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className={`sub-nav-item ${activeView === "hostings-dominios" ? "active" : ""}`}
                       onClick={() => handleNav("hostings-dominios")}
                     >
-                      <span>• Hostings y Dominios</span>
+                      <span>• Servicios</span>
                     </button>
                   </div>
                 </div>

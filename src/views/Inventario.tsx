@@ -68,6 +68,13 @@ export const Inventario: React.FC = () => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showDevolverModal, setShowDevolverModal] = useState(false);
 
+  // Maintenance process modal state
+  const [showMantenimientoModal, setShowMantenimientoModal] = useState(false);
+  const [mantenimientoActivo, setMantenimientoActivo] = useState<Activo | null>(null);
+  const [mantenimientoAccion, setMantenimientoAccion] = useState<'Reasignar' | 'Stock' | 'Baja'>('Reasignar');
+  const [mantenimientoPersonaId, setMantenimientoPersonaId] = useState<number>(0);
+  const [mantenimientoObs, setMantenimientoObs] = useState<string>('');
+
   // Forms state
   const [selectedPersonaId, setSelectedPersonaId] = useState<number>(0);
   const [observations, setObservations] = useState('');
@@ -703,6 +710,46 @@ export const Inventario: React.FC = () => {
     }
   };
 
+  const handleOpenMantenimientoModal = (activo: Activo) => {
+    setMantenimientoActivo(activo);
+    setMantenimientoAccion('Reasignar');
+    setMantenimientoPersonaId(activo.ultimo_custodio_id || 0);
+    setMantenimientoObs('');
+    setShowMantenimientoModal(true);
+  };
+
+  const handleProcesarMantenimiento = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mantenimientoActivo) return;
+
+    if (mantenimientoAccion === 'Reasignar' && !mantenimientoActivo.ultimo_custodio_id) {
+      showAlert('Este activo no tiene un custodio de origen registrado para re-asignarlo automáticamente.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await inventoryService.procesarMantenimiento(mantenimientoActivo.id, {
+        accion: mantenimientoAccion,
+        persona_id: mantenimientoAccion === 'Reasignar' ? (mantenimientoActivo.ultimo_custodio_id || undefined) : undefined,
+        observaciones: mantenimientoObs
+      });
+
+      showAlert(`El activo ${mantenimientoActivo.codigo} ha salido de mantenimiento exitosamente.`);
+
+      setShowMantenimientoModal(false);
+      setMantenimientoActivo(null);
+      if (selectedActivo && selectedActivo.id === mantenimientoActivo.id) {
+        setSelectedActivo(null);
+      }
+      fetchInventoryData();
+    } catch (err: any) {
+      showAlert('Error al procesar salida de mantenimiento: ' + (err.response?.data?.detail || err.message || 'Error inesperado'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleDeleteTipoEquipo = async (id: number) => {
     if (!await showConfirm('¿Estás seguro de que deseas eliminar este tipo de equipo? Los activos que lo usen quedarán desvinculados.')) return;
     try {
@@ -969,7 +1016,7 @@ export const Inventario: React.FC = () => {
       fetchActivosPage(pageActivos, debouncedSearch, filterEstado);
       fetchRecepcionesPage(pageRecepciones, debouncedSearch);
 
-      // Show document modal with both PDF buttons
+      // Show document modal with both PDF buttons if documents were generated
       if (created && created.id) {
         setSuccessDocModal({
           title: '¡Recepción de Bodega Registrada!',
@@ -988,6 +1035,8 @@ export const Inventario: React.FC = () => {
             }
           ]
         });
+      } else {
+        showAlert('Los activos seleccionados han sido enviados a Mantenimiento exitosamente.');
       }
     } catch (err: any) {
       showAlert('Error al registrar recepción: ' + (err.response?.data?.detail || err.message));
@@ -1317,10 +1366,19 @@ export const Inventario: React.FC = () => {
                       })()}
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => handleOpenDetail(a)}>
                           Ver Ficha
                         </button>
+                        {a.estado === 'Mantenimiento' && (
+                          <button 
+                            className="btn" 
+                            style={{ padding: '6px 12px', fontSize: '12px', background: '#d97706', borderColor: '#b45309', color: '#ffffff', fontWeight: '600', borderRadius: '6px' }} 
+                            onClick={() => handleOpenMantenimientoModal(a)}
+                          >
+                            Procesar Mantenimiento
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1796,6 +1854,39 @@ export const Inventario: React.FC = () => {
                 </form>
               ) : (
                 <>
+                  {/* Banner de Mantenimiento Activo */}
+                  {selectedActivo.estado === 'Mantenimiento' && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(245, 158, 11, 0.08) 100%)',
+                      border: '1px solid rgba(217, 119, 6, 0.3)',
+                      borderRadius: '8px',
+                      padding: '12px 14px',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#b45309' }}>Equipo en Mantenimiento / Soporte</div>
+                          {selectedActivo.ultimo_custodio_nombre && (
+                            <div style={{ fontSize: '11.5px', color: '#78350f' }}>
+                              Custodio de Origen: <strong>{selectedActivo.ultimo_custodio_nombre}</strong>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        className="btn"
+                        style={{ background: '#d97706', borderColor: '#b45309', color: '#ffffff', fontSize: '12px', fontWeight: 'bold', padding: '6px 12px', borderRadius: '6px', whiteSpace: 'nowrap' }}
+                        onClick={() => handleOpenMantenimientoModal(selectedActivo)}
+                      >
+                        Procesar Salida
+                      </button>
+                    </div>
+                  )}
+
                   {/* Custodio / Asignación Banner */}
                   {(selectedActivo.estado === 'Asignado' || drawerCustodioNombre) && (
                     <div style={{
@@ -2529,6 +2620,103 @@ export const Inventario: React.FC = () => {
                 <button type="button" className="btn btn-secondary" onClick={() => { setShowDevolverModal(false); setSelectedActivo(null); }}>Cancelar</button>
                 <button type="submit" className="btn btn-danger" disabled={isSubmitting}>
                   {isSubmitting ? 'Procesando...' : 'Recibir y Liberar Custodio'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* PROCESAR MANTENIMIENTO MODAL */}
+      {showMantenimientoModal && mantenimientoActivo && (
+        <div className="modal-overlay animate-fade" style={{ zIndex: 1001 }}>
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '520px' }}>
+            <div className="modal-header">
+              <h2>Procesar Salida de Mantenimiento</h2>
+              <button className="modal-close-btn" onClick={() => { setShowMantenimientoModal(false); setMantenimientoActivo(null); }}>×</button>
+            </div>
+
+            <form onSubmit={handleProcesarMantenimiento} className="modal-form">
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-primary)' }}>
+                  Activo: {mantenimientoActivo.codigo} - {mantenimientoActivo.marca} {mantenimientoActivo.modelo}
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                  Serial: <strong>{mantenimientoActivo.serial || 'N/A'}</strong> | Sede: <strong>{mantenimientoActivo.empresa_nombre || 'N/A'}</strong>
+                </div>
+                {mantenimientoActivo.ultimo_custodio_nombre && (
+                  <div style={{ fontSize: '12px', color: '#1e293b', marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed #cbd5e1' }}>
+                    Custodio de Origen registrado: <strong>{mantenimientoActivo.ultimo_custodio_nombre}</strong>
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontWeight: '700' }}>SELECCIONAR DESTINO / ACCIÓN FINAL *</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: mantenimientoAccion === 'Reasignar' ? '#eff6ff' : '#ffffff', border: `1px solid ${mantenimientoAccion === 'Reasignar' ? '#3b82f6' : '#cbd5e1'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                    <input 
+                      type="radio" 
+                      name="accion_mantenimiento" 
+                      checked={mantenimientoAccion === 'Reasignar'} 
+                      onChange={() => setMantenimientoAccion('Reasignar')} 
+                    />
+                    <span><strong>Re-asignar a su Custodio</strong> (Operativo de nuevo)</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: mantenimientoAccion === 'Stock' ? '#eff6ff' : '#ffffff', border: `1px solid ${mantenimientoAccion === 'Stock' ? '#3b82f6' : '#cbd5e1'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                    <input 
+                      type="radio" 
+                      name="accion_mantenimiento" 
+                      checked={mantenimientoAccion === 'Stock'} 
+                      onChange={() => setMantenimientoAccion('Stock')} 
+                    />
+                    <span><strong>Retornar a Stock en Bodega</strong> (Reparado y disponible)</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: mantenimientoAccion === 'Baja' ? '#fef2f2' : '#ffffff', border: `1px solid ${mantenimientoAccion === 'Baja' ? '#ef4444' : '#cbd5e1'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                    <input 
+                      type="radio" 
+                      name="accion_mantenimiento" 
+                      checked={mantenimientoAccion === 'Baja'} 
+                      onChange={() => setMantenimientoAccion('Baja')} 
+                    />
+                    <span><strong>Dar de Baja</strong> (Sin solución / Reparación no factible)</span>
+                  </label>
+                </div>
+              </div>
+
+              {mantenimientoAccion === 'Reasignar' && (
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px 14px', borderRadius: '6px', marginBottom: '14px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e40af', textTransform: 'uppercase', display: 'block' }}>
+                    Custodio al que se Re-asignará:
+                  </span>
+                  <strong style={{ color: '#0f172a', fontSize: '13.5px', marginTop: '3px', display: 'block' }}>
+                    {mantenimientoActivo.ultimo_custodio_nombre ? (
+                      mantenimientoActivo.ultimo_custodio_nombre
+                    ) : (
+                      'Sin custodio de origen registrado (asigna mediante Egreso si aplica)'
+                    )}
+                  </strong>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label className="form-label">INFORME TÉCNICO / OBSERVACIONES DE REPARACIÓN *</label>
+                <textarea
+                  className="form-control textarea-field"
+                  placeholder="Detalle el diagnóstico técnico, repuestos cambiados o motivo de la baja..."
+                  rows={3}
+                  value={mantenimientoObs}
+                  onChange={(e) => setMantenimientoObs(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => { setShowMantenimientoModal(false); setMantenimientoActivo(null); }}>Cancelar</button>
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Procesando...' : 'Finalizar Mantenimiento'}
                 </button>
               </div>
             </form>

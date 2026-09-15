@@ -1,8 +1,10 @@
 import { apiClient } from './api';
 
+export type HostingDominioType = 'HOSTING' | 'DOMINIO' | 'LICENCIA' | 'SERVICIO' | 'FIRMA';
+
 export interface HostingDominio {
   id: number;
-  tipo: 'HOSTING' | 'DOMINIO';
+  tipo: HostingDominioType;
   nombre: string;
   detalle?: string;
   pagado_hasta: string;
@@ -23,7 +25,7 @@ export interface HostingDominio {
 
 export const hostingDominioService = {
   async getHostingsDominios(
-    tipo?: 'HOSTING' | 'DOMINIO',
+    tipo?: HostingDominioType,
     empresaId?: number,
     search?: string
   ): Promise<HostingDominio[]> {
@@ -39,7 +41,7 @@ export const hostingDominioService = {
   },
 
   async create(data: {
-    tipo: 'HOSTING' | 'DOMINIO';
+    tipo: HostingDominioType;
     nombre: string;
     detalle?: string;
     pagado_hasta: string;
@@ -53,7 +55,7 @@ export const hostingDominioService = {
   async update(
     id: number,
     data: {
-      tipo: 'HOSTING' | 'DOMINIO';
+      tipo: HostingDominioType;
       nombre: string;
       detalle?: string;
       pagado_hasta: string;

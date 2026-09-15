@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { hostingDominioService, HostingDominio } from '../services/hostingDominio.service';
+import { hostingDominioService, HostingDominio, HostingDominioType } from '../services/hostingDominio.service';
 import { inventoryService, Proveedor } from '../services/inventory.service';
 import { apiClient } from '../services/api';
 import { showAlert, showConfirm } from '../utils/alerts';
@@ -11,6 +11,28 @@ interface Empresa {
   id: number;
   nombre: string;
 }
+
+const getTipoSingular = (tipo: HostingDominioType): string => {
+  switch (tipo) {
+    case 'HOSTING': return 'Hosting';
+    case 'DOMINIO': return 'Dominio';
+    case 'LICENCIA': return 'Licencia';
+    case 'SERVICIO': return 'Servicio';
+    case 'FIRMA': return 'Firma';
+    default: return tipo;
+  }
+};
+
+const getTipoNuevoLabel = (tipo: HostingDominioType): string => {
+  switch (tipo) {
+    case 'HOSTING': return 'Nuevo Hosting';
+    case 'DOMINIO': return 'Nuevo Dominio';
+    case 'LICENCIA': return 'Nueva Licencia';
+    case 'SERVICIO': return 'Nuevo Servicio';
+    case 'FIRMA': return 'Nueva Firma';
+    default: return `Nuevo ${tipo}`;
+  }
+};
 
 export const HostingsDominios: React.FC = () => {
   const { user } = useAuth();
@@ -25,8 +47,8 @@ export const HostingsDominios: React.FC = () => {
     }
   }, [user]);
 
-  // Active Tab: 'HOSTING' | 'DOMINIO'
-  const [activeTab, setActiveTab] = useState<'HOSTING' | 'DOMINIO'>('HOSTING');
+  // Active Tab: 'HOSTING' | 'DOMINIO' | 'LICENCIA' | 'SERVICIO' | 'FIRMA'
+  const [activeTab, setActiveTab] = useState<HostingDominioType>('HOSTING');
 
   const [items, setItems] = useState<HostingDominio[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -51,7 +73,7 @@ export const HostingsDominios: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Form Fields
-  const [formTipo, setFormTipo] = useState<'HOSTING' | 'DOMINIO'>('HOSTING');
+  const [formTipo, setFormTipo] = useState<HostingDominioType>('HOSTING');
   const [formNombre, setFormNombre] = useState('');
   const [formDetalle, setFormDetalle] = useState('');
   const [formPagadoHasta, setFormPagadoHasta] = useState('');
@@ -67,10 +89,8 @@ export const HostingsDominios: React.FC = () => {
 
   // Load catalog options once
   useEffect(() => {
-    console.log('[HostingsDominios] Cargando empresas y proveedores...');
     apiClient.get<Empresa[]>('/empresas')
       .then(res => {
-        console.log('[HostingsDominios] Empresas obtenidas:', res);
         setEmpresas(Array.isArray(res) ? res : []);
       })
       .catch(err => {
@@ -80,7 +100,6 @@ export const HostingsDominios: React.FC = () => {
 
     inventoryService.getProveedores()
       .then(res => {
-        console.log('[HostingsDominios] Proveedores obtenidos:', res);
         setProveedores(Array.isArray(res) ? res : []);
       })
       .catch(err => {
@@ -97,25 +116,20 @@ export const HostingsDominios: React.FC = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Fetch items
+  // Fetch items (fetching without filtering by tipo so tabs show total counts)
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      console.log(`[HostingsDominios] Solicitando datos - activeTab: ${activeTab}, empresaId: ${selectedEmpresaId}, search: "${debouncedSearch}"`);
       const data = await hostingDominioService.getHostingsDominios(
-        activeTab,
+        undefined,
         selectedEmpresaId || undefined,
         debouncedSearch || undefined
       );
-      console.log('[HostingsDominios] Datos recibidos del servidor:', data);
       const safeData = Array.isArray(data) ? data : [];
       setItems(safeData);
-      if (!Array.isArray(data)) {
-        console.warn('[HostingsDominios] La respuesta no fue un arreglo válido:', data);
-      }
     } catch (err: any) {
-      console.error('[HostingsDominios] Error al cargar hostings y dominios:', err);
+      console.error('[HostingsDominios] Error al cargar registros:', err);
       setItems([]);
       setError(err.message || 'Error al obtener la lista de registros.');
     } finally {
@@ -125,14 +139,17 @@ export const HostingsDominios: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [activeTab, selectedEmpresaId, debouncedSearch]);
+  }, [selectedEmpresaId, debouncedSearch]);
 
   // Stats calculation
   const safeItems = Array.isArray(items) ? items : [];
   const totalHostings = safeItems.filter(i => i.tipo === 'HOSTING').length;
   const totalDominios = safeItems.filter(i => i.tipo === 'DOMINIO').length;
+  const totalLicencias = safeItems.filter(i => i.tipo === 'LICENCIA').length;
+  const totalServicios = safeItems.filter(i => i.tipo === 'SERVICIO').length;
+  const totalFirmas = safeItems.filter(i => i.tipo === 'FIRMA').length;
 
-  const currentTabItems = safeItems;
+  const currentTabItems = safeItems.filter(i => i.tipo === activeTab);
   const porVencerCount = currentTabItems.filter(i => i?.estado_vencimiento === 'POR_VENCER').length;
   const vencidosCount = currentTabItems.filter(i => i?.estado_vencimiento === 'VENCIDO').length;
 
@@ -199,10 +216,10 @@ export const HostingsDominios: React.FC = () => {
 
       if (isEditing && editingId) {
         await hostingDominioService.update(editingId, payload);
-        showAlert(`${formTipo === 'HOSTING' ? 'Hosting' : 'Dominio'} actualizado exitosamente`, 'success');
+        showAlert(`${getTipoSingular(formTipo)} actualizado exitosamente`, 'success');
       } else {
         await hostingDominioService.create(payload);
-        showAlert(`${formTipo === 'HOSTING' ? 'Hosting' : 'Dominio'} registrado exitosamente`, 'success');
+        showAlert(`${getTipoSingular(formTipo)} registrado exitosamente`, 'success');
       }
 
       setShowModal(false);
@@ -249,7 +266,7 @@ export const HostingsDominios: React.FC = () => {
   const handleDelete = async (item: HostingDominio) => {
     const confirm = await showConfirm(
       '¿Eliminar registro?',
-      `¿Está seguro de que desea eliminar el ${item.tipo.toLowerCase()} "${item.nombre}"?`
+      `¿Está seguro de que desea eliminar ${getTipoSingular(item.tipo).toLowerCase()} "${item.nombre}"?`
     );
     if (!confirm) return;
 
@@ -263,25 +280,25 @@ export const HostingsDominios: React.FC = () => {
     }
   };
 
-  // Helper for status badge
+  // Helper for status badge without emojis
   const renderStatusBadge = (item: HostingDominio) => {
     if (item.estado_vencimiento === 'VENCIDO') {
       return (
         <span className="badge-vencimiento-vencido" title="Registro caducado">
-          ● Vencido ({item.dias_restantes !== undefined ? Math.abs(item.dias_restantes) : ''} días)
+          Vencido ({item.dias_restantes !== undefined ? Math.abs(item.dias_restantes) : ''} días)
         </span>
       );
     }
     if (item.estado_vencimiento === 'POR_VENCER') {
       return (
-        <span className="badge-vencimiento-porvencer" title="Caduca en menos de 30 días">
-          ⚠️ Por vencer ({item.dias_restantes} días)
+        <span className="badge-vencimiento-porvencer" title="Caduca en 60 días o menos">
+          Por vencer ({item.dias_restantes} días)
         </span>
       );
     }
     return (
       <span className="badge-vencimiento-vigente">
-        ✓ Vigente ({item.dias_restantes} días)
+        Vigente ({item.dias_restantes} días)
       </span>
     );
   };
@@ -291,20 +308,20 @@ export const HostingsDominios: React.FC = () => {
       {/* View Header */}
       <div className="view-header">
         <div>
-          <h1 className="gradient-text">Hostings y Dominios</h1>
-          <p className="text-muted">Gestión de infraestructura web, renovación de licencias y alertas anticipadas</p>
+          <h1 className="gradient-text">Hostings, Dominios y Servicios</h1>
+          <p className="text-muted">Gestión de infraestructura web, licencias, servicios y firmas digitales con alertas anticipadas (60 días)</p>
         </div>
         <button className="btn btn-primary" onClick={handleOpenCreateModal}>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: '6px' }}>
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          Nuevo {activeTab === 'HOSTING' ? 'Hosting' : 'Dominio'}
+          {getTipoNuevoLabel(activeTab)}
         </button>
       </div>
 
       {/* Tabs Selection Header */}
-      <div className="tabs-header">
+      <div className="tabs-header" style={{ flexWrap: 'wrap' }}>
         <button
           className={`tab-btn ${activeTab === 'HOSTING' ? 'active' : ''}`}
           onClick={() => setActiveTab('HOSTING')}
@@ -317,14 +334,32 @@ export const HostingsDominios: React.FC = () => {
         >
           Dominios ({totalDominios})
         </button>
+        <button
+          className={`tab-btn ${activeTab === 'LICENCIA' ? 'active' : ''}`}
+          onClick={() => setActiveTab('LICENCIA')}
+        >
+          Licencias ({totalLicencias})
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'SERVICIO' ? 'active' : ''}`}
+          onClick={() => setActiveTab('SERVICIO')}
+        >
+          Servicios ({totalServicios})
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'FIRMA' ? 'active' : ''}`}
+          onClick={() => setActiveTab('FIRMA')}
+        >
+          Firmas ({totalFirmas})
+        </button>
       </div>
 
       {/* Stats Summary Grid */}
       <div className="hd-stats-container">
         <div className="hd-stat-card glass-panel">
           <div>
-            <div className="hd-stat-title">Total Hostings</div>
-            <div className="hd-stat-number">{totalHostings}</div>
+            <div className="hd-stat-title">{getTipoSingular(activeTab)}s Registrados</div>
+            <div className="hd-stat-number">{currentTabItems.length}</div>
           </div>
           <div className="hd-stat-icon-wrapper blue">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
@@ -333,17 +368,7 @@ export const HostingsDominios: React.FC = () => {
 
         <div className="hd-stat-card glass-panel">
           <div>
-            <div className="hd-stat-title">Total Dominios</div>
-            <div className="hd-stat-number">{totalDominios}</div>
-          </div>
-          <div className="hd-stat-icon-wrapper purple">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path></svg>
-          </div>
-        </div>
-
-        <div className="hd-stat-card glass-panel">
-          <div>
-            <div className="hd-stat-title">Por Vencer (&lt; 30 días)</div>
+            <div className="hd-stat-title">Por Vencer (&lt; 60 días)</div>
             <div className="hd-stat-number">{porVencerCount}</div>
           </div>
           <div className="hd-stat-icon-wrapper amber">
@@ -368,7 +393,7 @@ export const HostingsDominios: React.FC = () => {
           <input
             type="text"
             className="form-control"
-            placeholder={`Buscar ${activeTab.toLowerCase()} por nombre o detalle...`}
+            placeholder={`Buscar en ${getTipoSingular(activeTab).toLowerCase()}s por nombre o detalle...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ paddingLeft: '40px', width: '100%' }}
@@ -404,7 +429,7 @@ export const HostingsDominios: React.FC = () => {
           <div className="spinner" style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" stroke="rgba(0,0,0,0.1)"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path></svg>
           </div>
-          <p className="text-muted" style={{ marginTop: '12px' }}>Cargando {activeTab.toLowerCase()}s...</p>
+          <p className="text-muted" style={{ marginTop: '12px' }}>Cargando datos...</p>
         </div>
       ) : error ? (
         <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
@@ -429,7 +454,7 @@ export const HostingsDominios: React.FC = () => {
               {currentTabItems.length === 0 ? (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-dim)' }}>
-                    No se encontraron {activeTab.toLowerCase()}s registrados.
+                    No se encontraron registros de tipo {getTipoSingular(activeTab)}.
                   </td>
                 </tr>
               ) : (
@@ -479,7 +504,7 @@ export const HostingsDominios: React.FC = () => {
                           onClick={() => handleOpenEditModal(item)}
                           title="Editar"
                         >
-                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg>
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 2 2h14a2 2 0 0 2 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg>
                         </button>
 
                         {/* Delete Button */}
@@ -507,7 +532,7 @@ export const HostingsDominios: React.FC = () => {
           <div className="hd-modal-container animate-scale-up" onClick={(e) => e.stopPropagation()}>
             <div className="hd-modal-header">
               <h2>
-                {isEditing ? `Editar ${formTipo === 'HOSTING' ? 'Hosting' : 'Dominio'}` : `Nuevo ${formTipo === 'HOSTING' ? 'Hosting' : 'Dominio'}`}
+                {isEditing ? `Editar ${getTipoSingular(formTipo)}` : `Nuevo ${getTipoSingular(formTipo)}`}
               </h2>
               <button
                 className="hd-modal-close-btn"
@@ -522,22 +547,25 @@ export const HostingsDominios: React.FC = () => {
                 <div className="hd-form-grid">
                   <div className="form-group">
                     <label className="form-label">Tipo de Registro</label>
-                    <input
-                      type="text"
+                    <select
                       className="form-control"
-                      value={formTipo === 'HOSTING' ? 'Hosting (Servidor / Alojamiento)' : 'Dominio (Dominio Web / DNS)'}
-                      readOnly
-                      disabled
-                      style={{ background: '#f1f5f9', cursor: 'not-allowed', fontWeight: 600, color: 'var(--color-primary)' }}
-                    />
+                      value={formTipo}
+                      onChange={(e) => setFormTipo(e.target.value as HostingDominioType)}
+                    >
+                      <option value="HOSTING">Hosting (Servidor / Alojamiento)</option>
+                      <option value="DOMINIO">Dominio (Dominio Web / DNS)</option>
+                      <option value="LICENCIA">Licencia (Software / Sistema)</option>
+                      <option value="SERVICIO">Servicio (Soporte / Suscripción)</option>
+                      <option value="FIRMA">Firma (Firma Digital / Certificado)</option>
+                    </select>
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Nombre del {formTipo === 'HOSTING' ? 'Hosting' : 'Dominio'} *</label>
+                    <label className="form-label">Nombre del {getTipoSingular(formTipo)} *</label>
                     <input
                       type="text"
                       className="form-control"
-                      placeholder={formTipo === 'HOSTING' ? 'Ej: VPS Principal AWS' : 'Ej: miempresa.com'}
+                      placeholder={`Ej: ${formTipo === 'HOSTING' ? 'VPS Principal AWS' : formTipo === 'DOMINIO' ? 'miempresa.com' : formTipo === 'LICENCIA' ? 'Microsoft 365 Business' : formTipo === 'SERVICIO' ? 'Mantenimiento Firewall' : 'Firma Digital Representante'}`}
                       value={formNombre}
                       onChange={(e) => setFormNombre(e.target.value)}
                       required
