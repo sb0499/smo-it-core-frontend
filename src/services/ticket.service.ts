@@ -58,11 +58,12 @@ export const ticketService = {
     return apiClient.get<Ticket[]>('/tickets');
   },
 
-  async getTicketsPaginated(page = 1, limit = 10, excludeStatus?: string, estado?: string, search?: string): Promise<{ total: number; page: number; limit: number; data: Ticket[] }> {
+  async getTicketsPaginated(page = 1, limit = 10, excludeStatus?: string, estado?: string, search?: string, tecnicoId?: number | string): Promise<{ total: number; page: number; limit: number; data: Ticket[] }> {
     const params: any = { page, limit };
     if (excludeStatus !== undefined) params.excludeStatus = excludeStatus;
     if (estado !== undefined) params.estado = estado;
     if (search !== undefined) params.search = search;
+    if (tecnicoId !== undefined && tecnicoId !== '') params.tecnico_id = tecnicoId;
     return apiClient.get('/tickets/paginated', { params });
   },
 

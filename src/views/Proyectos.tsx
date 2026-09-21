@@ -22,11 +22,14 @@ export const Proyectos: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  // Filters & Pagination
+  // Filters & Pagination  // Filters
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedTecnicoId, setSelectedTecnicoId] = useState<string>('');
+
+  // Pagination
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [total, setTotal] = useState(0);
 
   // New comments & uploads state
@@ -93,15 +96,20 @@ export const Proyectos: React.FC = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Fetch paginated projects whenever page, limit or search changes
+  // Reset page when technician filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [selectedTecnicoId]);
+
+  // Fetch paginated projects whenever page, limit, search or technician filter changes
   useEffect(() => {
     fetchProjects();
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, debouncedSearch, selectedTecnicoId]);
 
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const res = await projectService.getProyectos(page, limit, debouncedSearch);
+      const res = await projectService.getProyectos(page, limit, debouncedSearch, selectedTecnicoId);
       setProyectos(res.data || []);
       setTotal(res.total || 0);
     } catch (e) {
@@ -471,7 +479,23 @@ export const Proyectos: React.FC = () => {
               />
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', left: '14px', top: '15px', color: 'var(--color-text-dim)' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </div>
-            <button className="btn btn-secondary" onClick={fetchProjects}>
+            {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && (
+              <select
+                className="form-control"
+                style={{ width: '220px' }}
+                value={selectedTecnicoId}
+                onChange={(e) => setSelectedTecnicoId(e.target.value)}
+                title="Filtrar por Técnico Asignado / Creador"
+              >
+                <option value="">Todos los Técnicos</option>
+                {technicians.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nombre_completo}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button className="btn btn-secondary" onClick={() => fetchProjects()}>
               Actualizar
             </button>
           </div>

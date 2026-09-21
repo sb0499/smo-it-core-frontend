@@ -105,11 +105,12 @@ export interface User {
 
 export const projectService = {
   // Projects
-  async getProyectos(page?: number, limit?: number, search = ''): Promise<any> {
+  async getProyectos(page?: number, limit?: number, search = '', tecnicoId?: number | string): Promise<any> {
     const params: any = {};
     if (page !== undefined) params.page = page;
     if (limit !== undefined) params.limit = limit;
     if (search !== undefined) params.search = search;
+    if (tecnicoId !== undefined && tecnicoId !== '') params.tecnico_id = tecnicoId;
     return apiClient.get('/proyectos', { params });
   },
 

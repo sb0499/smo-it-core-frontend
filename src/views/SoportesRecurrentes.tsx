@@ -19,11 +19,13 @@ export const SoportesRecurrentes: React.FC = () => {
   const [soportes, setSoportes] = useState<SoporteRecurrente[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [categoriesList, setCategoriesList] = useState<{ id: number; nombre: string }[]>([]);
+  const [technicians, setTechnicians] = useState<{ id: number; nombre_completo: string; rol: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Filtros y búsqueda
   const [search, setSearch] = useState('');
+  const [selectedTecnicoId, setSelectedTecnicoId] = useState<string>('');
 
   // Estados de modal y formulario
   const [showModal, setShowModal] = useState(false);
@@ -40,6 +42,7 @@ export const SoportesRecurrentes: React.FC = () => {
   const [frecuencia, setFrecuencia] = useState<'Diario' | 'Semanal' | 'Mensual' | 'Trimestral' | 'Semestral' | 'Anual'>('Mensual');
   const [fechaInicio, setFechaInicio] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [tecnicoId, setTecnicoId] = useState<number | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,11 +51,11 @@ export const SoportesRecurrentes: React.FC = () => {
   const [totalSoportes, setTotalSoportes] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const fetchSoportes = async (pageNumber = page, searchVal = debouncedSearch) => {
+  const fetchSoportes = async (pageNumber = page, searchVal = debouncedSearch, tecnicoIdVal = selectedTecnicoId) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await recurrenciaService.getSoportesRecurrentes(pageNumber, 10, searchVal);
+      const res = await recurrenciaService.getSoportesRecurrentes(pageNumber, 10, searchVal, tecnicoIdVal);
       setSoportes(res.data);
       setTotalSoportes(res.total);
     } catch (err: any) {
@@ -63,7 +66,7 @@ export const SoportesRecurrentes: React.FC = () => {
   };
 
   const fetchData = () => {
-    fetchSoportes(page, debouncedSearch);
+    fetchSoportes(page, debouncedSearch, selectedTecnicoId);
   };
 
   // Load static metadata once on mount
@@ -85,6 +88,9 @@ export const SoportesRecurrentes: React.FC = () => {
 
         setEmpresas(finalEmpresas);
         setCategoriesList(catsData);
+        const techs = usersData.filter((u: any) => u.rol === 'TECNICO' || u.rol === 'SUPERVISOR' || u.rol === 'ADMIN');
+        setTechnicians(techs);
+
         if (finalEmpresas.length > 0 && !empresaId) {
           setEmpresaId(finalEmpresas[0].id);
         }
@@ -106,15 +112,15 @@ export const SoportesRecurrentes: React.FC = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Reset page when search changes
+  // Reset page when search or technician filter changes
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, selectedTecnicoId]);
 
-  // Fetch when page or search changes
+  // Fetch when page, search, or technician filter changes
   useEffect(() => {
-    fetchSoportes(page, debouncedSearch);
-  }, [page, debouncedSearch]);
+    fetchSoportes(page, debouncedSearch, selectedTecnicoId);
+  }, [page, debouncedSearch, selectedTecnicoId]);
 
   const openCreateModal = () => {
     setIsEditing(false);
@@ -127,9 +133,9 @@ export const SoportesRecurrentes: React.FC = () => {
     setPersonaSolicitante('Sistema de Mantenimiento');
     setPrioridad('Media');
     setFrecuencia('Mensual');
-    // Default start date to today
     setFechaInicio(new Date().toISOString().split('T')[0]);
     setIsActive(true);
+    setTecnicoId(null);
     setError(null);
     setShowModal(true);
   };
@@ -147,6 +153,7 @@ export const SoportesRecurrentes: React.FC = () => {
     setFrecuencia(s.frecuencia);
     setFechaInicio(s.fecha_inicio.split('T')[0]);
     setIsActive(!!s.is_active);
+    setTecnicoId(s.tecnico_id || null);
     setError(null);
     setShowModal(true);
   };
@@ -171,7 +178,8 @@ export const SoportesRecurrentes: React.FC = () => {
       prioridad,
       frecuencia,
       fecha_inicio: fechaInicio,
-      is_active: isActive
+      is_active: isActive,
+      tecnico_id: tecnicoId || null
     };
 
     try {
@@ -230,6 +238,22 @@ export const SoportesRecurrentes: React.FC = () => {
           />
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', left: '14px', top: '15px', color: 'var(--color-text-dim)' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
+        {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR') && (
+          <select
+            className="form-control"
+            style={{ width: '220px' }}
+            value={selectedTecnicoId}
+            onChange={(e) => setSelectedTecnicoId(e.target.value)}
+            title="Filtrar por Técnico Asignado"
+          >
+            <option value="">Todos los Técnicos</option>
+            {technicians.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nombre_completo}
+              </option>
+            ))}
+          </select>
+        )}
         <button className="btn btn-secondary" onClick={fetchData}>
           Actualizar
         </button>
@@ -255,6 +279,7 @@ export const SoportesRecurrentes: React.FC = () => {
                 <tr>
                   <th>Título Tarea</th>
                   <th>CC / Centro Comercial</th>
+                  <th>Técnico Asignado</th>
                   <th>Creado por</th>
                   <th>Área / Solicitante</th>
                   <th>Frecuencia</th>
@@ -267,7 +292,7 @@ export const SoportesRecurrentes: React.FC = () => {
               <tbody>
                 {filteredSoportes.length === 0 ? (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-dim)' }}>
+                    <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-dim)' }}>
                       No se encontraron soportes recurrentes programados.
                     </td>
                   </tr>
@@ -281,6 +306,11 @@ export const SoportesRecurrentes: React.FC = () => {
                       <td>
                         <span className="badge badge-process" style={{ fontSize: '10px', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)' }}>
                           {s.empresa_nombre || 'Todas las Sedes'}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '11.5px', color: s.tecnico_nombre ? '#3b82f6' : '#94a3b8', fontWeight: '600' }}>
+                          {s.tecnico_nombre || 'Sin Asignar'}
                         </span>
                       </td>
                       <td>
@@ -421,6 +451,21 @@ export const SoportesRecurrentes: React.FC = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">TÉCNICO RESPONSABLE ASIGNADO (OPCIONAL)</label>
+                <select
+                  className="form-control"
+                  value={tecnicoId || ''}
+                  onChange={(e) => setTecnicoId(e.target.value ? Number(e.target.value) : null)}
+                  disabled={submitting}
+                >
+                  <option value="">-- Sin asignar (Asignación automática) --</option>
+                  {technicians.map(t => (
+                    <option key={t.id} value={t.id}>{t.nombre_completo}</option>
+                  ))}
+                </select>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>

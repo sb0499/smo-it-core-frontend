@@ -17,13 +17,15 @@ export interface SoporteRecurrente {
   is_active: number | boolean;
   creador_id?: number | null;
   creador_nombre?: string | null;
+  tecnico_id?: number | null;
+  tecnico_nombre?: string | null;
 }
 
 export const recurrenciaService = {
-  async getSoportesRecurrentes(page = 1, limit = 10, search = ''): Promise<{ total: number; page: number; limit: number; data: SoporteRecurrente[] }> {
-    return apiClient.get('/soportes-recurrentes', {
-      params: { page, limit, search }
-    });
+  async getSoportesRecurrentes(page = 1, limit = 10, search = '', tecnicoId?: number | string): Promise<{ total: number; page: number; limit: number; data: SoporteRecurrente[] }> {
+    const params: any = { page, limit, search };
+    if (tecnicoId !== undefined && tecnicoId !== '') params.tecnico_id = tecnicoId;
+    return apiClient.get('/soportes-recurrentes', { params });
   },
 
   async createSoporteRecurrente(payload: Partial<SoporteRecurrente>): Promise<SoporteRecurrente> {
