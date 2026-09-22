@@ -443,6 +443,9 @@ export const Proyectos: React.FC = () => {
   try {
     memberIds = activeProyecto && activeProyecto.miembros ? JSON.parse(activeProyecto.miembros) : [];
   } catch (err) {}
+  if (activeProyecto?.creador_id && !memberIds.includes(activeProyecto.creador_id)) {
+    memberIds.push(activeProyecto.creador_id);
+  }
   const projectMembers = technicians.filter(t => memberIds.includes(t.id));
   
   const isUserProjectMember = projectMembers.some(m => m.id === user?.id);
@@ -460,7 +463,7 @@ export const Proyectos: React.FC = () => {
         <>
           <div className="projects-header-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '0 4px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'var(--color-text-main)' }}>Portafolio de Proyectos Activos</h2>
-            <button className="btn btn-primary" onClick={() => setShowAddProjectModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <button className="btn btn-primary" onClick={() => { setSelectedMiembros(user?.id ? [user.id] : []); setShowAddProjectModal(true); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Crear Proyecto
             </button>
