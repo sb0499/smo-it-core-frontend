@@ -123,6 +123,7 @@ export const SoportesRecurrentes: React.FC = () => {
   }, [page, debouncedSearch, selectedTecnicoId]);
 
   const openCreateModal = () => {
+    const isManager = user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR';
     setIsEditing(false);
     setEditingId(null);
     setTitulo('');
@@ -135,12 +136,13 @@ export const SoportesRecurrentes: React.FC = () => {
     setFrecuencia('Mensual');
     setFechaInicio(new Date().toISOString().split('T')[0]);
     setIsActive(true);
-    setTecnicoId(null);
+    setTecnicoId(isManager ? null : (user?.id || null));
     setError(null);
     setShowModal(true);
   };
 
   const openEditModal = (s: SoporteRecurrente) => {
+    const isManager = user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR';
     setIsEditing(true);
     setEditingId(s.id);
     setTitulo(s.titulo);
@@ -153,7 +155,7 @@ export const SoportesRecurrentes: React.FC = () => {
     setFrecuencia(s.frecuencia);
     setFechaInicio(s.fecha_inicio.split('T')[0]);
     setIsActive(!!s.is_active);
-    setTecnicoId(s.tecnico_id || null);
+    setTecnicoId(isManager ? (s.tecnico_id || null) : (user?.id || null));
     setError(null);
     setShowModal(true);
   };
@@ -168,6 +170,9 @@ export const SoportesRecurrentes: React.FC = () => {
     setSubmitting(true);
     setError(null);
 
+    const isManager = user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR';
+    const finalTecnicoId = isManager ? (tecnicoId || null) : (user?.id || null);
+
     const payload = {
       titulo,
       descripcion,
@@ -179,7 +184,7 @@ export const SoportesRecurrentes: React.FC = () => {
       frecuencia,
       fecha_inicio: fechaInicio,
       is_active: isActive,
-      tecnico_id: tecnicoId || null
+      tecnico_id: finalTecnicoId
     };
 
     try {
@@ -453,20 +458,33 @@ export const SoportesRecurrentes: React.FC = () => {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">TÉCNICO RESPONSABLE ASIGNADO (OPCIONAL)</label>
-                <select
-                  className="form-control"
-                  value={tecnicoId || ''}
-                  onChange={(e) => setTecnicoId(e.target.value ? Number(e.target.value) : null)}
-                  disabled={submitting}
-                >
-                  <option value="">-- Sin asignar (Asignación automática) --</option>
-                  {technicians.map(t => (
-                    <option key={t.id} value={t.id}>{t.nombre_completo}</option>
-                  ))}
-                </select>
-              </div>
+              {user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' ? (
+                <div className="form-group">
+                  <label className="form-label">TÉCNICO RESPONSABLE ASIGNADO (OPCIONAL)</label>
+                  <select
+                    className="form-control"
+                    value={tecnicoId || ''}
+                    onChange={(e) => setTecnicoId(e.target.value ? Number(e.target.value) : null)}
+                    disabled={submitting}
+                  >
+                    <option value="">-- Sin asignar (Asignación automática) --</option>
+                    {technicians.map(t => (
+                      <option key={t.id} value={t.id}>{t.nombre_completo}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="form-group">
+                  <label className="form-label">TÉCNICO RESPONSABLE</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={user?.nombre_completo || 'Asignado a ti mismo'}
+                    disabled
+                    style={{ opacity: 0.8, cursor: 'not-allowed' }}
+                  />
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                 <div className="form-group">
