@@ -479,7 +479,7 @@ export const SoportesRecurrentes: React.FC = () => {
                   <input
                     type="text"
                     className="form-control"
-                    value={user?.nombre_completo || 'Asignado a ti mismo'}
+                    value={user?.nombre || 'Asignado a ti mismo'}
                     disabled
                     style={{ opacity: 0.8, cursor: 'not-allowed' }}
                   />
