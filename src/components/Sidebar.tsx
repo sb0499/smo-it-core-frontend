@@ -31,7 +31,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         "movimientos",
         "actas",
         "bodegas",
-        "hostings-dominios",
       ].includes(activeView)
     ) {
       setInventarioOpen(true);
@@ -259,6 +258,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <polyline points="10 9 9 9 8 9" />
       </svg>
     ),
+    servicios: (
+      <svg
+        className="nav-icon-svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z" />
+      </svg>
+    ),
     logout: (
       <svg
         className="nav-icon-svg"
@@ -385,7 +399,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={`accordion-group ${inventarioOpen ? "open" : ""}`}
                 >
                   <button
-                    className={`accordion-header ${["inventario", "movimientos", "actas", "bodegas", "hostings-dominios"].includes(activeView) ? "active" : ""}`}
+                    className={`accordion-header ${["inventario", "movimientos", "actas", "bodegas"].includes(activeView) ? "active" : ""}`}
                     onClick={() => setInventarioOpen(!inventarioOpen)}
                   >
                     <div className="accordion-header-left">
@@ -421,15 +435,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                       <span>• Bodegas</span>
                     </button>
-                    <button
-                      className={`sub-nav-item ${activeView === "hostings-dominios" ? "active" : ""}`}
-                      onClick={() => handleNav("hostings-dominios")}
-                    >
-                      <span>• Servicios</span>
-                    </button>
                   </div>
                 </div>
               )}
+
+              {/* Servicios TI */}
+              <button
+                className={`nav-item ${activeView === "hostings-dominios" ? "active" : ""}`}
+                onClick={() => handleNav("hostings-dominios")}
+              >
+                <span className="nav-icon">{Icons.servicios}</span>
+                <span className="nav-label">Servicios TI</span>
+                {activeView === "hostings-dominios" && (
+                  <div className="active-glow"></div>
+                )}
+              </button>
 
               {/* Projects */}
               <button

@@ -205,7 +205,7 @@ function AppContent() {
         if (
           user?.rol === "ADMIN" ||
           user?.rol === "SUPERVISOR" ||
-          (user?.rol === "TECNICO" && user?.has_inventory_access)
+          user?.rol === "TECNICO"
         ) {
           return <HostingsDominios key={refreshKey} />;
         }

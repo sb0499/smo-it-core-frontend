@@ -62,10 +62,20 @@ export const HostingsDominios: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
+  // Filters & Pagination
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedEmpresaId, setSelectedEmpresaId] = useState<number>(0);
+  const [page, setPage] = useState<number>(1);
+  const [limit] = useState<number>(10);
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [tabStats, setTabStats] = useState({
+    totalHostings: 0,
+    totalDominios: 0,
+    totalLicencias: 0,
+    totalServicios: 0,
+    totalFirmas: 0,
+  });
 
   // Main CRUD Modal state
   const [showModal, setShowModal] = useState(false);
@@ -116,21 +126,40 @@ export const HostingsDominios: React.FC = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Fetch items (fetching without filtering by tipo so tabs show total counts)
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, selectedEmpresaId, debouncedSearch]);
+
+  // Fetch items paginated
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await hostingDominioService.getHostingsDominios(
-        undefined,
+      const res: any = await hostingDominioService.getHostingsDominios(
+        activeTab,
         selectedEmpresaId || undefined,
-        debouncedSearch || undefined
+        debouncedSearch || undefined,
+        page,
+        limit
       );
-      const safeData = Array.isArray(data) ? data : [];
-      setItems(safeData);
+      if (res && Array.isArray(res.data)) {
+        setItems(res.data);
+        setTotalItems(res.total || 0);
+        if (res.stats) {
+          setTabStats(res.stats);
+        }
+      } else if (Array.isArray(res)) {
+        setItems(res);
+        setTotalItems(res.length);
+      } else {
+        setItems([]);
+        setTotalItems(0);
+      }
     } catch (err: any) {
       console.error('[HostingsDominios] Error al cargar registros:', err);
       setItems([]);
+      setTotalItems(0);
       setError(err.message || 'Error al obtener la lista de registros.');
     } finally {
       setLoading(false);
@@ -139,17 +168,17 @@ export const HostingsDominios: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [selectedEmpresaId, debouncedSearch]);
+  }, [activeTab, selectedEmpresaId, debouncedSearch, page, limit]);
 
   // Stats calculation
   const safeItems = Array.isArray(items) ? items : [];
-  const totalHostings = safeItems.filter(i => i.tipo === 'HOSTING').length;
-  const totalDominios = safeItems.filter(i => i.tipo === 'DOMINIO').length;
-  const totalLicencias = safeItems.filter(i => i.tipo === 'LICENCIA').length;
-  const totalServicios = safeItems.filter(i => i.tipo === 'SERVICIO').length;
-  const totalFirmas = safeItems.filter(i => i.tipo === 'FIRMA').length;
+  const totalHostings = tabStats.totalHostings || safeItems.filter(i => i.tipo === 'HOSTING').length;
+  const totalDominios = tabStats.totalDominios || safeItems.filter(i => i.tipo === 'DOMINIO').length;
+  const totalLicencias = tabStats.totalLicencias || safeItems.filter(i => i.tipo === 'LICENCIA').length;
+  const totalServicios = tabStats.totalServicios || safeItems.filter(i => i.tipo === 'SERVICIO').length;
+  const totalFirmas = tabStats.totalFirmas || safeItems.filter(i => i.tipo === 'FIRMA').length;
 
-  const currentTabItems = safeItems.filter(i => i.tipo === activeTab);
+  const currentTabItems = safeItems;
   const porVencerCount = currentTabItems.filter(i => i?.estado_vencimiento === 'POR_VENCER').length;
   const vencidosCount = currentTabItems.filter(i => i?.estado_vencimiento === 'VENCIDO').length;
 
@@ -523,6 +552,57 @@ export const HostingsDominios: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {Math.ceil(totalItems / limit) > 1 && (
+        <div
+          className="pagination-container"
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '20px',
+            padding: '10px 0',
+          }}
+        >
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            style={{
+              cursor: page === 1 ? 'not-allowed' : 'pointer',
+              padding: '6px 12px',
+              fontSize: '12px',
+            }}
+          >
+            Anterior
+          </button>
+          <span
+            style={{
+              fontSize: '13px',
+              color: 'var(--color-text)',
+              fontWeight: '500',
+            }}
+          >
+            Página {page} de {Math.ceil(totalItems / limit) || 1} ({totalItems} registros)
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={page === Math.ceil(totalItems / limit)}
+            onClick={() => setPage(page + 1)}
+            style={{
+              cursor: page === Math.ceil(totalItems / limit) ? 'not-allowed' : 'pointer',
+              padding: '6px 12px',
+              fontSize: '12px',
+            }}
+          >
+            Siguiente
+          </button>
         </div>
       )}
 

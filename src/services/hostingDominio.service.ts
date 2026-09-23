@@ -23,17 +23,35 @@ export interface HostingDominio {
   estado_vencimiento?: 'VIGENTE' | 'POR_VENCER' | 'VENCIDO';
 }
 
+export interface PaginatedHostingDominios {
+  total: number;
+  page: number;
+  limit: number;
+  data: HostingDominio[];
+  stats?: {
+    totalHostings: number;
+    totalDominios: number;
+    totalLicencias: number;
+    totalServicios: number;
+    totalFirmas: number;
+  };
+}
+
 export const hostingDominioService = {
   async getHostingsDominios(
     tipo?: HostingDominioType,
     empresaId?: number,
-    search?: string
-  ): Promise<HostingDominio[]> {
+    search?: string,
+    page?: number,
+    limit?: number
+  ): Promise<PaginatedHostingDominios | HostingDominio[]> {
     const params: Record<string, any> = {};
     if (tipo) params.tipo = tipo;
     if (empresaId) params.empresa_id = empresaId;
     if (search) params.search = search;
-    return apiClient.get<HostingDominio[]>('/hostings-dominios', { params });
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    return apiClient.get('/hostings-dominios', { params });
   },
 
   async getById(id: number): Promise<HostingDominio> {
