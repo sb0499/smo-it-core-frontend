@@ -363,14 +363,13 @@ export const Tickets: React.FC = () => {
     user?.rol === "TECNICO" &&
     selectedTicket &&
     ((isTechN1 &&
-      (selectedTicket.nivel_soporte === "N2" ||
-        selectedTicket.nivel_soporte === "N3") &&
+      selectedTicket.nivel_soporte === "N2" &&
+      selectedTicket.tecnico_id !== user.id &&
+      (!loggedInTech?.grupo_n2 || loggedInTech.grupo_n2 !== selectedTicket.grupo_n2) &&
       selectedTicket.estado !== "Resuelto") ||
       (isTechN2 &&
-        (selectedTicket.nivel_soporte === "N1" ||
-          selectedTicket.estado === "Resuelto" ||
-          selectedTicket.estado === "Cerrado" ||
-          selectedTicket.estado === "Finalizada"))),
+        selectedTicket.tecnico_id !== user.id &&
+        selectedTicket.nivel_soporte === "N1")),
   );
 
   const fetchTicketsData = async (
@@ -2573,7 +2572,6 @@ export const Tickets: React.FC = () => {
                         : null;
 
                     const filtered = technicians.filter((t) => {
-                      if (t.nivel_soporte !== "N2") return false;
                       if (t.grupo_n2 !== escalarGrupo) return false;
 
                       const techEmpIds = Array.isArray(t.empresa_ids)
