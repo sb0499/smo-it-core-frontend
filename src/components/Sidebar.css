@@ -300,7 +300,7 @@
 }
 
 .accordion-group.open .accordion-content {
-  max-height: 200px;
+  max-height: 800px;
   opacity: 1;
 }
 
