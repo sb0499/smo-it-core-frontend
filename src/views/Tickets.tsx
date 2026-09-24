@@ -4,12 +4,39 @@ import { useAuth } from "../context/AuthContext";
 import {
   ticketService,
   Ticket,
+  TicketAdjunto,
   CreateTicketPayload,
 } from "../services/ticket.service";
 import { projectService, User } from "../services/project.service";
 import { kbService } from "../services/kb.service";
+import { areaService, Area } from "../services/area.service";
 import { apiClient } from "../services/api";
 import "./Tickets.css";
+
+const formatFileSize = (bytes?: number) => {
+  if (!bytes || isNaN(bytes)) return "0 KB";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
+
+const getBackendAttachmentUrl = (url: string) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+  const backendBase = apiUrl.replace(/\/api\/v1\/?$/, "");
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  return `${backendBase}${cleanPath}`;
+};
+
+const isImageFile = (tipo?: string, nombre?: string) => {
+  if (tipo && tipo.startsWith("image/")) return true;
+  if (nombre) {
+    const ext = nombre.toLowerCase().split(".").pop() || "";
+    return ["png", "jpg", "jpeg", "webp", "gif", "svg"].includes(ext);
+  }
+  return false;
+};
 
 export const Tickets: React.FC = () => {
   const { user } = useAuth();
@@ -33,6 +60,8 @@ export const Tickets: React.FC = () => {
     "Infraestructura" | "Desarrollo"
   >("Infraestructura");
   const [escalarTechId, setEscalarTechId] = useState<number>(0);
+  const [showEscalarAdminModal, setShowEscalarAdminModal] = useState(false);
+  const [escalarAdminTechId, setEscalarAdminTechId] = useState<number>(0);
 
   // New ticket state
   const [newTitle, setNewTitle] = useState("");
@@ -45,15 +74,22 @@ export const Tickets: React.FC = () => {
   const [newSucursalId, setNewSucursalId] = useState<number>(0);
   const [newPersonaSol, setNewPersonaSol] = useState("");
   const [newAreaSol, setNewAreaSol] = useState("");
-  const [newNivelSoporte, setNewNivelSoporte] = useState<"N1" | "N2">("N1");
+  const [newAsignacionDestino, setNewAsignacionDestino] = useState<
+    "SEDE_N1" | "ASIGNAR_A_MI"
+  >("SEDE_N1");
+  const [createFiles, setCreateFiles] = useState<File[]>([]);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
-  // Ticket edit state
+  // Ticket edit & detail state
   const [editEstado, setEditEstado] = useState<string>("");
   const [editObs, setEditObs] = useState<string>("");
   const [editTechId, setEditTechId] = useState<number>(0);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showCierrePanel, setShowCierrePanel] = useState(false);
   const [cierreObs, setCierreObs] = useState("");
+  const [cierreFiles, setCierreFiles] = useState<File[]>([]);
+  const [isUploadingDetailFiles, setIsUploadingDetailFiles] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   // Knowledge Base publish states
   const [showKBModal, setShowKBModal] = useState(false);
@@ -62,6 +98,191 @@ export const Tickets: React.FC = () => {
   const [kbSteps, setKbSteps] = useState("");
   const [kbTicketId, setKbTicketId] = useState<number | null>(null);
   const [isPublishingKB, setIsPublishingKB] = useState(false);
+
+  const renderTicketAdjuntos = (t: Ticket) => {
+    const adjuntosList = t.adjuntos || [];
+    return (
+      <div className="ticket-adjuntos-section">
+        <div className="ticket-adjuntos-header">
+          <h4 className="ticket-adjuntos-title">
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+            </svg>
+            Archivos y Evidencias Adjuntas ({adjuntosList.length})
+          </h4>
+
+          {/* Botón para adjuntar más archivos al ticket en cualquier momento */}
+          <div>
+            <input
+              type="file"
+              id={`detail-upload-input-${t.id}`}
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt"
+              style={{ display: "none" }}
+              disabled={isUploadingDetailFiles}
+              onChange={(e) => {
+                handleUploadDetailFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <label
+              htmlFor={`detail-upload-input-${t.id}`}
+              className="btn btn-secondary btn-sm"
+              style={{
+                cursor: isUploadingDetailFiles ? "not-allowed" : "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "5px 10px",
+                fontSize: "11.5px",
+                background: "#f1f5f9",
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              {isUploadingDetailFiles ? "Subiendo..." : "+ Adjuntar Archivo"}
+            </label>
+          </div>
+        </div>
+
+        {adjuntosList.length === 0 ? (
+          <p
+            style={{
+              margin: "6px 0 0 0",
+              fontSize: "12px",
+              color: "var(--color-text-muted, #64748b)",
+            }}
+          >
+            No se adjuntaron archivos o evidencias en este ticket.
+          </p>
+        ) : (
+          <div className="adjuntos-grid">
+            {adjuntosList.map((adj, idx) => {
+              const isImg = isImageFile(adj.tipo, adj.nombre);
+              const fullUrl = getBackendAttachmentUrl(adj.url);
+              const etapaClass = adj.etapa || "creacion";
+
+              return (
+                <div key={adj.id || idx} className="adjunto-card">
+                  {isImg ? (
+                    <div
+                      className="adjunto-img-preview"
+                      onClick={() => setPreviewImageUrl(fullUrl)}
+                      title="Clic para ver en tamaño completo"
+                    >
+                      <img src={fullUrl} alt={adj.nombre} loading="lazy" />
+                      <div className="adjunto-img-overlay">
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="16"
+                          height="16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                        >
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                          <line x1="11" y1="8" x2="11" y2="14"></line>
+                          <line x1="8" y1="11" x2="14" y2="11"></line>
+                        </svg>
+                        <span>Ver Foto</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="adjunto-doc-header">
+                      <div className="adjunto-icon-box">
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="20"
+                          height="20"
+                          fill="none"
+                          stroke="#6366f1"
+                          strokeWidth="2"
+                        >
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                          <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                      </div>
+                      <span className={`adjunto-badge ${etapaClass}`}>
+                        {etapaClass}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="adjunto-body">
+                    {isImg && (
+                      <span className={`adjunto-badge ${etapaClass}`}>
+                        {etapaClass}
+                      </span>
+                    )}
+                    <div className="adjunto-filename" title={adj.nombre}>
+                      {adj.nombre}
+                    </div>
+                    <div className="adjunto-meta">
+                      <span>
+                        {formatFileSize(adj.tamano)} •{" "}
+                        {adj.usuario || "Usuario"}
+                      </span>
+                      <span>
+                        {adj.fecha
+                          ? new Date(adj.fecha).toLocaleDateString()
+                          : ""}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="adjunto-actions">
+                    <a
+                      href={fullUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      download={adj.nombre}
+                      className="adjunto-btn-download"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="13"
+                        height="13"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                      Descargar
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const handleOpenKBFromTicket = (t: Ticket) => {
     setKbTitle(t.titulo);
@@ -116,18 +337,40 @@ export const Tickets: React.FC = () => {
   const [categoriesList, setCategoriesList] = useState<
     { id: number; nombre: string }[]
   >([]);
+  const [areasList, setAreasList] = useState<Area[]>([]);
 
   const loggedInTech = technicians.find((t) => t.id === user?.id);
-  const isN2 = loggedInTech?.nivel_soporte === "N2";
+  const isN2 =
+    loggedInTech?.nivel_soporte === "N2" ||
+    (user as any)?.nivel_soporte === "N2";
+  const isTechN2 = user?.rol === "TECNICO" && isN2;
   const isN1 =
     loggedInTech?.nivel_soporte === "N1" || (!isN2 && user?.rol === "TECNICO");
+  const isTechN1 = user?.rol === "TECNICO" && isN1;
+
+  const [activeTab, setActiveTab] = useState<"SOLICITUDES" | "INCIDENCIAS">(
+    "SOLICITUDES",
+  );
+
+  // Si el usuario es técnico N2, asegurar que la pestaña activa sea INCIDENCIAS
+  useEffect(() => {
+    if (isTechN2 && activeTab !== "INCIDENCIAS") {
+      setActiveTab("INCIDENCIAS");
+    }
+  }, [isTechN2]);
 
   const isReadOnlyForUser = Boolean(
     user?.rol === "TECNICO" &&
     selectedTicket &&
-    selectedTicket.tecnico_id !== user.id &&
-    (selectedTicket.tecnico_n1_id === user.id ||
-      (isN1 && selectedTicket.nivel_soporte !== "N1")),
+    ((isTechN1 &&
+      (selectedTicket.nivel_soporte === "N2" ||
+        selectedTicket.nivel_soporte === "N3") &&
+      selectedTicket.estado !== "Resuelto") ||
+      (isTechN2 &&
+        (selectedTicket.nivel_soporte === "N1" ||
+          selectedTicket.estado === "Resuelto" ||
+          selectedTicket.estado === "Cerrado" ||
+          selectedTicket.estado === "Finalizada"))),
   );
 
   const fetchTicketsData = async (
@@ -135,6 +378,7 @@ export const Tickets: React.FC = () => {
     searchVal = debouncedSearch,
     estadoVal = filterEstado,
     tecnicoIdVal = selectedTecnicoId,
+    tabVal = activeTab,
   ) => {
     try {
       setLoading(true);
@@ -145,8 +389,8 @@ export const Tickets: React.FC = () => {
         estadoVal,
         searchVal,
         tecnicoIdVal,
+        tabVal,
       );
-      console.log("fetchTicketsData response:", res);
       setTickets(res.data);
       setTotalTickets(res.total);
     } catch (e) {
@@ -160,7 +404,7 @@ export const Tickets: React.FC = () => {
   useEffect(() => {
     const loadMetadata = async () => {
       try {
-        const [companiesList, cats, usersList] = await Promise.all([
+        const [companiesList, cats, usersList, areasData] = await Promise.all([
           apiClient.get<
             {
               id: number;
@@ -175,6 +419,7 @@ export const Tickets: React.FC = () => {
           >("/empresas"),
           ticketService.getCategorias().catch(() => []),
           projectService.getUsuarios().catch(() => []),
+          areaService.getAllActiveAreas().catch(() => []),
         ]);
 
         setEmpresas(companiesList);
@@ -193,6 +438,11 @@ export const Tickets: React.FC = () => {
         setCategoriesList(cats);
         if (cats.length > 0) {
           setNewCat(cats[0].nombre);
+        }
+
+        setAreasList(areasData);
+        if (areasData.length > 0 && !newAreaSol) {
+          setNewAreaSol(areasData[0].nombre);
         }
 
         const techs = usersList.filter(
@@ -215,15 +465,21 @@ export const Tickets: React.FC = () => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Reset page when search, status, or technician filter changes
+  // Reset page when search, status, technician filter or tab changes
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, filterEstado, selectedTecnicoId]);
+  }, [debouncedSearch, filterEstado, selectedTecnicoId, activeTab]);
 
-  // Fetch tickets when page, search, status, or technician filter changes
+  // Fetch tickets when page, search, status, technician filter or tab changes
   useEffect(() => {
-    fetchTicketsData(page, debouncedSearch, filterEstado, selectedTecnicoId);
-  }, [page, debouncedSearch, filterEstado, selectedTecnicoId]);
+    fetchTicketsData(
+      page,
+      debouncedSearch,
+      filterEstado,
+      selectedTecnicoId,
+      activeTab,
+    );
+  }, [page, debouncedSearch, filterEstado, selectedTecnicoId, activeTab]);
 
   const handleEmpresaSelectChange = (empId: number) => {
     setNewEmpresaId(empId);
@@ -260,12 +516,34 @@ export const Tickets: React.FC = () => {
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isTechN2) {
+      showAlert(
+        "Los técnicos con Nivel de Soporte N2 no tienen permitido crear tickets.",
+      );
+      return;
+    }
     if (!newTitle || !newDesc) {
       showAlert("Por favor completa el título y descripción.");
       return;
     }
 
     try {
+      setIsUploadingFiles(true);
+      const isManagementOrN2 =
+        user?.rol === "SUPERVISOR" || user?.rol === "ADMIN" || isN2;
+      const isSelfAssign =
+        isManagementOrN2 && newAsignacionDestino === "ASIGNAR_A_MI";
+      const ticketNivel = isSelfAssign && isN2 ? "N2" : "N1";
+      const assignedTechId = isSelfAssign ? user?.id : undefined;
+
+      let uploadedAdjuntos = undefined;
+      if (createFiles.length > 0) {
+        uploadedAdjuntos = await ticketService.uploadAdjuntos(
+          createFiles,
+          "creacion",
+        );
+      }
+
       const payload: CreateTicketPayload = {
         titulo: newTitle,
         descripcion: newDesc,
@@ -276,7 +554,9 @@ export const Tickets: React.FC = () => {
         persona_solicitante: newPersonaSol || undefined,
         area_solicitante: newAreaSol || undefined,
         medio_solicitud: "Plataforma",
-        nivel_soporte: isN2 ? newNivelSoporte : undefined,
+        tecnico_id: assignedTechId,
+        nivel_soporte: ticketNivel,
+        adjuntos: uploadedAdjuntos,
       };
 
       await ticketService.createTicket(payload);
@@ -288,11 +568,14 @@ export const Tickets: React.FC = () => {
       setNewSucursalId(0);
       setNewPersonaSol("");
       setNewAreaSol("");
-      setNewNivelSoporte("N1");
+      setNewAsignacionDestino("SEDE_N1");
+      setCreateFiles([]);
 
       fetchTicketsData();
     } catch (err: any) {
       showAlert("Error al crear el ticket: " + err.message);
+    } finally {
+      setIsUploadingFiles(false);
     }
   };
 
@@ -303,6 +586,7 @@ export const Tickets: React.FC = () => {
     setEditTechId(ticket.tecnico_id || 0);
     setShowCierrePanel(false);
     setCierreObs("");
+    setCierreFiles([]);
   };
 
   const handleCerrarTicketConfirmado = async (e: React.MouseEvent) => {
@@ -315,17 +599,79 @@ export const Tickets: React.FC = () => {
 
     try {
       setIsUpdating(true);
-      await ticketService.updateTicket(selectedTicket.id, {
-        estado: "Finalizada",
+      if (cierreFiles.length > 0) {
+        await ticketService.addAdjuntosToTicket(
+          selectedTicket.id,
+          cierreFiles,
+          isTechN2 ? "resolucion" : "cierre",
+        );
+      }
+      const updated = await ticketService.updateTicket(selectedTicket.id, {
+        estado: "Cerrado",
         observaciones: cierreObs,
         tecnico_id: editTechId > 0 ? editTechId : user?.id,
       });
 
       setSelectedTicket(null);
+      setCierreFiles([]);
       fetchTicketsData();
-      showAlert("Ticket cerrado y finalizado exitosamente.");
+      showAlert("Ticket cerrado definitivamente con éxito.");
     } catch (err: any) {
       showAlert("Error al finalizar el ticket: " + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUploadDetailFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !selectedTicket) return;
+    const fileArray = Array.from(files);
+
+    const tooLarge = fileArray.find((f) => f.size > 25 * 1024 * 1024);
+    if (tooLarge) {
+      showAlert(
+        `El archivo "${tooLarge.name}" supera el límite máximo de 25MB.`,
+      );
+      return;
+    }
+
+    try {
+      setIsUploadingDetailFiles(true);
+      const updated = await ticketService.addAdjuntosToTicket(
+        selectedTicket.id,
+        fileArray,
+        "seguimiento",
+      );
+      setSelectedTicket(updated);
+      fetchTicketsData();
+      showAlert("Archivos adjuntados con éxito.");
+    } catch (err: any) {
+      showAlert("Error al adjuntar archivos: " + err.message);
+    } finally {
+      setIsUploadingDetailFiles(false);
+    }
+  };
+
+  const handleReabrirTicket = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (!selectedTicket) return;
+    if (
+      !(await showConfirm(
+        "¿Deseas reabrir este ticket? Se cambiará su estado a 'En Proceso' y permanecerá bajo tu atención (N1).",
+      ))
+    )
+      return;
+
+    try {
+      setIsUpdating(true);
+      const updated = await ticketService.updateTicket(selectedTicket.id, {
+        estado: "En Proceso",
+      });
+      setSelectedTicket(updated);
+      fetchTicketsData();
+      showAlert("El ticket ha sido reabierto exitosamente y asignado a N1.");
+    } catch (err: any) {
+      showAlert("Error al reabrir ticket: " + err.message);
     } finally {
       setIsUpdating(false);
     }
@@ -352,6 +698,26 @@ export const Tickets: React.FC = () => {
     }
   };
 
+  const handleEscalarAdminSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicket) return;
+
+    try {
+      setIsUpdating(true);
+      await ticketService.escalarTicketAAdmin(selectedTicket.id, {
+        tecnico_id: escalarAdminTechId > 0 ? escalarAdminTechId : null,
+      });
+      setShowEscalarAdminModal(false);
+      setSelectedTicket(null);
+      fetchTicketsData();
+      showAlert("Ticket escalado a Nivel Administración exitosamente.");
+    } catch (err: any) {
+      showAlert("Error al escalar a Administración: " + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleEscalarAProveedor = async () => {
     if (!selectedTicket) return;
     if (
@@ -369,30 +735,6 @@ export const Tickets: React.FC = () => {
       showAlert("Ticket escalado a Proveedor (N3) exitosamente. SLA Pausado.");
     } catch (err: any) {
       showAlert("Error al elevar a Proveedor: " + err.message);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleEscalarAProyecto = async () => {
-    if (!selectedTicket) return;
-    if (
-      !(await showConfirm(
-        "¿Deseas elevar este ticket a Proyecto? Se creará automáticamente un nuevo proyecto en el módulo de proyectos asignándote como responsable.",
-      ))
-    )
-      return;
-
-    try {
-      setIsUpdating(true);
-      const res = await ticketService.escalarTicketAProyecto(selectedTicket.id);
-      setSelectedTicket(null);
-      fetchTicketsData();
-      showAlert(
-        `¡Proyecto creado exitosamente!\n\nID Proyecto: #${res.proyecto_id}\nNombre: ${res.proyecto_nombre}\n\nSe te ha asignado como responsable en el módulo de proyectos.`,
-      );
-    } catch (err: any) {
-      showAlert("Error al elevar a Proyecto: " + err.message);
     } finally {
       setIsUpdating(false);
     }
@@ -465,6 +807,88 @@ export const Tickets: React.FC = () => {
 
   return (
     <div className="tickets-container animate-fade">
+      {/* ITIL Navigation Tabs */}
+      {!isTechN2 ? (
+        <div className="itil-tabs-container">
+          <div className="itil-tabs-header">
+            <button
+              type="button"
+              className={`itil-tab-btn ${activeTab === "SOLICITUDES" ? "active" : ""}`}
+              onClick={() => setActiveTab("SOLICITUDES")}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              <span>SOLICITUDES</span>
+              {activeTab === "SOLICITUDES" && (
+                <span className="itil-tab-badge">{totalTickets}</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className={`itil-tab-btn ${activeTab === "INCIDENCIAS" ? "active" : ""}`}
+              onClick={() => setActiveTab("INCIDENCIAS")}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>INCIDENCIAS</span>
+              {activeTab === "INCIDENCIAS" && (
+                <span className="itil-tab-badge">{totalTickets}</span>
+              )}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="itil-tabs-container">
+          <div className="itil-tabs-header">
+            <div className="itil-tab-btn active" style={{ cursor: "default" }}>
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>INCIDENCIAS ASIGNADAS</span>
+              <span className="itil-tab-badge">{totalTickets}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Upper controls bar */}
       <div className="tickets-controls glass-panel">
         <div className="controls-left">
@@ -483,11 +907,12 @@ export const Tickets: React.FC = () => {
             <option value="todos">Todos los Estados</option>
             <option value="Nuevo">Nuevo</option>
             <option value="En Proceso">En Proceso</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Pruebas">Pruebas</option>
-            <option value="Finalizada">Finalizada</option>
-            <option value="Escalado a Proyecto">Escalado a Proyecto</option>
-            <option value="Escalado a Proveedor">Escalado a Proveedor</option>
+            <option value="Resuelto">Resuelto</option>
+            <option value="Cerrado">Cerrado</option>
+            <option value="Elevado a Proveedor">Elevado a Proveedor</option>
+            <option value="Elevado a Administración">
+              Elevado a Administración
+            </option>
           </select>
           {(user?.rol === "ADMIN" || user?.rol === "SUPERVISOR") && (
             <select
@@ -508,21 +933,22 @@ export const Tickets: React.FC = () => {
 
         <div className="controls-right-buttons">
           {(user?.rol === "ADMIN" || user?.rol === "SUPERVISOR") && (
-            <>
-              <button
-                className="btn btn-secondary excel-btn"
-                onClick={handleDownloadReport}
-              >
-                Reporte Semanal Excel
-              </button>
-            </>
+            <button
+              type="button"
+              className="btn btn-secondary excel-btn"
+              onClick={handleDownloadReport}
+            >
+              Reporte Semanal Excel
+            </button>
           )}
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowCreateModal(true)}
-          >
-            Reportar Soporte / Ticket
-          </button>
+          {!isTechN2 && (
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowCreateModal(true)}
+            >
+              Reportar Soporte / Ticket
+            </button>
+          )}
         </div>
       </div>
 
@@ -607,6 +1033,33 @@ export const Tickets: React.FC = () => {
                       ? ` (${ticket.sucursal_nombre})`
                       : ""}
                   </div>
+                  {ticket.adjuntos && ticket.adjuntos.length > 0 && (
+                    <div
+                      className="meta-tag"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        background: "rgba(99, 102, 241, 0.08)",
+                        color: "var(--color-primary, #6366f1)",
+                        borderColor: "rgba(99, 102, 241, 0.2)",
+                        fontWeight: "500",
+                      }}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="12"
+                        height="12"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                      </svg>
+                      {ticket.adjuntos.length}{" "}
+                      {ticket.adjuntos.length === 1 ? "adjunto" : "adjuntos"}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -799,13 +1252,29 @@ export const Tickets: React.FC = () => {
 
                 <div className="form-group half">
                   <label className="form-label">ÁREA SOLICITANTE *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ej: Contabilidad, Caja 3, etc."
-                    value={newAreaSol}
-                    onChange={(e) => setNewAreaSol(e.target.value)}
-                  />
+                  {areasList.length > 0 ? (
+                    <select
+                      className="form-control"
+                      value={newAreaSol}
+                      onChange={(e) => setNewAreaSol(e.target.value)}
+                      required
+                    >
+                      {areasList.map((a) => (
+                        <option key={a.id} value={a.nombre}>
+                          {a.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ej: Contabilidad, Caja 3, etc."
+                      value={newAreaSol}
+                      onChange={(e) => setNewAreaSol(e.target.value)}
+                      required
+                    />
+                  )}
                 </div>
               </div>
 
@@ -869,21 +1338,26 @@ export const Tickets: React.FC = () => {
                 />
               </div>
 
-              {isN2 && (
+              {(user?.rol === "SUPERVISOR" ||
+                user?.rol === "ADMIN" ||
+                isN2) && (
                 <div className="form-group">
-                  <label className="form-label">NIVEL DE SOPORTE *</label>
+                  <label className="form-label">ASIGNACIÓN DEL TICKET *</label>
                   <select
                     className="form-control"
-                    value={newNivelSoporte}
+                    value={newAsignacionDestino}
                     onChange={(e) =>
-                      setNewNivelSoporte(e.target.value as "N1" | "N2")
+                      setNewAsignacionDestino(
+                        e.target.value as "SEDE_N1" | "ASIGNAR_A_MI",
+                      )
                     }
                   >
-                    <option value="N1">
-                      Nivel 1 (N1) - Asignar a Centro Comercial
+                    <option value="SEDE_N1">
+                      Asignar al Técnico N1 de la Sede / Centro Comercial
                     </option>
-                    <option value="N2">
-                      Nivel 2 (N2) - Mi nivel (Asignado a mí)
+                    <option value="ASIGNAR_A_MI">
+                      Asignarme a mí (Auto-atención){" "}
+                      {isN2 ? "(Nivel 2)" : "(Nivel 1)"}
                     </option>
                   </select>
                 </div>
@@ -903,16 +1377,114 @@ export const Tickets: React.FC = () => {
                 />
               </div>
 
+              {/* ADJUNTOS / EVIDENCIAS AL CREAR */}
+              <div className="form-group">
+                <label
+                  className="form-label"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span>
+                    ADJUNTAR ARCHIVOS / CAPTURAS / DOCUMENTOS (OPCIONAL)
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "var(--color-text-muted, #64748b)",
+                      fontWeight: "normal",
+                    }}
+                  >
+                    Imágenes, PDFs, Word, Excel (Máx. 25MB c/u)
+                  </span>
+                </label>
+
+                <div className="ticket-dropzone">
+                  <input
+                    type="file"
+                    id="create-ticket-files"
+                    multiple
+                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        const newFiles = Array.from(e.target.files);
+                        setCreateFiles((prev) => [...prev, ...newFiles]);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="create-ticket-files"
+                    className="dropzone-label"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="24"
+                      height="24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>
+                      Haz clic aquí para seleccionar o arrastrar archivos /
+                      fotos
+                    </span>
+                  </label>
+                </div>
+
+                {createFiles.length > 0 && (
+                  <div className="selected-files-list mt-2">
+                    {createFiles.map((file, idx) => (
+                      <div key={idx} className="file-chip">
+                        <span className="file-chip-name" title={file.name}>
+                          {file.name}
+                        </span>
+                        <span className="file-chip-size">
+                          ({formatFileSize(file.size)})
+                        </span>
+                        <button
+                          type="button"
+                          className="file-chip-remove"
+                          onClick={() =>
+                            setCreateFiles((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            )
+                          }
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="modal-actions">
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setShowCreateModal(false)}
+                  disabled={isUploadingFiles}
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Registrar Soporte
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isUploadingFiles}
+                >
+                  {isUploadingFiles
+                    ? "Subiendo archivos y registrando..."
+                    : "Registrar Soporte"}
                 </button>
               </div>
             </form>
@@ -997,10 +1569,10 @@ export const Tickets: React.FC = () => {
                     Administrar Operación TI
                   </h4>
 
-                  {selectedTicket.estado !== "Finalizada" && (
+                  {selectedTicket.estado !== "Cerrado" &&
+                  selectedTicket.estado !== "Finalizada" ? (
                     <div className="cierre-rapido-container mb-3">
-                      {selectedTicket.estado === "Nuevo" ||
-                      selectedTicket.estado === "Pendiente" ? (
+                      {selectedTicket.estado === "Nuevo" ? (
                         <button
                           type="button"
                           className="btn"
@@ -1037,21 +1609,242 @@ export const Tickets: React.FC = () => {
                             ? "Actualizando..."
                             : "Iniciar Atención / Pasar a En Proceso"}
                         </button>
-                      ) : selectedTicket.estado === "Escalado a Proyecto" ? (
+                      ) : selectedTicket.estado === "Resuelto" ? (
                         <div
                           style={{
-                            border: "1px solid rgba(59,130,246,0.3)",
-                            background: "rgba(59,130,246,0.06)",
+                            border: "1px solid #a7f3d0",
+                            background: "#ecfdf5",
                             padding: "16px",
                             borderRadius: "12px",
-                            color: "#1d4ed8",
-                            fontSize: "13px",
                           }}
                         >
-                          <strong>🚀 Elevado a Proyecto:</strong> Este ticket
-                          fue elevado a proyecto. Se finaliza de forma 100%
-                          automática una vez concluido el proyecto en el módulo
-                          correspondiente.
+                          <div
+                            style={{
+                              color: "#047857",
+                              fontWeight: "600",
+                              fontSize: "14px",
+                              marginBottom: "6px",
+                            }}
+                          >
+                            🟢 Ticket Marcado como Resuelto por N2
+                          </div>
+                          {selectedTicket.observaciones && (
+                            <div
+                              style={{
+                                background: "#ffffff",
+                                padding: "10px 12px",
+                                borderRadius: "8px",
+                                border: "1px solid #a7f3d0",
+                                margin: "8px 0 12px 0",
+                                fontSize: "13px",
+                                color: "#065f46",
+                              }}
+                            >
+                              <strong>
+                                Observación / Solución enviada por N2:
+                              </strong>
+                              <p
+                                style={{
+                                  margin: "4px 0 0 0",
+                                  whiteSpace: "pre-wrap",
+                                }}
+                              >
+                                {selectedTicket.observaciones}
+                              </p>
+                            </div>
+                          )}
+                          <p
+                            style={{
+                              margin: "0 0 12px 0",
+                              fontSize: "12.5px",
+                              color: "#065f46",
+                            }}
+                          >
+                            Por favor contacta al usuario para confirmar que la
+                            solución haya sido satisfactoria antes de cerrar
+                            definitivamente o reabrir el ticket.
+                          </p>
+                          {!showCierrePanel ? (
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "10px",
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <button
+                                type="button"
+                                className="btn btn-success"
+                                style={{
+                                  flex: 1,
+                                  padding: "10px",
+                                  fontWeight: "600",
+                                }}
+                                onClick={() => setShowCierrePanel(true)}
+                              >
+                                Confirmar y Cerrar Definitivamente
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-warning"
+                                style={{
+                                  flex: 1,
+                                  padding: "10px",
+                                  fontWeight: "600",
+                                  background: "#f59e0b",
+                                  color: "white",
+                                }}
+                                onClick={handleReabrirTicket}
+                                disabled={isUpdating}
+                              >
+                                Reabrir Ticket (Asignar a N1)
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="cierre-rapido-panel animate-fade">
+                              <label
+                                className="form-label"
+                                style={{
+                                  color: "#047857",
+                                  fontWeight: "600",
+                                  marginBottom: "8px",
+                                  display: "block",
+                                }}
+                              >
+                                OBSERVACIONES DEL CIERRE DE N1 (OBLIGATORIO) *
+                              </label>
+                              <textarea
+                                className="form-control textarea-field"
+                                placeholder="Confirmación con el usuario y detalles de cierre..."
+                                rows={3}
+                                value={cierreObs}
+                                onChange={(e) => setCierreObs(e.target.value)}
+                                required
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  borderRadius: "6px",
+                                  border: "1px solid #d1d5db",
+                                  marginBottom: "12px",
+                                }}
+                              />
+                              <div style={{ marginBottom: "12px" }}>
+                                <label
+                                  style={{
+                                    fontSize: "12px",
+                                    color: "#047857",
+                                    fontWeight: "600",
+                                    marginBottom: "4px",
+                                    display: "block",
+                                  }}
+                                >
+                                  ADJUNTAR EVIDENCIAS DEL CIERRE (OPCIONAL)
+                                </label>
+                                <input
+                                  type="file"
+                                  id="cierre-files-input-n1"
+                                  multiple
+                                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar"
+                                  style={{ display: "none" }}
+                                  onChange={(e) => {
+                                    if (e.target.files) {
+                                      const newF = Array.from(e.target.files);
+                                      setCierreFiles((prev) => [
+                                        ...prev,
+                                        ...newF,
+                                      ]);
+                                      e.target.value = "";
+                                    }
+                                  }}
+                                />
+                                <label
+                                  htmlFor="cierre-files-input-n1"
+                                  className="btn btn-secondary btn-sm"
+                                  style={{
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                    padding: "6px 12px",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    width="14"
+                                    height="14"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  >
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                  </svg>
+                                  Seleccionar archivos de evidencia
+                                </label>
+
+                                {cierreFiles.length > 0 && (
+                                  <div className="selected-files-list mt-2">
+                                    {cierreFiles.map((file, idx) => (
+                                      <div key={idx} className="file-chip">
+                                        <span className="file-chip-name">
+                                          {file.name}
+                                        </span>
+                                        <span className="file-chip-size">
+                                          ({formatFileSize(file.size)})
+                                        </span>
+                                        <button
+                                          type="button"
+                                          className="file-chip-remove"
+                                          onClick={() =>
+                                            setCierreFiles((prev) =>
+                                              prev.filter((_, i) => i !== idx),
+                                            )
+                                          }
+                                        >
+                                          &times;
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div style={{ display: "flex", gap: "10px" }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-success"
+                                  onClick={handleCerrarTicketConfirmado}
+                                  disabled={isUpdating}
+                                  style={{
+                                    flex: 1,
+                                    background: "#10b981",
+                                    border: "none",
+                                    color: "white",
+                                    fontWeight: "600",
+                                    padding: "8px",
+                                  }}
+                                >
+                                  {isUpdating
+                                    ? "Cerrando..."
+                                    : "Confirmar Cierre (Finalizado)"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  onClick={() => {
+                                    setShowCierrePanel(false);
+                                    setCierreObs("");
+                                    setCierreFiles([]);
+                                  }}
+                                  style={{ flex: 0.5, padding: "8px" }}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div
@@ -1092,9 +1885,11 @@ export const Tickets: React.FC = () => {
                               >
                                 <polyline points="20 6 9 17 4 12"></polyline>
                               </svg>
-                              {selectedTicket.estado === "Escalado a Proveedor"
+                              {selectedTicket.estado === "Elevado a Proveedor"
                                 ? "Finalizar / Cerrar Ticket con Solución (SLA Pausado)"
-                                : "Finalizar / Cerrar Ticket con Solución"}
+                                : isTechN2
+                                  ? "Resolver Ticket (Devolver a N1)"
+                                  : "Finalizar / Cerrar Ticket con Solución"}
                             </button>
                           ) : (
                             <div className="cierre-rapido-panel animate-fade">
@@ -1124,6 +1919,90 @@ export const Tickets: React.FC = () => {
                                   marginBottom: "12px",
                                 }}
                               />
+
+                              <div style={{ marginBottom: "12px" }}>
+                                <label
+                                  style={{
+                                    fontSize: "12px",
+                                    color: "#047857",
+                                    fontWeight: "600",
+                                    marginBottom: "4px",
+                                    display: "block",
+                                  }}
+                                >
+                                  ADJUNTAR EVIDENCIAS DE LA SOLUCIÓN (OPCIONAL)
+                                </label>
+                                <input
+                                  type="file"
+                                  id="cierre-files-input-tech"
+                                  multiple
+                                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar"
+                                  style={{ display: "none" }}
+                                  onChange={(e) => {
+                                    if (e.target.files) {
+                                      const newF = Array.from(e.target.files);
+                                      setCierreFiles((prev) => [
+                                        ...prev,
+                                        ...newF,
+                                      ]);
+                                      e.target.value = "";
+                                    }
+                                  }}
+                                />
+                                <label
+                                  htmlFor="cierre-files-input-tech"
+                                  className="btn btn-secondary btn-sm"
+                                  style={{
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                    padding: "6px 12px",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    width="14"
+                                    height="14"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  >
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                  </svg>
+                                  Seleccionar archivos de evidencia
+                                </label>
+
+                                {cierreFiles.length > 0 && (
+                                  <div className="selected-files-list mt-2">
+                                    {cierreFiles.map((file, idx) => (
+                                      <div key={idx} className="file-chip">
+                                        <span className="file-chip-name">
+                                          {file.name}
+                                        </span>
+                                        <span className="file-chip-size">
+                                          ({formatFileSize(file.size)})
+                                        </span>
+                                        <button
+                                          type="button"
+                                          className="file-chip-remove"
+                                          onClick={() =>
+                                            setCierreFiles((prev) =>
+                                              prev.filter((_, i) => i !== idx),
+                                            )
+                                          }
+                                        >
+                                          &times;
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
                               <div style={{ display: "flex", gap: "10px" }}>
                                 <button
                                   type="button"
@@ -1140,8 +2019,10 @@ export const Tickets: React.FC = () => {
                                   }}
                                 >
                                   {isUpdating
-                                    ? "Cerrando..."
-                                    : "Confirmar Cierre (Finalizado)"}
+                                    ? "Procesando..."
+                                    : isTechN2
+                                      ? "Marcar como Resuelto (Devolver a N1)"
+                                      : "Confirmar Cierre (Finalizado)"}
                                 </button>
                                 <button
                                   type="button"
@@ -1149,6 +2030,7 @@ export const Tickets: React.FC = () => {
                                   onClick={() => {
                                     setShowCierrePanel(false);
                                     setCierreObs("");
+                                    setCierreFiles([]);
                                   }}
                                   style={{ flex: 0.5, padding: "8px" }}
                                 >
@@ -1158,6 +2040,45 @@ export const Tickets: React.FC = () => {
                             </div>
                           )}
                         </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        border: "1px solid #cbd5e1",
+                        background: "#f8fafc",
+                        padding: "14px",
+                        borderRadius: "10px",
+                        color: "#475569",
+                        fontSize: "13px",
+                        marginBottom: "16px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: "10px",
+                      }}
+                    >
+                      <span>
+                        <strong>Ticket Cerrado:</strong> Este requerimiento ha
+                        sido concluido y cerrado definitivamente.
+                      </span>
+                      {!isReadOnlyForUser && (
+                        <button
+                          type="button"
+                          className="btn btn-warning"
+                          style={{
+                            background: "#f59e0b",
+                            borderColor: "#f59e0b",
+                            color: "white",
+                            padding: "6px 12px",
+                            fontSize: "12px",
+                          }}
+                          onClick={handleReabrirTicket}
+                          disabled={isUpdating}
+                        >
+                          Reabrir Ticket
+                        </button>
                       )}
                     </div>
                   )}
@@ -1262,6 +2183,69 @@ export const Tickets: React.FC = () => {
                       onChange={(e) => setEditObs(e.target.value)}
                     />
                   </div>
+
+                  {Array.isArray((selectedTicket as any).bitacora_dinamica) &&
+                    (selectedTicket as any).bitacora_dinamica.length > 0 && (
+                      <div className="bitacora-timeline mt-3">
+                        <strong
+                          style={{
+                            display: "block",
+                            marginBottom: "8px",
+                            fontSize: "13px",
+                            color: "var(--text-main, #334155)",
+                          }}
+                        >
+                          Historial del Ticket:
+                        </strong>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px",
+                            maxHeight: "220px",
+                            overflowY: "auto",
+                            paddingRight: "4px",
+                          }}
+                        >
+                          {(selectedTicket as any).bitacora_dinamica.map(
+                            (item: any, idx: number) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  background: "rgba(139, 92, 246, 0.06)",
+                                  borderLeft: "3px solid #8b5cf6",
+                                  padding: "10px 14px",
+                                  borderRadius: "8px",
+                                  fontSize: "12px",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  <span style={{ fontWeight: 600 }}>
+                                    {item.usuario || "Sistema"}
+                                  </span>
+                                  <span
+                                    style={{ fontSize: "10px", opacity: 0.7 }}
+                                  >
+                                    {item.fecha
+                                      ? new Date(item.fecha).toLocaleString()
+                                      : ""}
+                                  </span>
+                                </div>
+                                <div style={{ color: "#334155" }}>
+                                  {item.accion}
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    )}
                 </div>
               ) : (
                 <div className="user-view-only-section">
@@ -1365,6 +2349,9 @@ export const Tickets: React.FC = () => {
                 </div>
               )}
 
+              {/* SECCIÓN DE ARCHIVOS Y EVIDENCIAS ADJUNTAS */}
+              {renderTicketAdjuntos(selectedTicket)}
+
               <div className="modal-actions">
                 <button
                   type="button"
@@ -1381,9 +2368,9 @@ export const Tickets: React.FC = () => {
                   (user?.rol === "ADMIN" ||
                     user?.rol === "SUPERVISOR" ||
                     user?.rol === "TECNICO") &&
+                  selectedTicket.estado !== "Cerrado" &&
                   selectedTicket.estado !== "Finalizada" &&
-                  selectedTicket.estado !== "Escalado a Proyecto" &&
-                  selectedTicket.estado !== "Escalado a Proveedor" && (
+                  selectedTicket.estado !== "Elevado a Proveedor" && (
                     <button
                       type="button"
                       className="btn btn-warning"
@@ -1403,43 +2390,54 @@ export const Tickets: React.FC = () => {
                     </button>
                   )}
 
-                {/* Elevar a N3 / Proyecto (Solo para tickets N2 activos) */}
+                {/* Escalar a Nivel Administración (Exclusivo Supervisores y Administradores) */}
                 {!isReadOnlyForUser &&
-                  selectedTicket.nivel_soporte === "N2" &&
-                  (isN2 ||
-                    user?.rol === "ADMIN" ||
-                    user?.rol === "SUPERVISOR") &&
-                  selectedTicket.estado !== "Escalado a Proveedor" &&
-                  selectedTicket.estado !== "Escalado a Proyecto" &&
-                  selectedTicket.estado !== "Finalizada" && (
-                    <>
-                      <button
-                        type="button"
-                        className="btn"
-                        style={{
-                          background: "#d97706",
-                          borderColor: "#d97706",
-                          color: "white",
-                        }}
-                        onClick={handleEscalarAProveedor}
-                        disabled={isUpdating}
-                      >
-                        Elevar a Proveedor (N3)
-                      </button>
-                      <button
-                        type="button"
-                        className="btn"
-                        style={{
-                          background: "#2563eb",
-                          borderColor: "#2563eb",
-                          color: "white",
-                        }}
-                        onClick={handleEscalarAProyecto}
-                        disabled={isUpdating}
-                      >
-                        Elevar a Proyecto
-                      </button>
-                    </>
+                  (user?.rol === "SUPERVISOR" || user?.rol === "ADMIN") &&
+                  selectedTicket.nivel_soporte !== "ADMIN" &&
+                  selectedTicket.estado !== "Cerrado" &&
+                  selectedTicket.estado !== "Finalizada" &&
+                  selectedTicket.estado !== "Resuelto" && (
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{
+                        background: "#6366f1",
+                        borderColor: "#6366f1",
+                        color: "white",
+                        fontWeight: "600",
+                      }}
+                      onClick={() => {
+                        setEscalarAdminTechId(0);
+                        setShowEscalarAdminModal(true);
+                      }}
+                      disabled={isUpdating}
+                    >
+                      Escalar a Administración
+                    </button>
+                  )}
+
+                {/* Elevar a N3 / Proveedor (Técnicos N1, N2, Admin, Supervisor) */}
+                {!isReadOnlyForUser &&
+                  (user?.rol === "ADMIN" ||
+                    user?.rol === "SUPERVISOR" ||
+                    user?.rol === "TECNICO") &&
+                  selectedTicket.estado !== "Elevado a Proveedor" &&
+                  selectedTicket.estado !== "Cerrado" &&
+                  selectedTicket.estado !== "Finalizada" &&
+                  selectedTicket.estado !== "Resuelto" && (
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{
+                        background: "#d97706",
+                        borderColor: "#d97706",
+                        color: "white",
+                      }}
+                      onClick={handleEscalarAProveedor}
+                      disabled={isUpdating}
+                    >
+                      Elevar a Proveedor (N3)
+                    </button>
                   )}
 
                 {!isReadOnlyForUser &&
@@ -1553,7 +2551,7 @@ export const Tickets: React.FC = () => {
 
               <div className="form-group">
                 <label className="form-label">
-                  ASIGNAR A TÉCNICO ESPECÍFICO
+                  ASIGNAR A TÉCNICO ESPECÍFICO (DE ESTA SEDE)
                 </label>
                 <select
                   className="form-control"
@@ -1561,18 +2559,89 @@ export const Tickets: React.FC = () => {
                   onChange={(e) => setEscalarTechId(Number(e.target.value))}
                   disabled={isUpdating}
                 >
-                  <option value="0">Auto-asignación (Balanceo de Carga)</option>
-                  {technicians
-                    .filter(
-                      (t) =>
-                        t.nivel_soporte === "N2" && t.grupo_n2 === escalarGrupo,
-                    )
-                    .map((t) => (
+                  <option value="0">
+                    Auto-asignación (Balanceo de Carga en Sede)
+                  </option>
+                  {(() => {
+                    const ticketEmpId =
+                      selectedTicket?.empresa_id != null
+                        ? Number(selectedTicket.empresa_id)
+                        : null;
+                    const ticketSucId =
+                      selectedTicket?.sucursal_id != null
+                        ? Number(selectedTicket.sucursal_id)
+                        : null;
+
+                    const filtered = technicians.filter((t) => {
+                      if (t.nivel_soporte !== "N2") return false;
+                      if (t.grupo_n2 !== escalarGrupo) return false;
+
+                      const techEmpIds = Array.isArray(t.empresa_ids)
+                        ? t.empresa_ids.map(Number)
+                        : [];
+                      const techSucIds = Array.isArray(t.sucursal_ids)
+                        ? t.sucursal_ids.map(Number)
+                        : [];
+
+                      // 1. Si el técnico tiene sucursales asignadas específicamente (ej: Scala o Condado)
+                      if (techSucIds.length > 0) {
+                        if (ticketSucId) {
+                          if (!techSucIds.includes(ticketSucId)) return false;
+                        } else if (ticketEmpId) {
+                          const currentEmp = empresas.find(
+                            (e) => Number(e.id) === ticketEmpId,
+                          );
+                          const empSucIds = (currentEmp?.sucursales || []).map(
+                            (s) => Number(s.id),
+                          );
+                          if (empSucIds.length > 0) {
+                            const hasMatch = techSucIds.some((sId) =>
+                              empSucIds.includes(sId),
+                            );
+                            if (!hasMatch) return false;
+                          }
+                        }
+                      }
+
+                      // 2. Si el técnico tiene empresas asignadas específicamente
+                      if (techEmpIds.length > 0 && ticketEmpId) {
+                        if (!techEmpIds.includes(ticketEmpId)) return false;
+                      }
+
+                      return true;
+                    });
+
+                    if (filtered.length === 0) {
+                      return (
+                        <option value="-1" disabled>
+                          Sin técnicos N2 de {escalarGrupo} asignados a esta
+                          sede
+                        </option>
+                      );
+                    }
+
+                    return filtered.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.nombre_completo}
                       </option>
-                    ))}
+                    ));
+                  })()}
                 </select>
+                {selectedTicket?.empresa_nombre && (
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "var(--color-text-muted, #64748b)",
+                      marginTop: "4px",
+                      display: "block",
+                    }}
+                  >
+                    Técnicos N2 con acceso a {selectedTicket.empresa_nombre}
+                    {selectedTicket.sucursal_nombre
+                      ? ` (${selectedTicket.sucursal_nombre})`
+                      : ""}
+                  </span>
+                )}
               </div>
 
               <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
@@ -1592,6 +2661,133 @@ export const Tickets: React.FC = () => {
                     flex: 1,
                     background: "#8b5cf6",
                     borderColor: "#8b5cf6",
+                    color: "white",
+                  }}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? "Escalando..." : "Confirmar Escalación"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEscalarAdminModal && (
+        <div
+          className="modal-backdrop animate-fade"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1100,
+          }}
+        >
+          <div
+            className="glass-panel animate-slide-up"
+            style={{
+              width: "100%",
+              maxWidth: "420px",
+              padding: "24px",
+              background: "var(--bg-panel)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <h4 style={{ margin: 0, fontSize: "16px" }}>
+                Escalar Ticket a Nivel Administración
+              </h4>
+              <button
+                type="button"
+                onClick={() => setShowEscalarAdminModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--color-text-muted)",
+                  fontSize: "20px",
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleEscalarAdminSubmit}
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
+              <div className="form-group">
+                <label className="form-label">
+                  SELECCIONAR ADMINISTRADOR DESTINO
+                </label>
+                <select
+                  className="form-control"
+                  value={escalarAdminTechId}
+                  onChange={(e) =>
+                    setEscalarAdminTechId(Number(e.target.value))
+                  }
+                  disabled={isUpdating}
+                >
+                  <option value="0">
+                    Auto-asignación (Balanceo entre Administradores Habilitados)
+                  </option>
+                  {technicians
+                    .filter(
+                      (t) =>
+                        t.rol === "ADMIN" &&
+                        (t.recibir_escalado_admin ?? 1) === 1,
+                    )
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.nombre_completo}
+                      </option>
+                    ))}
+                </select>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--color-text-muted, #64748b)",
+                    marginTop: "4px",
+                    display: "block",
+                  }}
+                >
+                  Únicamente se muestran los administradores habilitados para
+                  recibir escalamientos desde base de datos.
+                </span>
+              </div>
+
+              <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                  onClick={() => setShowEscalarAdminModal(false)}
+                  disabled={isUpdating}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    flex: 1,
+                    background: "#6366f1",
+                    borderColor: "#6366f1",
                     color: "white",
                   }}
                   disabled={isUpdating}
@@ -1770,6 +2966,72 @@ export const Tickets: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL LIGHTBOX PARA PREVISUALIZAR IMÁGENES / CAPTURAS EN TAMAÑO COMPLETO */}
+      {previewImageUrl && (
+        <div
+          className="image-lightbox-modal animate-fade"
+          onClick={() => setPreviewImageUrl(null)}
+        >
+          <div
+            className="image-lightbox-content animate-scale"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="image-lightbox-close"
+              onClick={() => setPreviewImageUrl(null)}
+            >
+              &times;
+            </button>
+            <img src={previewImageUrl} alt="Evidencia en tamaño completo" />
+            <div
+              style={{
+                marginTop: "14px",
+                display: "flex",
+                gap: "10px",
+                justifyContent: "center",
+              }}
+            >
+              <a
+                href={previewImageUrl}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="btn btn-primary btn-sm"
+                style={{
+                  background: "#6366f1",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  textDecoration: "none",
+                }}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar Imagen Original
+              </a>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setPreviewImageUrl(null)}
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

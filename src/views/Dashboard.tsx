@@ -59,7 +59,7 @@ export const Dashboard: React.FC = () => {
         projectService.getProyectos().catch(() => [] as Proyecto[]),
         apiClient.get<any[]>("/empresas").catch(() => []),
         ticketService
-          .getTicketsPaginated(1, 4, "Finalizada")
+          .getTicketsPaginated(1, 4, "Cerrado")
           .catch(() => ({ total: 0, page: 1, limit: 4, data: [] as Ticket[] })),
         inventoryService
           .getConsumibles(1, 4, "", true)
@@ -130,7 +130,7 @@ export const Dashboard: React.FC = () => {
       const res = await ticketService.getTicketsPaginated(
         page,
         4,
-        "Finalizada",
+        "Cerrado",
       );
       setPaginatedTickets(res.data);
       setTicketsTotal(res.total);
@@ -163,14 +163,14 @@ export const Dashboard: React.FC = () => {
   // 1. Ticket computations
   const totalTicketsCount = tickets.length;
   const resolvedTicketsCount = tickets.filter(
-    (t) => t.estado === "Finalizada",
+    (t) => t.estado === "Cerrado" || t.estado === "Finalizada",
   ).length;
   const resolutionRate =
     totalTicketsCount > 0
       ? Math.round((resolvedTicketsCount / totalTicketsCount) * 100)
       : 100;
 
-  const openTickets = tickets.filter((t) => t.estado !== "Finalizada");
+  const openTickets = tickets.filter((t) => t.estado !== "Cerrado" && t.estado !== "Finalizada");
   const criticalCount = openTickets.filter(
     (t) => t.prioridad === "Critica",
   ).length;

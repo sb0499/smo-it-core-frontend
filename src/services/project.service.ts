@@ -101,6 +101,7 @@ export interface User {
   empresa_inventario_nombres?: string[];
   sucursal_ids?: number[];
   sucursal_nombres?: string[];
+  recibir_escalado_admin?: number | boolean;
 }
 
 export const projectService = {

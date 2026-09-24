@@ -358,7 +358,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* Accordion 1: Tickets */}
               <div className={`accordion-group ${ticketsOpen ? "open" : ""}`}>
                 <button
-                  className={`accordion-header ${["tickets", "plantillas", "base-conocimiento"].includes(activeView) ? "active" : ""}`}
+                  className={`accordion-header ${["tickets", "plantillas", "base-conocimiento", "reporte-diario"].includes(activeView) ? "active" : ""}`}
                   onClick={() => setTicketsOpen(!ticketsOpen)}
                 >
                   <div className="accordion-header-left">
@@ -377,17 +377,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span>• Tickets</span>
                   </button>
                   <button
-                    className={`sub-nav-item ${activeView === "plantillas" ? "active" : ""}`}
-                    onClick={() => handleNav("plantillas")}
-                  >
-                    <span>• Soportes Recurrentes</span>
-                  </button>
-                  <button
                     className={`sub-nav-item ${activeView === "base-conocimiento" ? "active" : ""}`}
                     onClick={() => handleNav("base-conocimiento")}
                   >
                     <span>• Base de Conocimientos</span>
                   </button>
+                  {(user?.rol === "ADMIN" || user?.rol === "SUPERVISOR") && (
+                    <button
+                      className={`sub-nav-item ${activeView === "reporte-diario" ? "active" : ""}`}
+                      onClick={() => handleNav("reporte-diario")}
+                    >
+                      <span>• Reporte Diario</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -499,7 +501,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               <div className={`accordion-group ${adminOpen ? "open" : ""}`}>
                 <button
-                  className={`accordion-header ${["personas", "proveedores", "usuarios", "credenciales", "empresas", "categorias"].includes(activeView) ? "active" : ""}`}
+                  className={`accordion-header ${["personas", "proveedores", "usuarios", "credenciales", "empresas", "categorias", "areas", "sla-config"].includes(activeView) ? "active" : ""}`}
                   onClick={() => setAdminOpen(!adminOpen)}
                 >
                   <div className="accordion-header-left">
@@ -523,6 +525,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   >
                     <span>• Categorías Soporte</span>
                   </button>
+                  {(user?.rol === "ADMIN" || user?.rol === "SUPERVISOR") && (
+                    <>
+                      <button
+                        className={`sub-nav-item ${activeView === "areas" ? "active" : ""}`}
+                        onClick={() => handleNav("areas")}
+                      >
+                        <span>• Áreas Solicitantes</span>
+                      </button>
+                      <button
+                        className={`sub-nav-item ${activeView === "sla-config" ? "active" : ""}`}
+                        onClick={() => handleNav("sla-config")}
+                      >
+                        <span>• Tiempos de SLA</span>
+                      </button>
+                    </>
+                  )}
                   <button
                     className={`sub-nav-item ${activeView === "personas" ? "active" : ""}`}
                     onClick={() => handleNav("personas")}

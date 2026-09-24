@@ -5,7 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { 
   inventoryService, 
   Activo, 
-  Consumible, 
+  Consumible,
+  ConsumibleHistorial,
   Persona, 
   Proveedor, 
   MovimientoInventario,
@@ -345,12 +346,37 @@ export const Inventario: React.FC = () => {
   const [editAssetTipoEquipoId, setEditAssetTipoEquipoId] = useState<number>(0);
   const [editAssetBodegaId, setEditAssetBodegaId] = useState<number>(0);
 
-  // Consumable Create fields
-  const [consNombre, setConsNombre] = useState('');
-  const [consDescripcion, setConsDescripcion] = useState('');
-  const [consUnidadMedida, setConsUnidadMedida] = useState('Unidades');
-  const [consStockActual, setConsStockActual] = useState<number>(0);
-  const [consStockMinimo, setConsStockMinimo] = useState<number>(0);
+  // Suministros TI state & modal handlers
+  const [showSuministroModal, setShowSuministroModal] = useState(false);
+  const [editingSuministro, setEditingSuministro] = useState<Consumible | null>(null);
+  const [suministroEmpresaId, setSuministroEmpresaId] = useState<number>(0);
+  const [suministroNombre, setSuministroNombre] = useState('');
+  const [suministroSerial, setSuministroSerial] = useState('');
+  const [suministroUnidadMedida, setSuministroUnidadMedida] = useState('Unidades');
+  const [suministroPrecioUnitario, setSuministroPrecioUnitario] = useState<number | string>('');
+  const [suministroStockActual, setSuministroStockActual] = useState<number | string>(0);
+  const [suministroStockMinimo, setSuministroStockMinimo] = useState<number | string>(0);
+  const [suministroDescripcion, setSuministroDescripcion] = useState('');
+
+  // Usar Modal
+  const [showUsarModal, setShowUsarModal] = useState(false);
+  const [usarSuministro, setUsarSuministro] = useState<Consumible | null>(null);
+  const [usarCantidad, setUsarCantidad] = useState<number | string>(1);
+  const [usarMotivo, setUsarMotivo] = useState('');
+
+  // Restock Modal
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [restockSuministro, setRestockSuministro] = useState<Consumible | null>(null);
+  const [restockCantidad, setRestockCantidad] = useState<number | string>(10);
+  const [restockPrecioUnitario, setRestockPrecioUnitario] = useState<number | string>('');
+  const [restockMotivo, setRestockMotivo] = useState('');
+
+  // Ficha / Bitácora Modal
+  const [showFichaSuministroModal, setShowFichaSuministroModal] = useState(false);
+  const [fichaSuministro, setFichaSuministro] = useState<Consumible | null>(null);
+  const [historialSuministro, setHistorialSuministro] = useState<ConsumibleHistorial[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const [pageHistorial, setPageHistorial] = useState<number>(1);
 
   // Tipo Equipo CRUD & Pagination fields
   const [newTipoEquipoNombre, setNewTipoEquipoNombre] = useState('');
@@ -600,35 +626,150 @@ export const Inventario: React.FC = () => {
     }
   };
 
-  const handleCreateConsumable = async (e: React.FormEvent) => {
+  const handleOpenCreateSuministro = () => {
+    setEditingSuministro(null);
+    setSuministroEmpresaId(0);
+    setSuministroNombre('');
+    setSuministroSerial('');
+    setSuministroUnidadMedida('Unidades');
+    setSuministroPrecioUnitario('');
+    setSuministroStockActual(0);
+    setSuministroStockMinimo(0);
+    setSuministroDescripcion('');
+    setShowSuministroModal(true);
+  };
+
+  const handleOpenEditSuministro = (c: Consumible) => {
+    setEditingSuministro(c);
+    setSuministroEmpresaId(c.empresa_id || 0);
+    setSuministroNombre(c.nombre || '');
+    setSuministroSerial(c.serial || '');
+    setSuministroUnidadMedida(c.unidad_medida || 'Unidades');
+    setSuministroPrecioUnitario(c.precio_unitario || '');
+    setSuministroStockActual(c.stock_actual ?? 0);
+    setSuministroStockMinimo(c.stock_minimo ?? 0);
+    setSuministroDescripcion(c.descripcion || '');
+    setShowSuministroModal(true);
+  };
+
+  const handleSaveSuministro = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!consNombre || !consUnidadMedida) {
-      showAlert('Por favor completa los campos requeridos para el consumible.');
+    if (suministroEmpresaId <= 0) {
+      showAlert('Por favor seleccione la Sede / Empresa del suministro.');
+      return;
+    }
+    if (!suministroNombre.trim()) {
+      showAlert('Por favor ingrese el nombre del suministro.');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      await inventoryService.createConsumible({
-        nombre: consNombre,
-        descripcion: consDescripcion || undefined,
-        unidad_medida: consUnidadMedida,
-        stock_actual: Number(consStockActual),
-        stock_minimo: Number(consStockMinimo),
-      });
+      const dataPayload = {
+        empresa_id: suministroEmpresaId,
+        nombre: suministroNombre.trim(),
+        serial: suministroSerial.trim() || undefined,
+        unidad_medida: suministroUnidadMedida || 'Unidades',
+        precio_unitario: suministroPrecioUnitario !== '' ? Number(suministroPrecioUnitario) : undefined,
+        stock_actual: Number(suministroStockActual || 0),
+        stock_minimo: Number(suministroStockMinimo || 0),
+        descripcion: suministroDescripcion.trim() || undefined
+      };
 
-      setShowCreateConsumableModal(false);
-      setConsNombre('');
-      setConsDescripcion('');
-      setConsUnidadMedida('Unidades');
-      setConsStockActual(0);
-      setConsStockMinimo(0);
+      if (editingSuministro) {
+        await inventoryService.updateConsumible(editingSuministro.id, dataPayload);
+        showAlert('Suministro actualizado correctamente.');
+      } else {
+        await inventoryService.createConsumible(dataPayload);
+        showAlert('Suministro registrado correctamente.');
+      }
 
-      fetchInventoryData();
+      setShowSuministroModal(false);
+      fetchConsumiblesPage(pageConsumibles, debouncedSearch);
     } catch (err: any) {
-      showAlert('Error registrando consumible: ' + err.message);
+      showAlert('Error al guardar suministro: ' + (err.message || 'Error inesperado'));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSuministro = async (id: number) => {
+    if (!await showConfirm('¿Estás seguro de que deseas eliminar este suministro de TI? Esta acción no se puede deshacer.')) return;
+    try {
+      await inventoryService.deleteConsumible(id);
+      showAlert('Suministro eliminado.');
+      fetchConsumiblesPage(pageConsumibles, debouncedSearch);
+    } catch (err: any) {
+      showAlert('Error al eliminar suministro: ' + err.message);
+    }
+  };
+
+  const handleDirectUsar = async (c: Consumible) => {
+    if (c.stock_actual <= 0) {
+      showAlert('El suministro no tiene stock disponible.');
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      await inventoryService.usarConsumible(c.id, {
+        cantidad: 1,
+        motivo: 'Uso de suministro'
+      });
+      fetchConsumiblesPage(pageConsumibles, debouncedSearch);
+    } catch (err: any) {
+      showAlert('Error al descontar stock: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenRestock = (c: Consumible) => {
+    setRestockSuministro(c);
+    setRestockCantidad(10);
+    setRestockPrecioUnitario(c.precio_unitario || '');
+    setRestockMotivo('');
+    setShowRestockModal(true);
+  };
+
+  const handleConfirmRestock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!restockSuministro) return;
+    const cant = Number(restockCantidad);
+    if (!cant || cant <= 0) {
+      showAlert('Ingrese una cantidad válida a ingresar mayor a 0.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await inventoryService.restockConsumible(restockSuministro.id, {
+        cantidad: cant,
+        precio_unitario: restockPrecioUnitario !== '' ? Number(restockPrecioUnitario) : undefined,
+        motivo: restockMotivo.trim() || undefined
+      });
+      showAlert('Restock registrado correctamente. Stock actualizado.');
+      setShowRestockModal(false);
+      fetchConsumiblesPage(pageConsumibles, debouncedSearch);
+    } catch (err: any) {
+      showAlert('Error al registrar restock: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenFicha = async (c: Consumible) => {
+    setFichaSuministro(c);
+    setPageHistorial(1);
+    setShowFichaSuministroModal(true);
+    setLoadingHistorial(true);
+    try {
+      const history = await inventoryService.getHistorialConsumible(c.id);
+      setHistorialSuministro(history || []);
+    } catch (err) {
+      console.error('Error fetching historial:', err);
+      setHistorialSuministro([]);
+    } finally {
+      setLoadingHistorial(false);
     }
   };
 
@@ -1161,7 +1302,7 @@ export const Inventario: React.FC = () => {
           className={`tab-btn ${activeTab === 'consumibles' ? 'active' : ''}`}
           onClick={() => { setActiveTab('consumibles'); setSearchQuery(''); }}
         >
-          Consumibles y Suministros
+          Suministros de TI
         </button>
         <button 
           className={`tab-btn ${activeTab === 'recepciones' ? 'active' : ''}`}
@@ -1286,8 +1427,8 @@ export const Inventario: React.FC = () => {
                 </button>
               )}
               {activeTab === 'consumibles' && (
-                <button className="btn btn-primary" onClick={() => setShowCreateConsumableModal(true)}>
-                  Registrar Consumible
+                <button className="btn btn-primary" onClick={handleOpenCreateSuministro}>
+                  + Registrar Suministro
                 </button>
               )}
             </div>
@@ -1389,82 +1530,132 @@ export const Inventario: React.FC = () => {
           </div>
         )
       ) : activeTab === 'consumibles' ? (
-        /* TAB 2: CONSUMIBLES */
+        /* TAB 2: SUMINISTROS DE TI (TABLA ESTRUCTURADA) */
         filteredConsumibles.length === 0 ? (
           <div className="empty-panel glass-panel text-center py-5">
             <span className="empty-big-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
               <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-dim)' }}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
             </span>
-            <h3>No se encontraron consumibles</h3>
+            <h3>No se encontraron suministros de TI</h3>
+            <p className="text-muted">Utiliza el botón "+ Registrar Suministro" para agregar nuevos ítems de consumo en tus sedes.</p>
           </div>
         ) : (
-          <>
-            <div className="consumables-grid">
-            {filteredConsumibles.map((c) => {
-              const isLowStock = c.stock_actual <= c.stock_minimo;
-              return (
-                <div key={c.id} className={`consumable-card glass-panel ${isLowStock ? 'low-stock-critical' : ''} animate-slide-up`}>
-                  <div className="consumable-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <span className="consumable-icon-wrap" style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--color-text-muted)' }}>
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-                    </span>
-                    {isLowStock && <span className="badge badge-state-baja" style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#b91c1c' }}>Stock Mínimo</span>}
-                  </div>
-                  <div className="consumable-card-body mt-2">
-                    <h3>{c.nombre}</h3>
-                    <p className="text-muted font-xs">{c.descripcion || 'Sin descripción adicional'}</p>
-                    
-                    <div className="consumable-numbers mt-3">
-                      <div className="number-group">
-                        <span className="num-val">{c.stock_actual}</span>
-                        <span className="num-lbl">Stock Actual ({c.unidad_medida})</span>
-                      </div>
-                      <div className="number-group">
-                        <span className="num-val">{c.stock_minimo}</span>
-                        <span className="num-lbl">Mínimo</span>
-                      </div>
-                    </div>
-
-                    <div className="stock-meter-track mt-3">
-                      <div 
-                        className={`stock-meter-fill ${isLowStock ? 'alert-fill' : 'safe-fill'}`} 
-                        style={{ width: `${Math.min(100, Math.max(5, (c.stock_actual / (c.stock_minimo * 2 || 10)) * 100))}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Stock quick adjuster */}
-                  {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && (
-                    <div className="consumable-adjuster-bar mt-4">
-                      {adjustingConsumableId === c.id ? (
-                        <div className="adjuster-input-group">
-                          <input
-                            type="number"
-                            className="form-control adjust-input"
-                            placeholder="Cant (+/-)"
-                            value={adjustAmount === 0 ? '' : adjustAmount}
-                            onChange={(e) => setAdjustAmount(Number(e.target.value))}
-                          />
-                          <button className="btn btn-primary btn-adjust-ok" onClick={() => handleConsumableStockAdjust(c.id)}>
-                            Ok
-                          </button>
-                          <button className="btn btn-secondary btn-adjust-cancel" onClick={() => setAdjustingConsumableId(null)}>
-                            ×
-                          </button>
+          <div className="assets-table-container glass-panel">
+            <table className="assets-table">
+              <thead>
+                <tr>
+                  <th>CÓDIGO / NOMBRE</th>
+                  <th>SEDE / UBICACIÓN</th>
+                  <th>SERIAL / N° PARTE</th>
+                  <th>UNIDAD / PRECIO</th>
+                  <th>STOCK ACTUAL</th>
+                  <th>MÍNIMO / ÚLTIMO RESTOCK</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredConsumibles.map((c) => {
+                  const isLowStock = c.stock_actual <= c.stock_minimo;
+                  return (
+                    <tr key={c.id} className="asset-row animate-slide-up">
+                      <td>
+                        <div className="asset-code-group">
+                          <span className="asset-code">{c.codigo || `SUM-${c.id}`}</span>
+                          <span className="asset-brand" style={{ fontWeight: '600' }}>{c.nombre}</span>
                         </div>
-                      ) : (
-                        <button className="btn btn-secondary btn-adjust-trigger" onClick={() => { setAdjustingConsumableId(c.id); setAdjustAmount(0); }}>
-                          Ajustar Inventario
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                      </td>
+                      <td>
+                        <span className="holder-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: '500' }}>
+                          {c.empresa_nombre || 'General'}
+                        </span>
+                      </td>
+                      <td className="asset-serial">{c.serial || 'N/A'}</td>
+                      <td>
+                        <div className="asset-code-group">
+                          <span style={{ fontSize: '12px', fontWeight: '500' }}>{c.unidad_medida || 'Unidades'}</span>
+                          <span className="text-muted" style={{ fontSize: '11px' }}>
+                            {c.precio_unitario ? `$${Number(c.precio_unitario).toFixed(2)}` : 'Sin precio'}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '15px', fontWeight: '700', color: isLowStock ? '#dc2626' : '#0f172a' }}>
+                            {c.stock_actual}
+                          </span>
+                          {isLowStock && (
+                            <span className="badge badge-state-baja" style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#b91c1c', fontSize: '10px' }}>
+                              Stock Mínimo
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="asset-code-group">
+                          <span className="text-muted" style={{ fontSize: '12px' }}>Mínimo: {c.stock_minimo}</span>
+                          <span className="text-muted" style={{ fontSize: '11px' }}>
+                            {c.fecha_restock ? formatLocalDateSimple(c.fecha_restock) : 'Sin restock'}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <button
+                            className="btn"
+                            style={{ padding: '4px 10px', fontSize: '11px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: '6px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            onClick={() => handleDirectUsar(c)}
+                            title="Descontar 1 unidad del stock"
+                          >
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Usar
+                          </button>
+                          <button
+                            className="btn"
+                            style={{ padding: '4px 10px', fontSize: '11px', background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '6px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            onClick={() => handleOpenRestock(c)}
+                            title="Aumentar inventario (Reabastecer)"
+                          >
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Restock
+                          </button>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ padding: '4px 8px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            onClick={() => handleOpenFicha(c)}
+                            title="Ver ficha y bitácora de movimientos"
+                          >
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            Ficha
+                          </button>
+                          {(user?.rol === 'ADMIN' || user?.rol === 'SUPERVISOR' || user?.rol === 'TECNICO') && (
+                            <>
+                              <button
+                                className="btn btn-secondary"
+                                style={{ padding: '4px 8px', fontSize: '11px', display: 'inline-flex', alignItems: 'center' }}
+                                onClick={() => handleOpenEditSuministro(c)}
+                                title="Editar suministro"
+                              >
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                              </button>
+                              <button
+                                className="btn"
+                                style={{ padding: '4px 8px', fontSize: '11px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', display: 'inline-flex', alignItems: 'center' }}
+                                onClick={() => handleDeleteSuministro(c.id)}
+                                title="Eliminar suministro"
+                              >
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {renderPagination(pageConsumibles, totalConsumibles, 10, setPageConsumibles)}
           </div>
-          {renderPagination(pageConsumibles, totalConsumibles, 10, setPageConsumibles)}
-        </>
         )
       ) : activeTab === 'recepciones' ? (
         /* TAB 3: RECEPCIONES */
@@ -3404,89 +3595,6 @@ export const Inventario: React.FC = () => {
         </div>
       )}
 
-      {/* CREATE CONSUMABLE MODAL */}
-      {showCreateConsumableModal && (
-        <div className="modal-overlay animate-fade" style={{ zIndex: 1001 }}>
-          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '480px' }}>
-            <div className="modal-header">
-              <h2>Registrar Nuevo Consumible</h2>
-              <button className="modal-close-btn" onClick={() => setShowCreateConsumableModal(false)}>×</button>
-            </div>
-
-            <form onSubmit={handleCreateConsumable} className="modal-form">
-              <div className="form-group">
-                <label className="form-label">NOMBRE DEL CONSUMIBLE *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ej: Cable UTP Cat 6, Conectores RJ45, Tóner 85A..."
-                  value={consNombre}
-                  onChange={(e) => setConsNombre(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group half">
-                  <label className="form-label">UNIDAD DE MEDIDA *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ej: Unidades, Cajas, Metros"
-                    value={consUnidadMedida}
-                    onChange={(e) => setConsUnidadMedida(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group half">
-                  <label className="form-label font-xs">DESCRIPCIÓN</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ej: Cable de red color azul..."
-                    value={consDescripcion}
-                    onChange={(e) => setConsDescripcion(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group half">
-                  <label className="form-label">STOCK INICIAL *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="form-control"
-                    value={consStockActual}
-                    onChange={(e) => setConsStockActual(Number(e.target.value))}
-                    required
-                  />
-                </div>
-
-                <div className="form-group half">
-                  <label className="form-label">STOCK MÍNIMO *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="form-control"
-                    value={consStockMinimo}
-                    onChange={(e) => setConsStockMinimo(Number(e.target.value))}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowCreateConsumableModal(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                  {isSubmitting ? 'Guardando...' : 'Registrar Consumible'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* EXCEL IMPORT MODAL */}
       {showImportModal && (
@@ -4209,6 +4317,344 @@ export const Inventario: React.FC = () => {
             >
               Cerrar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE / EDIT SUMINISTRO DE TI MODAL */}
+      {showSuministroModal && (
+        <div className="modal-overlay animate-fade" style={{ zIndex: 1001 }}>
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '560px' }}>
+            <div className="modal-header">
+              <h2>{editingSuministro ? `Editar Suministro ${editingSuministro.codigo}` : 'Nuevo Suministro de TI'}</h2>
+              <button className="modal-close-btn" onClick={() => setShowSuministroModal(false)}>×</button>
+            </div>
+
+            <form onSubmit={handleSaveSuministro} className="modal-form">
+              <div className="form-group">
+                <label className="form-label">SEDE / EMPRESA *</label>
+                <select
+                  className="form-control"
+                  value={suministroEmpresaId}
+                  onChange={(e) => setSuministroEmpresaId(Number(e.target.value))}
+                  required
+                >
+                  <option value="0">Seleccionar sede...</option>
+                  {allowedEmpresas.map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group half">
+                  <label className="form-label">NOMBRE DEL SUMINISTRO *</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ej: Tóner HP 85A, Cable Patch Cord 2m"
+                    value={suministroNombre}
+                    onChange={(e) => setSuministroNombre(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group half">
+                  <label className="form-label">SERIAL / N° PARTE (Opcional)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ej: CE285A, CAT6-BLU"
+                    value={suministroSerial}
+                    onChange={(e) => setSuministroSerial(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group half">
+                  <label className="form-label">UNIDAD DE MEDIDA *</label>
+                  <select
+                    className="form-control"
+                    value={suministroUnidadMedida}
+                    onChange={(e) => setSuministroUnidadMedida(e.target.value)}
+                  >
+                    <option value="Unidades">Unidades</option>
+                    <option value="Cajas">Cajas</option>
+                    <option value="Paquetes">Paquetes</option>
+                    <option value="Metros">Metros</option>
+                    <option value="Rollos">Rollos</option>
+                    <option value="Piezas">Piezas</option>
+                    <option value="Kits">Kits</option>
+                  </select>
+                </div>
+
+                <div className="form-group half">
+                  <label className="form-label">PRECIO UNITARIO ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="form-control"
+                    placeholder="0.00"
+                    value={suministroPrecioUnitario}
+                    onChange={(e) => setSuministroPrecioUnitario(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group half">
+                  <label className="form-label">STOCK ACTUAL *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="form-control"
+                    value={suministroStockActual}
+                    onChange={(e) => setSuministroStockActual(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group half">
+                  <label className="form-label">STOCK MÍNIMO (Alerta) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="form-control"
+                    value={suministroStockMinimo}
+                    onChange={(e) => setSuministroStockMinimo(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">DESCRIPCIÓN / OBSERVACIONES</label>
+                <textarea
+                  className="form-control"
+                  rows={2}
+                  placeholder="Detalles sobre uso, compatibilidad o ubicación específica..."
+                  value={suministroDescripcion}
+                  onChange={(e) => setSuministroDescripcion(e.target.value)}
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowSuministroModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Guardando...' : editingSuministro ? 'Guardar Cambios' : 'Registrar Suministro'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RESTOCK / REABASTECER SUMINISTRO MODAL */}
+      {showRestockModal && restockSuministro && (
+        <div className="modal-overlay animate-fade" style={{ zIndex: 1001 }}>
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '460px' }}>
+            <div className="modal-header">
+              <h2>Restock de Suministro</h2>
+              <button className="modal-close-btn" onClick={() => setShowRestockModal(false)}>×</button>
+            </div>
+
+            <form onSubmit={handleConfirmRestock} className="modal-form">
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px' }}>
+                <strong style={{ color: '#15803d', display: 'block', fontSize: '13.5px' }}>
+                  {restockSuministro.codigo} - {restockSuministro.nombre}
+                </strong>
+                <div style={{ fontSize: '12px', color: '#166534', marginTop: '4px' }}>
+                  Sede: <strong>{restockSuministro.empresa_nombre || 'General'}</strong> | Stock Actual: <strong>{restockSuministro.stock_actual} {restockSuministro.unidad_medida}</strong>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group half">
+                  <label className="form-label">CANTIDAD A INGRESAR *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="form-control"
+                    value={restockCantidad}
+                    onChange={(e) => setRestockCantidad(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group half">
+                  <label className="form-label">PRECIO UNITARIO ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="form-control"
+                    placeholder="Opcional"
+                    value={restockPrecioUnitario}
+                    onChange={(e) => setRestockPrecioUnitario(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">MOTIVO / PROVEEDOR / N° FACTURA (Opcional)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ej: Compra según Factura #8492 de Proveedor Solutek"
+                  value={restockMotivo}
+                  onChange={(e) => setRestockMotivo(e.target.value)}
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowRestockModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Procesando...' : 'Registrar Restock'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* FICHA TÉCNICA Y BITÁCORA DE HISTORIAL */}
+      {showFichaSuministroModal && fichaSuministro && (
+        <div className="modal-overlay animate-fade" style={{ zIndex: 1001 }}>
+          <div className="modal-container glass-panel animate-slide-up" style={{ maxWidth: '680px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="modal-header">
+              <h2>Ficha del Suministro</h2>
+              <button className="modal-close-btn" onClick={() => setShowFichaSuministroModal(false)}>×</button>
+            </div>
+
+            <div style={{ padding: '0 0 16px 0', overflowY: 'auto', flex: 1 }}>
+              {/* FICHA RESUMEN */}
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <span className="badge badge-process" style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-primary)' }}>
+                      {fichaSuministro.codigo || `SUM-${fichaSuministro.id}`}
+                    </span>
+                    <h3 style={{ margin: '6px 0 2px 0', fontSize: '17px', color: '#0f172a' }}>{fichaSuministro.nombre}</h3>
+                    <p className="text-muted" style={{ fontSize: '12.5px', margin: 0 }}>
+                      Sede: <strong>{fichaSuministro.empresa_nombre || 'General'}</strong> {fichaSuministro.serial ? `| Serial/N° Parte: ${fichaSuministro.serial}` : ''}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: fichaSuministro.stock_actual <= fichaSuministro.stock_minimo ? '#dc2626' : '#16a34a' }}>
+                      {fichaSuministro.stock_actual} <span style={{ fontSize: '13px', fontWeight: 'normal', color: '#64748b' }}>{fichaSuministro.unidad_medida}</span>
+                    </div>
+                    <span className="text-muted" style={{ fontSize: '11px' }}>
+                      Stock Mínimo: {fichaSuministro.stock_minimo}
+                    </span>
+                  </div>
+                </div>
+
+                {fichaSuministro.descripcion && (
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed #cbd5e1', fontSize: '12px', color: '#475569' }}>
+                    <strong>Descripción:</strong> {fichaSuministro.descripcion}
+                  </div>
+                )}
+              </div>
+
+              {/* BITÁCORA DE MOVIMIENTOS */}
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Bitácora de Uso y Restock ({historialSuministro.length} registros)
+              </h4>
+
+              {loadingHistorial ? (
+                <div style={{ textAlign: 'center', padding: '20px 0', color: '#64748b', fontSize: '13px' }}>
+                  Cargando bitácora de movimientos...
+                </div>
+              ) : historialSuministro.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px 0', color: '#94a3b8', fontSize: '13px', border: '1px dashed #cbd5e1', borderRadius: '6px' }}>
+                  No hay movimientos registrados en la bitácora para este suministro.
+                </div>
+              ) : (() => {
+                const pageSize = 4;
+                const totalPages = Math.ceil(historialSuministro.length / pageSize) || 1;
+                const pagedHistorial = historialSuministro.slice((pageHistorial - 1) * pageSize, pageHistorial * pageSize);
+
+                return (
+                  <div>
+                    <div className="assets-table-container">
+                      <table className="assets-table" style={{ fontSize: '12px' }}>
+                        <thead>
+                          <tr>
+                            <th>FECHA</th>
+                            <th>TIPO</th>
+                            <th>CANTIDAD</th>
+                            <th>STOCK (ANT → NUEVO)</th>
+                            <th>MOTIVO / DESTINO</th>
+                            <th>USUARIO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pagedHistorial.map(h => (
+                            <tr key={h.id}>
+                              <td>{formatLocalDateSimple(h.created_at)}</td>
+                              <td>
+                                {h.tipo_movimiento === 'RESTOCK' ? (
+                                  <span className="badge" style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', fontSize: '10px' }}>
+                                    RESTOCK
+                                  </span>
+                                ) : (
+                                  <span className="badge" style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', fontSize: '10px' }}>
+                                    USO
+                                  </span>
+                                )}
+                              </td>
+                              <td style={{ fontWeight: 'bold', color: h.tipo_movimiento === 'RESTOCK' ? '#16a34a' : '#dc2626' }}>
+                                {h.cantidad > 0 ? `+${h.cantidad}` : h.cantidad}
+                              </td>
+                              <td>
+                                {h.stock_anterior} → <strong>{h.stock_nuevo}</strong>
+                              </td>
+                              <td>{h.motivo || '-'}</td>
+                              <td>{h.usuario_nombre || 'Sistema'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {totalPages > 1 && (
+                      <div className="pagination" style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ fontSize: '12px', padding: '4px 10px' }}
+                          disabled={pageHistorial === 1}
+                          onClick={() => setPageHistorial(p => Math.max(p - 1, 1))}
+                        >
+                          Anterior
+                        </button>
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                          Página {pageHistorial} de {totalPages}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ fontSize: '12px', padding: '4px 10px' }}
+                          disabled={pageHistorial >= totalPages}
+                          onClick={() => setPageHistorial(p => Math.min(p + 1, totalPages))}
+                        >
+                          Siguiente
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: 'auto', paddingTop: '12px' }}>
+              <button type="button" className="btn btn-secondary w-100" onClick={() => setShowFichaSuministroModal(false)}>
+                Cerrar Ficha
+              </button>
+            </div>
           </div>
         </div>
       )}

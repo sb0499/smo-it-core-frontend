@@ -19,7 +19,14 @@ export const Reportes: React.FC = () => {
   const [assetsInStock, setAssetsInStock] = useState(0);
   const [activeProjects, setActiveProjects] = useState(0);
   const [ticketsByPriority, setTicketsByPriority] = useState({ Baja: 0, Media: 0, Alta: 0, Critica: 0 });
-  const [ticketsByEstado, setTicketsByEstado] = useState({ Nuevo: 0, EnProceso: 0, Pendiente: 0, Pruebas: 0, Finalizada: 0 });
+  const [ticketsByEstado, setTicketsByEstado] = useState({
+    Nuevo: 0,
+    EnProceso: 0,
+    Resuelto: 0,
+    Cerrado: 0,
+    ElevadoAProveedor: 0,
+    ElevadoAAdministracion: 0
+  });
   const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
@@ -37,7 +44,7 @@ export const Reportes: React.FC = () => {
       projectService.getProyectos().catch(() => []),
     ]).then(([ticketsList, activosList, proyectosList]) => {
       setTicketsCount(ticketsList.length);
-      const done = ticketsList.filter((t: any) => t.estado === 'Finalizada').length;
+      const done = ticketsList.filter((t: any) => t.estado === 'Cerrado' || t.estado === 'Finalizada').length;
       setCompletedTickets(done);
       setPendingTickets(ticketsList.length - done);
       setAssetsInStock(activosList.filter((a: any) => a.estado === 'Stock').length);
@@ -45,12 +52,19 @@ export const Reportes: React.FC = () => {
 
       // Compute distributions
       const prio = { Baja: 0, Media: 0, Alta: 0, Critica: 0 };
-      const est = { Nuevo: 0, EnProceso: 0, Pendiente: 0, Pruebas: 0, Finalizada: 0 };
+      const est = {
+        Nuevo: 0,
+        EnProceso: 0,
+        Resuelto: 0,
+        Cerrado: 0,
+        ElevadoAProveedor: 0,
+        ElevadoAAdministracion: 0
+      };
       ticketsList.forEach((t: any) => {
         if (prio[t.prioridad as keyof typeof prio] !== undefined) {
           prio[t.prioridad as keyof typeof prio]++;
         }
-        const stateKey = t.estado.replace(/\s+/g, '') as keyof typeof est;
+        const stateKey = (t.estado === 'Finalizada' ? 'Cerrado' : t.estado === 'Escalado a Proveedor' ? 'ElevadoAProveedor' : t.estado.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '')) as keyof typeof est;
         if (est[stateKey] !== undefined) {
           est[stateKey]++;
         }
@@ -171,9 +185,10 @@ export const Reportes: React.FC = () => {
                     {[
                       { key: 'Nuevo', label: 'Nuevos', val: ticketsByEstado.Nuevo, color: '#3b82f6' },
                       { key: 'EnProceso', label: 'En Proceso', val: ticketsByEstado.EnProceso, color: '#f59e0b' },
-                      { key: 'Pendiente', label: 'Pendientes', val: ticketsByEstado.Pendiente, color: '#8b5cf6' },
-                      { key: 'Pruebas', label: 'En Pruebas', val: ticketsByEstado.Pruebas, color: '#06b6d4' },
-                      { key: 'Finalizada', label: 'Finalizados', val: ticketsByEstado.Finalizada, color: '#10b981' }
+                      { key: 'Resuelto', label: 'Resueltos (N2)', val: ticketsByEstado.Resuelto, color: '#10b981' },
+                      { key: 'Cerrado', label: 'Cerrados', val: ticketsByEstado.Cerrado, color: '#64748b' },
+                      { key: 'ElevadoAProveedor', label: 'Elevado a Proveedor', val: ticketsByEstado.ElevadoAProveedor, color: '#d97706' },
+                      { key: 'ElevadoAAdministracion', label: 'Elevado a Admin', val: ticketsByEstado.ElevadoAAdministracion, color: '#6366f1' }
                     ].map(st => {
                       const pct = getPercentage(st.val, ticketsCount);
                       return (

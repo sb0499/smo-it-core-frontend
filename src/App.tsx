@@ -22,7 +22,10 @@ import { ActasIngreso } from "./views/ActasIngreso";
 import { HostingsDominios } from "./views/HostingsDominios";
 import { Empresas } from "./views/Empresas";
 import { Categorias } from "./views/Categorias";
+import { Areas } from "./views/Areas";
+import { SlaConfigView } from "./views/SlaConfig";
 import { BaseConocimiento } from "./views/BaseConocimiento";
+import { ReporteDiarioView } from "./views/ReporteDiario";
 import { AlertContainer } from "./components/AlertContainer";
 import "./App.css";
 
@@ -65,6 +68,15 @@ function AppContent() {
         return <Tickets key={refreshKey} />;
       case "base-conocimiento":
         return <BaseConocimiento key={refreshKey} />;
+      case "reporte-diario":
+        if (user?.rol === "ADMIN" || user?.rol === "SUPERVISOR") {
+          return <ReporteDiarioView key={refreshKey} />;
+        }
+        return user?.rol === "USUARIO" ? (
+          <Tickets key={refreshKey} />
+        ) : (
+          <Dashboard key={refreshKey} />
+        );
       case "empresas":
         if (
           user?.rol === "ADMIN" ||
@@ -85,6 +97,24 @@ function AppContent() {
           user?.rol === "TECNICO"
         ) {
           return <Categorias key={refreshKey} />;
+        }
+        return user?.rol === "USUARIO" ? (
+          <Tickets key={refreshKey} />
+        ) : (
+          <Dashboard key={refreshKey} />
+        );
+      case "areas":
+        if (user?.rol === "ADMIN" || user?.rol === "SUPERVISOR") {
+          return <Areas key={refreshKey} />;
+        }
+        return user?.rol === "USUARIO" ? (
+          <Tickets key={refreshKey} />
+        ) : (
+          <Dashboard key={refreshKey} />
+        );
+      case "sla-config":
+        if (user?.rol === "ADMIN" || user?.rol === "SUPERVISOR") {
+          return <SlaConfigView key={refreshKey} />;
         }
         return user?.rol === "USUARIO" ? (
           <Tickets key={refreshKey} />

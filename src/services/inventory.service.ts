@@ -40,13 +40,32 @@ export interface Bodega {
   created_at?: string;
 }
 
+export interface ConsumibleHistorial {
+  id: number;
+  consumible_id: number;
+  tipo_movimiento: 'USO' | 'RESTOCK' | 'AJUSTE';
+  cantidad: number;
+  stock_anterior: number;
+  stock_nuevo: number;
+  motivo: string | null;
+  usuario_id: number | null;
+  usuario_nombre?: string;
+  created_at: string;
+}
+
 export interface Consumible {
   id: number;
+  codigo?: string;
   nombre: string;
-  descripcion: string | null;
+  empresa_id?: number | null;
+  empresa_nombre?: string;
+  serial?: string | null;
+  precio_unitario: number;
   unidad_medida: string;
   stock_actual: number;
   stock_minimo: number;
+  fecha_restock?: string | null;
+  descripcion?: string | null;
 }
 
 export interface Persona {
@@ -196,19 +215,45 @@ export const inventoryService = {
     return apiClient.get<HistorialCambio[]>(`/inventarios/${activoId}/historial-cambios`);
   },
 
-  // Consumibles
+  // Consumibles / Suministros de TI
   async getConsumibles(page = 1, limit = 10, search = '', criticalOnly = false): Promise<{ total: number; page: number; limit: number; data: Consumible[] }> {
     return apiClient.get('/consumibles', {
       params: { page, limit, search, criticalOnly }
     });
   },
 
+  async getConsumibleById(id: number): Promise<Consumible> {
+    return apiClient.get<Consumible>(`/consumibles/${id}`);
+  },
+
   async createConsumible(payload: Partial<Consumible>): Promise<Consumible> {
     return apiClient.post<Consumible>('/consumibles', payload);
   },
 
+  async updateConsumible(id: number, payload: Partial<Consumible>): Promise<Consumible> {
+    return apiClient.put<Consumible>(`/consumibles/${id}`, payload);
+  },
+
+  async usarConsumible(id: number, payload: { cantidad: number; motivo?: string } | number, motivoArg?: string): Promise<Consumible> {
+    const body = typeof payload === 'object' ? payload : { cantidad: payload, motivo: motivoArg };
+    return apiClient.post<Consumible>(`/consumibles/${id}/usar`, body);
+  },
+
+  async restockConsumible(id: number, payload: { cantidad: number; precio_unitario?: number; motivo?: string } | number, precio_unitarioArg?: number, motivoArg?: string): Promise<Consumible> {
+    const body = typeof payload === 'object' ? payload : { cantidad: payload, precio_unitario: precio_unitarioArg, motivo: motivoArg };
+    return apiClient.post<Consumible>(`/consumibles/${id}/restock`, body);
+  },
+
+  async getHistorialConsumible(id: number): Promise<ConsumibleHistorial[]> {
+    return apiClient.get<ConsumibleHistorial[]>(`/consumibles/${id}/historial`);
+  },
+
   async updateConsumibleStock(consumibleId: number, cantidad: number): Promise<Consumible> {
     return apiClient.patch<Consumible>(`/consumibles/${consumibleId}/stock?cantidad=${cantidad}`);
+  },
+
+  async deleteConsumible(id: number): Promise<void> {
+    return apiClient.delete(`/consumibles/${id}`);
   },
 
   // Personas
