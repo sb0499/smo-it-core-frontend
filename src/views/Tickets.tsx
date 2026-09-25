@@ -365,7 +365,8 @@ export const Tickets: React.FC = () => {
     ((isTechN1 &&
       selectedTicket.nivel_soporte === "N2" &&
       selectedTicket.tecnico_id !== user.id &&
-      (!loggedInTech?.grupo_n2 || loggedInTech.grupo_n2 !== selectedTicket.grupo_n2) &&
+      (!loggedInTech?.grupo_n2 ||
+        loggedInTech.grupo_n2 !== selectedTicket.grupo_n2) &&
       selectedTicket.estado !== "Resuelto") ||
       (isTechN2 &&
         selectedTicket.tecnico_id !== user.id &&
@@ -2411,7 +2412,7 @@ export const Tickets: React.FC = () => {
                       }}
                       disabled={isUpdating}
                     >
-                      Escalar a Administración
+                      Escalar a Gerencia TI
                     </button>
                   )}
 
