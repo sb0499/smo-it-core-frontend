@@ -261,8 +261,8 @@ export const inventoryService = {
     return apiClient.get<Persona[]>('/personas');
   },
 
-  async getEmpresas(): Promise<any[]> {
-    return apiClient.get<any[]>('/empresas');
+  async getEmpresas(all = true): Promise<any[]> {
+    return apiClient.get<any[]>('/empresas', { params: all ? { all: 'true' } : {} });
   },
 
   async createPersona(payload: Partial<Persona>): Promise<Persona> {
@@ -433,12 +433,13 @@ export const inventoryService = {
   },
 
   // Bodegas CRUD
-  async getBodegas(page?: number, limit?: number, search = '', empresaId?: number): Promise<any> {
+  async getBodegas(page?: number, limit?: number, search = '', empresaId?: number, all = true): Promise<any> {
     const params: any = {};
     if (page !== undefined) params.page = page;
     if (limit !== undefined) params.limit = limit;
     if (search !== undefined) params.search = search;
     if (empresaId !== undefined) params.empresa_id = empresaId;
+    if (all) params.all = 'true';
     return apiClient.get('/bodegas', { params });
   },
   async createBodega(payload: Partial<Bodega>): Promise<Bodega> {

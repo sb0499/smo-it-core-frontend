@@ -941,7 +941,7 @@ export const Tickets: React.FC = () => {
               Reporte Semanal Excel
             </button>
           )}
-          {!isTechN2 && (
+          {!isTechN2 && activeTab !== "INCIDENCIAS" && (
             <button
               className="btn btn-primary"
               onClick={() => setShowCreateModal(true)}
