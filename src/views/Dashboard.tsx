@@ -264,7 +264,7 @@ export const Dashboard: React.FC = () => {
         style={{ padding: "16px 20px" }}
       >
         <div className="welcome-left">
-          <h1 style={{ fontSize: "15px", fontWeight: "600", color: "#1e293b" }}>
+          <h1 style={{ fontSize: "15px", fontWeight: "600", color: "var(--color-text-main)" }}>
             ¡Hola de nuevo,{" "}
             <span className="gradient-text">{user?.nombre}</span>!
           </h1>
@@ -361,10 +361,10 @@ export const Dashboard: React.FC = () => {
                       display: "flex",
                       alignItems: "center",
                       gap: "6px",
-                      background: "#f8fafc",
+                      background: "var(--bg-panel-hover)",
                       padding: "4px 8px",
                       borderRadius: "4px",
-                      border: "1px solid #f1f5f9",
+                      border: "1px solid var(--border-color)",
                       fontSize: "12px",
                     }}
                   >
@@ -573,7 +573,7 @@ export const Dashboard: React.FC = () => {
                 width: "36px",
                 height: "36px",
                 borderRadius: "8px",
-                background: "#f8fafc",
+                background: "var(--bg-panel-hover)",
               }}
             >
               <svg

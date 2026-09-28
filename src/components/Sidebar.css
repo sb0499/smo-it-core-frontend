@@ -19,6 +19,12 @@
   box-shadow: 4px 0 25px rgba(99, 102, 241, 0.15);
 }
 
+[data-theme="dark"] .sidebar {
+  background: linear-gradient(145deg, #0b1120 0%, #171d36 50%, #1e1b4b 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+}
+
 .sidebar-header {
   display: flex;
   align-items: center;

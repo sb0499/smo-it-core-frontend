@@ -1631,13 +1631,13 @@ export const Tickets: React.FC = () => {
                           {selectedTicket.observaciones && (
                             <div
                               style={{
-                                background: "#ffffff",
+                                background: "var(--bg-panel)",
                                 padding: "10px 12px",
                                 borderRadius: "8px",
-                                border: "1px solid #a7f3d0",
+                                border: "1px solid rgba(16, 185, 129, 0.3)",
                                 margin: "8px 0 12px 0",
                                 fontSize: "13px",
-                                color: "#065f46",
+                                color: "#10b981",
                               }}
                             >
                               <strong>
@@ -2045,11 +2045,11 @@ export const Tickets: React.FC = () => {
                   ) : (
                     <div
                       style={{
-                        border: "1px solid #cbd5e1",
-                        background: "#f8fafc",
+                        border: "1px solid var(--border-color)",
+                        background: "var(--bg-panel-hover)",
                         padding: "14px",
                         borderRadius: "10px",
-                        color: "#475569",
+                        color: "var(--color-text-muted)",
                         fontSize: "13px",
                         marginBottom: "16px",
                         display: "flex",
@@ -2823,20 +2823,21 @@ export const Tickets: React.FC = () => {
             style={{
               width: "100%",
               maxWidth: "620px",
-              background: "#ffffff",
+              background: "var(--bg-panel)",
+              border: "1px solid var(--border-color)",
               borderRadius: "12px",
               overflow: "hidden",
-              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.15)",
+              boxShadow: "var(--glass-shadow)",
             }}
           >
             <div
               style={{
                 padding: "16px 20px",
-                borderBottom: "1px solid #e2e8f0",
+                borderBottom: "1px solid var(--border-color)",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                background: "#f8fafc",
+                background: "var(--bg-panel-hover)",
               }}
             >
               <h3
@@ -2844,7 +2845,7 @@ export const Tickets: React.FC = () => {
                   margin: 0,
                   fontSize: "16px",
                   fontWeight: "bold",
-                  color: "#0f172a",
+                  color: "var(--color-text-main)",
                 }}
               >
                 Publicar en la Base de Conocimientos

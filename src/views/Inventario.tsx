@@ -1580,7 +1580,7 @@ export const Inventario: React.FC = () => {
                       </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '15px', fontWeight: '700', color: isLowStock ? '#dc2626' : '#0f172a' }}>
+                          <span style={{ fontSize: '15px', fontWeight: '700', color: isLowStock ? '#dc2626' : 'var(--color-text-main)' }}>
                             {c.stock_actual}
                           </span>
                           {isLowStock && (
@@ -2112,7 +2112,7 @@ export const Inventario: React.FC = () => {
                         <span style={{ fontSize: '10.5px', fontWeight: 'bold', textTransform: 'uppercase', color: '#6366f1', letterSpacing: '0.6px' }}>
                           Asignado a (Custodio Actual)
                         </span>
-                        <span style={{ fontSize: '14.5px', fontWeight: '700', color: '#0f172a' }}>
+                        <span style={{ fontSize: '14.5px', fontWeight: '700', color: 'var(--color-text-main)' }}>
                           {drawerCustodioNombre || 'Sin nombre asignado'}
                         </span>
                         {(drawerCustodioCargo || drawerCustodioCedula || drawerCustodioDepartamento) && (
@@ -2129,8 +2129,8 @@ export const Inventario: React.FC = () => {
                   )}
 
                   {/* Top Spec summary */}
-                  <div className="asset-spec-box" style={{ border: '1px solid #f1f5f9', background: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '12px' }}>
+                  <div className="asset-spec-box" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel-hover)', padding: '16px', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '12px' }}>
                       <span style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--color-primary)' }}>{selectedActivo.codigo}</span>
                       <span className={`badge badge-state-${selectedActivo.estado.toLowerCase()}`}>
                         {selectedActivo.estado}
@@ -2182,7 +2182,7 @@ export const Inventario: React.FC = () => {
                       )}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
                         <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: '#64748b' }}>Especificaciones Técnicas:</span>
-                        <p style={{ fontSize: '12px', background: '#ffffff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                        <p style={{ fontSize: '12px', background: 'var(--bg-input)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--color-text-main)', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
                           {selectedActivo.especificaciones || 'Sin especificaciones detalladas registradas'}
                         </p>
                       </div>
@@ -2238,17 +2238,17 @@ export const Inventario: React.FC = () => {
                               {/* Dot indicator */}
                               <div style={{ position: 'absolute', left: '-21.5px', top: '5px', width: '9px', height: '9px', borderRadius: '50%', background: '#2563eb' }}></div>
                               
-                              <div style={{ background: '#f8fafc', border: '1px solid #f1f5f9', padding: '10px 14px', borderRadius: '6px', fontSize: '12px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', color: '#1e293b', marginBottom: '4px' }}>
+                              <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', padding: '10px 14px', borderRadius: '6px', fontSize: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-text-main)', marginBottom: '4px' }}>
                                   <span>{m.tipo}</span>
-                                  <span style={{ color: '#94a3b8', textTransform: 'none', fontWeight: 'normal' }}>{formatLocalDateSimple(m.fecha)}</span>
+                                  <span style={{ color: 'var(--color-text-dim)', textTransform: 'none', fontWeight: 'normal' }}>{formatLocalDateSimple(m.fecha)}</span>
                                 </div>
-                                <p style={{ color: '#475569', fontSize: '11.5px' }}>
+                                <p style={{ color: 'var(--color-text-muted)', fontSize: '11.5px' }}>
                                   {m.desde_persona_nombre ? `De: ${m.desde_persona_nombre}` : ''}
                                   {m.hacia_persona_nombre ? ` A: ${m.hacia_persona_nombre}` : ''}
                                 </p>
                                 {m.observaciones && (
-                                  <p style={{ fontStyle: 'italic', color: '#64748b', background: '#ffffff', border: '1px solid #e2e8f0', padding: '6px 8px', borderRadius: '4px', marginTop: '6px', fontSize: '11px' }}>
+                                  <p style={{ fontStyle: 'italic', color: 'var(--color-text-dim)', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', padding: '6px 8px', borderRadius: '4px', marginTop: '6px', fontSize: '11px' }}>
                                     "{m.observaciones}"
                                   </p>
                                 )}
@@ -2281,14 +2281,14 @@ export const Inventario: React.FC = () => {
                               {/* Dot indicator */}
                               <div style={{ position: 'absolute', left: '-21.5px', top: '5px', width: '9px', height: '9px', borderRadius: '50%', background: '#f59e0b' }}></div>
                               
-                              <div style={{ background: '#fdfbeb', border: '1px solid #fef3c7', padding: '10px 14px', borderRadius: '6px', fontSize: '12px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', color: '#b45309', marginBottom: '4px' }}>
+                              <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)', padding: '10px 14px', borderRadius: '6px', fontSize: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', color: '#f59e0b', marginBottom: '4px' }}>
                                   <span>Modificado por: {hc.usuario_nombre}</span>
                                   <span style={{ color: '#d97706', textTransform: 'none', fontWeight: 'normal' }}>{formatLocalDateSimple(hc.fecha)}</span>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
                                   {hc.cambios.split(' | ').map((cambio, idx) => (
-                                    <div key={idx} style={{ padding: '4px 8px', background: '#ffffff', border: '1px solid #fde68a', borderRadius: '4px', color: '#78350f', fontSize: '11.5px' }}>
+                                    <div key={idx} style={{ padding: '4px 8px', background: 'var(--bg-panel)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '4px', color: '#fbbf24', fontSize: '11.5px' }}>
                                       {cambio}
                                     </div>
                                   ))}
@@ -2418,11 +2418,11 @@ export const Inventario: React.FC = () => {
                           zIndex: 2000,
                           maxHeight: '220px',
                           overflowY: 'auto',
-                          background: '#ffffff',
-                          border: '1px solid #cbd5e1',
+                          background: 'var(--bg-panel)',
+                          border: '1px solid var(--border-color)',
                           borderRadius: '8px',
                           marginTop: '4px',
-                          boxShadow: '0 10px 25px rgba(0,0,0,0.12)'
+                          boxShadow: 'var(--glass-shadow)'
                         }}
                       >
                         {personas
@@ -2445,19 +2445,19 @@ export const Inventario: React.FC = () => {
                                   style={{
                                     padding: '10px 14px',
                                     cursor: 'pointer',
-                                    borderBottom: '1px solid #f1f5f9',
-                                    background: recepcionPersonaId === p.id ? '#eff6ff' : '#ffffff',
+                                    borderBottom: '1px solid var(--border-color)',
+                                    background: recepcionPersonaId === p.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
                                     fontSize: '12.5px',
                                     transition: 'background 0.15s ease'
                                   }}
                                   onMouseEnter={(e) => {
-                                    if (recepcionPersonaId !== p.id) e.currentTarget.style.background = '#f8fafc';
+                                    if (recepcionPersonaId !== p.id) e.currentTarget.style.background = 'var(--bg-panel-hover)';
                                   }}
                                   onMouseLeave={(e) => {
-                                    if (recepcionPersonaId !== p.id) e.currentTarget.style.background = '#ffffff';
+                                    if (recepcionPersonaId !== p.id) e.currentTarget.style.background = 'transparent';
                                   }}
                                 >
-                                  <strong style={{ color: '#0f172a', display: 'block', fontSize: '13px' }}>{p.nombre}</strong>
+                                  <strong style={{ color: 'var(--color-text-main)', display: 'block', fontSize: '13px' }}>{p.nombre}</strong>
                                   <span style={{ fontSize: '11px', color: '#64748b' }}>
                                     {p.cargo || p.departamento || 'Sin cargo'} • {p.empresa_nombre || 'Sede'} • C.I. {p.cedula || 'N/A'}
                                   </span>
@@ -2712,11 +2712,11 @@ export const Inventario: React.FC = () => {
                       zIndex: 2000,
                       maxHeight: '220px',
                       overflowY: 'auto',
-                      background: '#ffffff',
-                      border: '1px solid #cbd5e1',
+                      background: 'var(--bg-panel)',
+                      border: '1px solid var(--border-color)',
                       borderRadius: '8px',
                       marginTop: '4px',
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.12)'
+                      boxShadow: 'var(--glass-shadow)'
                     }}
                   >
                     {personas
@@ -2739,19 +2739,19 @@ export const Inventario: React.FC = () => {
                               style={{
                                 padding: '10px 14px',
                                 cursor: 'pointer',
-                                borderBottom: '1px solid #f1f5f9',
-                                background: selectedPersonaId === p.id ? '#eff6ff' : '#ffffff',
+                                borderBottom: '1px solid var(--border-color)',
+                                background: selectedPersonaId === p.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
                                 fontSize: '12.5px',
                                 transition: 'background 0.15s ease'
                               }}
                               onMouseEnter={(e) => {
-                                if (selectedPersonaId !== p.id) e.currentTarget.style.background = '#f8fafc';
+                                if (selectedPersonaId !== p.id) e.currentTarget.style.background = 'var(--bg-panel-hover)';
                               }}
                               onMouseLeave={(e) => {
-                                if (selectedPersonaId !== p.id) e.currentTarget.style.background = '#ffffff';
+                                if (selectedPersonaId !== p.id) e.currentTarget.style.background = 'transparent';
                               }}
                             >
-                              <strong style={{ color: '#0f172a', display: 'block', fontSize: '13px' }}>{p.nombre}</strong>
+                              <strong style={{ color: 'var(--color-text-main)', display: 'block', fontSize: '13px' }}>{p.nombre}</strong>
                               <span style={{ fontSize: '11px', color: '#64748b' }}>
                                 {p.cargo || p.departamento || 'Sin cargo'} • {p.empresa_nombre || 'Sede'} • C.I. {p.cedula || 'N/A'}
                               </span>
@@ -2828,7 +2828,7 @@ export const Inventario: React.FC = () => {
             </div>
 
             <form onSubmit={handleProcesarMantenimiento} className="modal-form">
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px' }}>
+              <div style={{ background: 'var(--bg-panel-hover)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px' }}>
                 <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-primary)' }}>
                   Activo: {mantenimientoActivo.codigo} - {mantenimientoActivo.marca} {mantenimientoActivo.modelo}
                 </div>
@@ -2836,7 +2836,7 @@ export const Inventario: React.FC = () => {
                   Serial: <strong>{mantenimientoActivo.serial || 'N/A'}</strong> | Sede: <strong>{mantenimientoActivo.empresa_nombre || 'N/A'}</strong>
                 </div>
                 {mantenimientoActivo.ultimo_custodio_nombre && (
-                  <div style={{ fontSize: '12px', color: '#1e293b', marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed #cbd5e1' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-main)', marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed var(--border-color)' }}>
                     Custodio de Origen registrado: <strong>{mantenimientoActivo.ultimo_custodio_nombre}</strong>
                   </div>
                 )}
@@ -2845,7 +2845,7 @@ export const Inventario: React.FC = () => {
               <div className="form-group">
                 <label className="form-label" style={{ fontWeight: '700' }}>SELECCIONAR DESTINO / ACCIÓN FINAL *</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: mantenimientoAccion === 'Reasignar' ? '#eff6ff' : '#ffffff', border: `1px solid ${mantenimientoAccion === 'Reasignar' ? '#3b82f6' : '#cbd5e1'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: mantenimientoAccion === 'Reasignar' ? 'rgba(99, 102, 241, 0.15)' : 'var(--bg-panel)', border: `1px solid ${mantenimientoAccion === 'Reasignar' ? '#3b82f6' : 'var(--border-color)'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
                     <input 
                       type="radio" 
                       name="accion_mantenimiento" 
@@ -2855,7 +2855,7 @@ export const Inventario: React.FC = () => {
                     <span><strong>Re-asignar a su Custodio</strong> (Operativo de nuevo)</span>
                   </label>
 
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: mantenimientoAccion === 'Stock' ? '#eff6ff' : '#ffffff', border: `1px solid ${mantenimientoAccion === 'Stock' ? '#3b82f6' : '#cbd5e1'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: mantenimientoAccion === 'Stock' ? 'rgba(99, 102, 241, 0.15)' : 'var(--bg-panel)', border: `1px solid ${mantenimientoAccion === 'Stock' ? '#3b82f6' : 'var(--border-color)'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
                     <input 
                       type="radio" 
                       name="accion_mantenimiento" 
@@ -2865,7 +2865,7 @@ export const Inventario: React.FC = () => {
                     <span><strong>Retornar a Stock en Bodega</strong> (Reparado y disponible)</span>
                   </label>
 
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: mantenimientoAccion === 'Baja' ? '#fef2f2' : '#ffffff', border: `1px solid ${mantenimientoAccion === 'Baja' ? '#ef4444' : '#cbd5e1'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: mantenimientoAccion === 'Baja' ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-panel)', border: `1px solid ${mantenimientoAccion === 'Baja' ? '#ef4444' : 'var(--border-color)'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
                     <input 
                       type="radio" 
                       name="accion_mantenimiento" 
@@ -2878,11 +2878,11 @@ export const Inventario: React.FC = () => {
               </div>
 
               {mantenimientoAccion === 'Reasignar' && (
-                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px 14px', borderRadius: '6px', marginBottom: '14px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#1e40af', textTransform: 'uppercase', display: 'block' }}>
+                <div style={{ background: 'rgba(99, 102, 241, 0.12)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '12px 14px', borderRadius: '6px', marginBottom: '14px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-primary)', textTransform: 'uppercase', display: 'block' }}>
                     Custodio al que se Re-asignará:
                   </span>
-                  <strong style={{ color: '#0f172a', fontSize: '13.5px', marginTop: '3px', display: 'block' }}>
+                  <strong style={{ color: 'var(--color-text-main)', fontSize: '13.5px', marginTop: '3px', display: 'block' }}>
                     {mantenimientoActivo.ultimo_custodio_nombre ? (
                       mantenimientoActivo.ultimo_custodio_nombre
                     ) : (
@@ -3019,11 +3019,11 @@ export const Inventario: React.FC = () => {
                           zIndex: 2000,
                           maxHeight: '220px',
                           overflowY: 'auto',
-                          background: '#ffffff',
-                          border: '1px solid #cbd5e1',
+                          background: 'var(--bg-panel)',
+                          border: '1px solid var(--border-color)',
                           borderRadius: '8px',
                           marginTop: '4px',
-                          boxShadow: '0 10px 25px rgba(0,0,0,0.12)'
+                          boxShadow: 'var(--glass-shadow)'
                         }}
                       >
                         {proveedores
@@ -3046,19 +3046,19 @@ export const Inventario: React.FC = () => {
                                   style={{
                                     padding: '10px 14px',
                                     cursor: 'pointer',
-                                    borderBottom: '1px solid #f1f5f9',
-                                    background: assetProveedorId === p.id ? '#eff6ff' : '#ffffff',
+                                    borderBottom: '1px solid var(--border-color)',
+                                    background: assetProveedorId === p.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
                                     fontSize: '12.5px',
                                     transition: 'background 0.15s ease'
                                   }}
                                   onMouseEnter={(e) => {
-                                    if (assetProveedorId !== p.id) e.currentTarget.style.background = '#f8fafc';
+                                    if (assetProveedorId !== p.id) e.currentTarget.style.background = 'var(--bg-panel-hover)';
                                   }}
                                   onMouseLeave={(e) => {
-                                    if (assetProveedorId !== p.id) e.currentTarget.style.background = '#ffffff';
+                                    if (assetProveedorId !== p.id) e.currentTarget.style.background = 'transparent';
                                   }}
                                 >
-                                  <strong style={{ color: '#0f172a', display: 'block', fontSize: '13px' }}>{p.nombre}</strong>
+                                  <strong style={{ color: 'var(--color-text-main)', display: 'block', fontSize: '13px' }}>{p.nombre}</strong>
                                   {(p.contacto || p.telefono || p.email) && (
                                     <span style={{ fontSize: '11px', color: '#64748b' }}>
                                       {p.contacto ? `Contacto: ${p.contacto}` : (p.telefono || p.email)}
@@ -3165,9 +3165,9 @@ export const Inventario: React.FC = () => {
               </div>
 
               {/* SECCIÓN ACTIVOS DE ESTE INGRESO */}
-              <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #e2e8f0' }}>
+              <div style={{ background: 'var(--bg-panel-hover)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#0f172a' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-main)' }}>
                     Activos a Registrar ({(assetEsLote ? assetCantidad : 1) + extraAssets.reduce((sum, ext) => sum + (ext.es_lote ? (ext.cantidad || 1) : 1), 0)})
                   </h4>
                   <button
@@ -3181,8 +3181,8 @@ export const Inventario: React.FC = () => {
                 </div>
 
                 {/* ACTIVO #1 (PRINCIPAL) */}
-                <div style={{ border: '1px solid #cbd5e1', padding: '0.8rem', borderRadius: '6px', marginBottom: '0.8rem', background: '#ffffff' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.5rem' }}>
+                <div style={{ border: '1px solid var(--border-color)', padding: '0.8rem', borderRadius: '6px', marginBottom: '0.8rem', background: 'var(--bg-panel)' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#64748b', marginBottom: '0.5rem' }}>
                     Activo #1
                   </div>
                   <div className="form-row">
@@ -3236,11 +3236,11 @@ export const Inventario: React.FC = () => {
                             zIndex: 2000,
                             maxHeight: '220px',
                             overflowY: 'auto',
-                            background: '#ffffff',
-                            border: '1px solid #cbd5e1',
+                            background: 'var(--bg-panel)',
+                            border: '1px solid var(--border-color)',
                             borderRadius: '8px',
                             marginTop: '4px',
-                            boxShadow: '0 10px 25px rgba(0,0,0,0.12)'
+                            boxShadow: 'var(--glass-shadow)'
                           }}
                         >
                           {(allTipoEquipos.length > 0 ? allTipoEquipos : tipoEquipos)
@@ -3263,19 +3263,19 @@ export const Inventario: React.FC = () => {
                                     style={{
                                       padding: '10px 14px',
                                       cursor: 'pointer',
-                                      borderBottom: '1px solid #f1f5f9',
-                                      background: assetTipoEquipoId === te.id ? '#eff6ff' : '#ffffff',
+                                      borderBottom: '1px solid var(--border-color)',
+                                      background: assetTipoEquipoId === te.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
                                       fontSize: '12.5px',
                                       transition: 'background 0.15s ease'
                                     }}
                                     onMouseEnter={(e) => {
-                                      if (assetTipoEquipoId !== te.id) e.currentTarget.style.background = '#f8fafc';
+                                      if (assetTipoEquipoId !== te.id) e.currentTarget.style.background = 'var(--bg-panel-hover)';
                                     }}
                                     onMouseLeave={(e) => {
-                                      if (assetTipoEquipoId !== te.id) e.currentTarget.style.background = '#ffffff';
+                                      if (assetTipoEquipoId !== te.id) e.currentTarget.style.background = 'transparent';
                                     }}
                                   >
-                                    <strong style={{ color: '#0f172a', display: 'block', fontSize: '13px' }}>{te.nombre}</strong>
+                                    <strong style={{ color: 'var(--color-text-main)', display: 'block', fontSize: '13px' }}>{te.nombre}</strong>
                                   </div>
                                 ))
                             )}
@@ -3333,8 +3333,8 @@ export const Inventario: React.FC = () => {
                   </div>
 
                   {/* LOTE / CANTIDAD MULTIPLE ACTIVO #1 */}
-                  <div style={{ marginTop: '0.5rem', background: '#eff6ff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#1e40af', margin: 0 }}>
+                  <div style={{ marginTop: '0.5rem', background: 'rgba(99, 102, 241, 0.08)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.25)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-primary)', margin: 0 }}>
                       <input
                         type="checkbox"
                         checked={assetEsLote}
@@ -3349,7 +3349,7 @@ export const Inventario: React.FC = () => {
 
                     {assetEsLote && (
                       <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#1e40af' }}>CANTIDAD *</label>
+                        <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: '0.8rem', color: 'var(--color-primary)' }}>CANTIDAD *</label>
                         <input
                           type="number"
                           className="form-control"
@@ -3357,10 +3357,10 @@ export const Inventario: React.FC = () => {
                           max={500}
                           value={assetCantidad}
                           onChange={(e) => setAssetCantidad(Math.max(1, parseInt(e.target.value) || 1))}
-                          style={{ width: '100px', fontWeight: 'bold', color: '#0f172a', background: '#ffffff', borderColor: '#93c5fd' }}
+                          style={{ width: '100px', fontWeight: 'bold' }}
                           required
                         />
-                        <span style={{ fontSize: '0.78rem', color: '#1d4ed8', fontWeight: 500 }}>Se registrarán {assetCantidad} unidades de este activo.</span>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: 500 }}>Se registrarán {assetCantidad} unidades de este activo.</span>
                       </div>
                     )}
                   </div>
@@ -3368,9 +3368,9 @@ export const Inventario: React.FC = () => {
 
                 {/* ACTIVOS ADICIONALES (EXTRA) */}
                 {extraAssets.map((extra, idx) => (
-                  <div key={idx} style={{ border: '1px solid #cbd5e1', padding: '0.8rem', borderRadius: '6px', marginBottom: '0.8rem', background: '#ffffff', position: 'relative' }}>
+                  <div key={idx} style={{ border: '1px solid var(--border-color)', padding: '0.8rem', borderRadius: '6px', marginBottom: '0.8rem', background: 'var(--bg-panel)', position: 'relative' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#64748b' }}>
                         Activo #{idx + 2}
                       </div>
                       <button
@@ -3432,11 +3432,11 @@ export const Inventario: React.FC = () => {
                               zIndex: 2000,
                               maxHeight: '220px',
                               overflowY: 'auto',
-                              background: '#ffffff',
-                              border: '1px solid #cbd5e1',
+                              background: 'var(--bg-panel)',
+                              border: '1px solid var(--border-color)',
                               borderRadius: '8px',
                               marginTop: '4px',
-                              boxShadow: '0 10px 25px rgba(0,0,0,0.12)'
+                              boxShadow: 'var(--glass-shadow)'
                             }}
                           >
                             {(allTipoEquipos.length > 0 ? allTipoEquipos : tipoEquipos)
@@ -3457,19 +3457,19 @@ export const Inventario: React.FC = () => {
                                       style={{
                                         padding: '10px 14px',
                                         cursor: 'pointer',
-                                        borderBottom: '1px solid #f1f5f9',
-                                        background: extra.tipo_equipo_id === te.id ? '#eff6ff' : '#ffffff',
+                                        borderBottom: '1px solid var(--border-color)',
+                                        background: extra.tipo_equipo_id === te.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
                                         fontSize: '12.5px',
                                         transition: 'background 0.15s ease'
                                       }}
                                       onMouseEnter={(e) => {
-                                        if (extra.tipo_equipo_id !== te.id) e.currentTarget.style.background = '#f8fafc';
+                                        if (extra.tipo_equipo_id !== te.id) e.currentTarget.style.background = 'var(--bg-panel-hover)';
                                       }}
                                       onMouseLeave={(e) => {
-                                        if (extra.tipo_equipo_id !== te.id) e.currentTarget.style.background = '#ffffff';
+                                        if (extra.tipo_equipo_id !== te.id) e.currentTarget.style.background = 'transparent';
                                       }}
                                     >
-                                      <strong style={{ color: '#0f172a', display: 'block', fontSize: '13px' }}>{te.nombre}</strong>
+                                      <strong style={{ color: 'var(--color-text-main)', display: 'block', fontSize: '13px' }}>{te.nombre}</strong>
                                     </div>
                                   ))
                               )}
@@ -3543,8 +3543,8 @@ export const Inventario: React.FC = () => {
                     </div>
 
                     {/* LOTE / CANTIDAD MULTIPLE EXTRA ASSET */}
-                    <div style={{ marginTop: '0.5rem', background: '#eff6ff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#1e40af', margin: 0 }}>
+                    <div style={{ marginTop: '0.5rem', background: 'rgba(99, 102, 241, 0.08)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.25)' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-primary)', margin: 0 }}>
                         <input
                           type="checkbox"
                           checked={extra.es_lote || false}
@@ -3561,7 +3561,7 @@ export const Inventario: React.FC = () => {
 
                       {extra.es_lote && (
                         <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#1e40af' }}>CANTIDAD *</label>
+                          <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: '0.8rem', color: 'var(--color-primary)' }}>CANTIDAD *</label>
                           <input
                             type="number"
                             className="form-control"
@@ -3573,10 +3573,10 @@ export const Inventario: React.FC = () => {
                               updated[idx].cantidad = Math.max(1, parseInt(e.target.value) || 1);
                               setExtraAssets(updated);
                             }}
-                            style={{ width: '100px', fontWeight: 'bold', color: '#0f172a', background: '#ffffff', borderColor: '#93c5fd' }}
+                            style={{ width: '100px', fontWeight: 'bold' }}
                             required
                           />
-                          <span style={{ fontSize: '0.78rem', color: '#1d4ed8', fontWeight: 500 }}>Se registrarán {extra.cantidad || 1} unidades de este activo.</span>
+                          <span style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: 500 }}>Se registrarán {extra.cantidad || 1} unidades de este activo.</span>
                         </div>
                       )}
                     </div>
@@ -3757,17 +3757,17 @@ export const Inventario: React.FC = () => {
               )}
 
               {importSummary && (
-                <div className="import-summary-box mt-3" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '14px', borderRadius: '8px' }}>
-                  <h4 style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>Resumen del Proceso:</h4>
+                <div className="import-summary-box mt-3" style={{ background: 'var(--bg-panel-hover)', border: '1px solid var(--border-color)', padding: '14px', borderRadius: '8px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-text-main)', marginBottom: '8px' }}>Resumen del Proceso:</h4>
                   <ul style={{ fontSize: '12px', listStyleType: 'none', paddingLeft: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <li>✅ Filas procesadas: <strong>{importSummary.totalProcessed}</strong></li>
                     <li>📥 Activos insertados individualmente: <strong className="text-success">{importSummary.totalInserted}</strong></li>
                     {importSummary.errors.length > 0 && (
                       <li className="mt-2">
                         <strong className="text-danger" style={{ display: 'block', marginBottom: '4px' }}>⚠️ Advertencias/Errores ({importSummary.errors.length}):</strong>
-                        <div style={{ maxHeight: '100px', overflowY: 'auto', background: '#ffffff', border: '1px solid #fee2e2', padding: '8px', borderRadius: '4px', fontSize: '11px', color: '#b91c1c' }}>
+                        <div style={{ maxHeight: '100px', overflowY: 'auto', background: 'var(--bg-panel)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '8px', borderRadius: '4px', fontSize: '11px', color: '#f87171' }}>
                           {importSummary.errors.map((err, i) => (
-                            <div key={i} style={{ borderBottom: '1px solid #fee2e2', paddingBottom: '2px', marginBottom: '2px' }}>{err}</div>
+                            <div key={i} style={{ borderBottom: '1px solid rgba(239, 68, 68, 0.2)', paddingBottom: '2px', marginBottom: '2px' }}>{err}</div>
                           ))}
                         </div>
                       </li>
@@ -3904,11 +3904,11 @@ export const Inventario: React.FC = () => {
                           zIndex: 2000,
                           maxHeight: '220px',
                           overflowY: 'auto',
-                          background: '#ffffff',
-                          border: '1px solid #cbd5e1',
+                          background: 'var(--bg-panel)',
+                          border: '1px solid var(--border-color)',
                           borderRadius: '8px',
                           marginTop: '4px',
-                          boxShadow: '0 10px 25px rgba(0,0,0,0.12)'
+                          boxShadow: 'var(--glass-shadow)'
                         }}
                       >
                         {personas
@@ -3934,19 +3934,19 @@ export const Inventario: React.FC = () => {
                                   style={{
                                     padding: '10px 14px',
                                     cursor: 'pointer',
-                                    borderBottom: '1px solid #f1f5f9',
-                                    background: egresoPersonaId === p.id ? '#eff6ff' : '#ffffff',
+                                    borderBottom: '1px solid var(--border-color)',
+                                    background: egresoPersonaId === p.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
                                     fontSize: '12.5px',
                                     transition: 'background 0.15s ease'
                                   }}
                                   onMouseEnter={(e) => {
-                                    if (egresoPersonaId !== p.id) e.currentTarget.style.background = '#f8fafc';
+                                    if (egresoPersonaId !== p.id) e.currentTarget.style.background = 'var(--bg-panel-hover)';
                                   }}
                                   onMouseLeave={(e) => {
-                                    if (egresoPersonaId !== p.id) e.currentTarget.style.background = '#ffffff';
+                                    if (egresoPersonaId !== p.id) e.currentTarget.style.background = 'transparent';
                                   }}
                                 >
-                                  <strong style={{ color: '#0f172a', display: 'block', fontSize: '13px' }}>{p.nombre}</strong>
+                                  <strong style={{ color: 'var(--color-text-main)', display: 'block', fontSize: '13px' }}>{p.nombre}</strong>
                                   <span style={{ fontSize: '11px', color: '#64748b' }}>
                                     {p.cargo || p.departamento || 'Sin cargo'} • {p.empresa_nombre || 'Sede'} • C.I. {p.cedula || 'N/A'}
                                   </span>
@@ -4069,11 +4069,11 @@ export const Inventario: React.FC = () => {
                           zIndex: 2000,
                           maxHeight: '220px',
                           overflowY: 'auto',
-                          background: '#ffffff',
-                          border: '1px solid #cbd5e1',
+                          background: 'var(--bg-panel)',
+                          border: '1px solid var(--border-color)',
                           borderRadius: '8px',
                           marginTop: '4px',
-                          boxShadow: '0 10px 25px rgba(0,0,0,0.12)'
+                          boxShadow: 'var(--glass-shadow)'
                         }}
                       >
                         <div
@@ -4085,8 +4085,8 @@ export const Inventario: React.FC = () => {
                           style={{
                             padding: '8px 12px',
                             cursor: 'pointer',
-                            borderBottom: '1px solid #f1f5f9',
-                            background: egresoTipoEquipoId === 0 ? '#eff6ff' : '#ffffff',
+                            borderBottom: '1px solid var(--border-color)',
+                            background: egresoTipoEquipoId === 0 ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
                             fontSize: '12.5px',
                             fontWeight: '600',
                             color: 'var(--color-primary)'
@@ -4114,8 +4114,8 @@ export const Inventario: React.FC = () => {
                                   style={{
                                     padding: '9px 12px',
                                     cursor: 'pointer',
-                                    borderBottom: '1px solid #f1f5f9',
-                                    background: egresoTipoEquipoId === te.id ? '#eff6ff' : '#ffffff',
+                                    borderBottom: '1px solid var(--border-color)',
+                                    background: egresoTipoEquipoId === te.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
                                     fontSize: '12.5px',
                                     transition: 'background 0.15s ease',
                                     display: 'flex',
@@ -4123,15 +4123,15 @@ export const Inventario: React.FC = () => {
                                     alignItems: 'center'
                                   }}
                                   onMouseEnter={(e) => {
-                                    if (egresoTipoEquipoId !== te.id) e.currentTarget.style.background = '#f8fafc';
+                                    if (egresoTipoEquipoId !== te.id) e.currentTarget.style.background = 'var(--bg-panel-hover)';
                                   }}
                                   onMouseLeave={(e) => {
-                                    if (egresoTipoEquipoId !== te.id) e.currentTarget.style.background = '#ffffff';
+                                    if (egresoTipoEquipoId !== te.id) e.currentTarget.style.background = 'transparent';
                                   }}
                                 >
-                                  <strong style={{ color: '#0f172a', fontSize: '12.5px' }}>{te.nombre}</strong>
+                                  <strong style={{ color: 'var(--color-text-main)', fontSize: '12.5px' }}>{te.nombre}</strong>
                                   {te.abreviacion && (
-                                    <span style={{ fontSize: '10.5px', background: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                                    <span style={{ fontSize: '10.5px', background: 'var(--bg-panel-hover)', color: 'var(--color-text-dim)', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>
                                       {te.abreviacion}
                                     </span>
                                   )}
@@ -4279,7 +4279,7 @@ export const Inventario: React.FC = () => {
               </svg>
             </div>
 
-            <h2 style={{ fontSize: '18px', color: '#0f172a', marginBottom: '4px' }}>{successDocModal.title}</h2>
+            <h2 style={{ fontSize: '18px', color: 'var(--color-text-main)', marginBottom: '4px' }}>{successDocModal.title}</h2>
             <span className="badge badge-process" style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-primary)', background: '#eff6ff', border: '1px solid #dbeafe', margin: '6px 0 12px 0', padding: '4px 12px' }}>
               {successDocModal.code}
             </span>
@@ -4530,13 +4530,13 @@ export const Inventario: React.FC = () => {
 
             <div style={{ padding: '0 0 16px 0', overflowY: 'auto', flex: 1 }}>
               {/* FICHA RESUMEN */}
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
+              <div style={{ background: 'var(--bg-panel-hover)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <span className="badge badge-process" style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-primary)' }}>
                       {fichaSuministro.codigo || `SUM-${fichaSuministro.id}`}
                     </span>
-                    <h3 style={{ margin: '6px 0 2px 0', fontSize: '17px', color: '#0f172a' }}>{fichaSuministro.nombre}</h3>
+                    <h3 style={{ margin: '6px 0 2px 0', fontSize: '17px', color: 'var(--color-text-main)' }}>{fichaSuministro.nombre}</h3>
                     <p className="text-muted" style={{ fontSize: '12.5px', margin: 0 }}>
                       Sede: <strong>{fichaSuministro.empresa_nombre || 'General'}</strong> {fichaSuministro.serial ? `| Serial/N° Parte: ${fichaSuministro.serial}` : ''}
                     </p>
@@ -4552,14 +4552,14 @@ export const Inventario: React.FC = () => {
                 </div>
 
                 {fichaSuministro.descripcion && (
-                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed #cbd5e1', fontSize: '12px', color: '#475569' }}>
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-color)', fontSize: '12px', color: 'var(--color-text-dim)' }}>
                     <strong>Descripción:</strong> {fichaSuministro.descripcion}
                   </div>
                 )}
               </div>
 
               {/* BITÁCORA DE MOVIMIENTOS */}
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 Bitácora de Uso y Restock ({historialSuministro.length} registros)
               </h4>

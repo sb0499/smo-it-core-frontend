@@ -596,7 +596,7 @@ export const Proyectos: React.FC = () => {
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Volver a Proyectos
               </button>
-              <h2 className="project-name mt-2" style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: '8px 0 4px 0' }}>{activeProyecto.nombre}</h2>
+              <h2 className="project-name mt-2" style={{ fontSize: '20px', fontWeight: '700', color: 'var(--color-text-main)', margin: '8px 0 4px 0' }}>{activeProyecto.nombre}</h2>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <span className="badge" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', fontSize: '10px', textTransform: 'uppercase', fontWeight: '600' }}>Categoría: {activeProyecto.tipo_proyecto}</span>
                 <span className={`badge badge-state-${activeProyecto.estado.toLowerCase().replace(' ', '')}`} style={{ fontSize: '10px' }}>{activeProyecto.estado}</span>
@@ -882,9 +882,9 @@ export const Proyectos: React.FC = () => {
                       cursor: 'pointer',
                       padding: '8px 12px',
                       fontSize: '11.5px',
-                      border: '1px dashed #cbd5e1',
-                      background: '#f8fafc',
-                      color: '#475569',
+                      border: '1px dashed var(--border-color)',
+                      background: 'var(--bg-panel-hover)',
+                      color: 'var(--color-text-main)',
                       borderRadius: '6px',
                       transition: 'all 0.2s',
                       textOverflow: 'ellipsis',
@@ -995,7 +995,7 @@ export const Proyectos: React.FC = () => {
 
               <div className="form-group">
                 <label className="form-label">ASIGNAR EQUIPO (MIEMBROS)</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', maxHeight: '120px', overflowY: 'auto', border: '1px solid #e2e8f0', padding: '8px', borderRadius: '8px', background: '#f8fafc' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', maxHeight: '120px', overflowY: 'auto', border: '1px solid var(--border-color)', padding: '8px', borderRadius: '8px', background: 'var(--bg-panel-hover)' }}>
                   {technicians.map((t) => (
                     <label key={t.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', cursor: 'pointer', margin: 0 }}>
                       <input
@@ -1193,13 +1193,13 @@ export const Proyectos: React.FC = () => {
                     .slice(0, 2)
                     .toUpperCase();
                   return (
-                    <div key={c.id} className="comment-bubble" style={{ display: 'flex', gap: '10px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                    <div key={c.id} className="comment-bubble" style={{ display: 'flex', gap: '10px', background: 'var(--bg-panel-hover)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                       <div className="comment-avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#2563eb', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10.5px', fontWeight: 'bold', flexShrink: 0 }}>
                         {initials}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, overflow: 'hidden' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#1e293b' }}>{c.autor_nombre}</span>
+                          <span style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--color-text-main)' }}>{c.autor_nombre}</span>
                           <span style={{ fontSize: '9.5px', color: '#94a3b8' }}>{new Date(c.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                         <p style={{ margin: 0, fontSize: '12px', color: '#475569', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{c.contenido}</p>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { Sidebar } from "./components/Sidebar";
 import { Navbar } from "./components/Navbar";
 import { Login } from "./views/Login";
@@ -277,10 +278,12 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-      <AlertContainer />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+        <AlertContainer />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
