@@ -404,7 +404,7 @@ export const Chats: React.FC = () => {
                         {u.nombre_completo.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: "600", color: "#1e293b" }}>
+                        <div style={{ fontWeight: "600", color: "var(--color-text-main)" }}>
                           {u.nombre_completo}
                         </div>
                         <div style={{ fontSize: "11px", color: "#64748b" }}>
@@ -1058,8 +1058,8 @@ export const Chats: React.FC = () => {
                     style={{
                       padding: "8px 10px",
                       borderRadius: "8px",
-                      border: "1px solid #e2e8f0",
-                      background: "#ffffff",
+                      border: "1px solid var(--border-color)",
+                      background: "var(--bg-panel)",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",

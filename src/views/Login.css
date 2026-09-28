@@ -5,7 +5,7 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background-color: #ffffff;
+  background-color: var(--bg-main);
   font-family: var(--font-sans);
 }
 
@@ -182,7 +182,7 @@
   justify-content: center;
   align-items: center;
   padding: 40px;
-  background-color: #ffffff;
+  background-color: var(--bg-panel);
   z-index: 5;
 }
 
@@ -207,7 +207,7 @@
 .login-form-title {
   font-size: 22px;
   font-weight: 700;
-  color: #6366f1;
+  color: var(--color-primary);
   letter-spacing: 0.08em;
   margin: 0;
 }
@@ -224,6 +224,11 @@
   margin-bottom: 24px;
 }
 
+[data-theme="dark"] .login-error-alert {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
 .alert-icon-svg {
   color: #ef4444;
   flex-shrink: 0;
@@ -233,6 +238,10 @@
   font-size: 12px;
   font-weight: 500;
   color: #991b1b;
+}
+
+[data-theme="dark"] .alert-text {
+  color: #f87171;
 }
 
 /* Custom Form and Elements */
@@ -269,23 +278,23 @@
   padding: 0 20px 0 54px;
   font-size: 14px;
   font-weight: 500;
-  color: #1e293b;
-  background-color: #f1f0fa;
-  border: 2px solid transparent;
+  color: var(--color-text-main);
+  background-color: var(--bg-panel-hover);
+  border: 2px solid var(--border-color);
   border-radius: 26px;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .pill-control::placeholder {
-  color: #94a3b8;
+  color: var(--color-text-dim);
   font-weight: 400;
 }
 
 .pill-control:focus {
-  background-color: #ffffff;
-  border-color: #818cf8;
-  box-shadow: 0 8px 20px rgba(129, 140, 248, 0.08);
+  background-color: var(--bg-panel);
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 20px rgba(129, 140, 248, 0.15);
 }
 
 .input-pill-wrapper:focus-within .pill-icon-svg {
@@ -327,17 +336,19 @@
   left: 0;
   height: 17px;
   width: 17px;
-  background-color: #f1f0fa;
+  background-color: var(--border-color);
   border-radius: 5px;
   transition: all 0.2s ease;
 }
 
 .checkbox-container:hover input ~ .checkmark {
-  background-color: #e2e0f4;
+  background-color: var(--color-primary);
+  opacity: 0.5;
 }
 
 .checkbox-container input:checked ~ .checkmark {
-  background-color: #818cf8;
+  background-color: var(--color-primary);
+  opacity: 1;
 }
 
 .checkmark::after {
@@ -359,17 +370,18 @@
 
 .checkbox-label {
   line-height: 1;
+  color: var(--color-text-muted);
 }
 
 .forgot-link {
-  color: #64748b;
+  color: var(--color-text-muted);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
 }
 
 .forgot-link:hover {
-  color: #4f46e5;
+  color: var(--color-primary);
 }
 
 /* Gradient capsule button */
@@ -419,7 +431,7 @@
 .quick-access-section-custom {
   margin-top: 36px;
   padding-top: 24px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -429,7 +441,7 @@
 .quick-label-custom {
   font-size: 11px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--color-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -451,40 +463,69 @@
   font-size: 12px;
   font-weight: 600;
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-panel-hover);
+  color: var(--color-text-main);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .admin-badge {
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .admin-badge:hover {
-  color: #4f46e5;
+  color: #818cf8;
   border-color: #818cf8;
-  background-color: #f5f3ff;
+  background-color: rgba(99, 102, 241, 0.15);
 }
 
 .tech-badge {
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .tech-badge:hover {
-  color: #10b981;
+  color: #34d399;
   border-color: #34d399;
-  background-color: #ecfdf5;
+  background-color: rgba(16, 185, 129, 0.15);
 }
 
 .user-badge {
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .user-badge:hover {
-  color: #f59e0b;
+  color: #fbbf24;
   border-color: #fbbf24;
-  background-color: #fffbeb;
+  background-color: rgba(245, 158, 11, 0.15);
+}
+
+[data-theme="dark"] .login-decor-side {
+  background: linear-gradient(135deg, #0b1120 0%, #1e1b4b 50%, #0f172a 100%);
+}
+
+.login-theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--bg-panel);
+  color: var(--color-text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--glass-shadow);
+  transition: all 0.2s ease;
+}
+
+.login-theme-toggle:hover {
+  background: var(--bg-panel-hover);
+  transform: scale(1.05);
 }
 
 /* RESPONSIVE DESIGN */

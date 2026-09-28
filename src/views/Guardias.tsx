@@ -352,15 +352,15 @@ export const Guardias: React.FC = () => {
       </div>
 
       {/* active planta shifts grid banner */}
-      <div className="glass-panel animate-slide-up" style={{ padding: '14px 18px', background: '#ffffff', border: '1px solid #f1f5f9', marginBottom: '14px' }}>
+      <div className="glass-panel animate-slide-up" style={{ padding: '14px 18px', marginBottom: '14px' }}>
         <h3 style={{ fontSize: '10.5px', fontWeight: 'bold', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
           Soporte Técnico de Planta (L-V)
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
           {getPlantSupportItems().map(item => (
-            <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '6px 10px', borderRadius: '4px', border: '1px solid #f1f5f9', fontSize: '11.5px' }}>
-              <span style={{ fontWeight: '700', color: '#2563eb', fontSize: '11px' }}>{item.label}</span>
-              <span style={{ color: '#475569', fontWeight: '500' }}>{item.techName}</span>
+            <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-panel-hover)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '11.5px' }}>
+              <span style={{ fontWeight: '700', color: 'var(--color-primary)', fontSize: '11px' }}>{item.label}</span>
+              <span style={{ color: 'var(--color-text-main)', fontWeight: '500' }}>{item.techName}</span>
             </div>
           ))}
         </div>
@@ -400,7 +400,7 @@ export const Guardias: React.FC = () => {
             <div className="calendar-days-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
               {/* Previous month blanks */}
               {Array.from({ length: firstDayOfMonth }).map((_, index) => (
-                <div key={`blank-${index}`} className="calendar-day-cell blank" style={{ background: '#f8fafc', opacity: 0.4, minHeight: '100px', borderRadius: '6px', border: '1px solid #f1f5f9' }} />
+                <div key={`blank-${index}`} className="calendar-day-cell blank" style={{ background: 'var(--bg-input)', opacity: 0.4, minHeight: '100px', borderRadius: '6px', border: '1px solid var(--border-color)' }} />
               ))}
               {/* Current month days */}
               {Array.from({ length: daysInMonth }).map((_, index) => {
@@ -418,10 +418,10 @@ export const Guardias: React.FC = () => {
                     key={`day-${day}`} 
                     className={`calendar-day-cell ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}`} 
                     style={{ 
-                      background: isToday ? '#fdf4ff' : '#ffffff', 
+                      background: isToday ? 'rgba(168, 85, 247, 0.08)' : isWeekend ? 'var(--bg-panel-hover)' : 'var(--bg-panel)', 
                       minHeight: '100px', 
                       borderRadius: '6px', 
-                      border: isToday ? '1px solid #f0abfc' : '1px solid #e2e8f0', 
+                      border: isToday ? '1px solid rgba(168, 85, 247, 0.6)' : '1px solid var(--border-color)', 
                       padding: '8px',
                       display: 'flex',
                       flexDirection: 'column',
@@ -432,13 +432,13 @@ export const Guardias: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ 
                         fontWeight: isToday || isWeekend ? 'bold' : 'normal', 
-                        color: isToday ? '#a21caf' : isWeekend ? '#1e40af' : '#475569',
+                        color: isToday ? '#c084fc' : isWeekend ? 'var(--color-primary)' : 'var(--color-text-main)',
                         fontSize: '13px'
                       }}>
                         {day}
                       </span>
                       {isToday && (
-                        <span className="today-badge" style={{ background: '#fdf4ff', color: '#a21caf', border: '1px solid #f0abfc', padding: '2px 4px', fontSize: '9px', borderRadius: '3px', fontWeight: 'bold' }}>Hoy</span>
+                        <span className="today-badge">Hoy</span>
                       )}
                     </div>
 
@@ -447,9 +447,9 @@ export const Guardias: React.FC = () => {
                         <div 
                           key={g.id} 
                           style={{ 
-                            background: isWeekend ? '#eff6ff' : '#fef2f2', 
-                            color: isWeekend ? '#1e40af' : '#b91c1c', 
-                            border: isWeekend ? '1px solid #dbeafe' : '1px solid #fee2e2',
+                            background: isWeekend ? 'rgba(99, 102, 241, 0.15)' : 'rgba(239, 68, 68, 0.15)', 
+                            color: isWeekend ? '#818cf8' : '#f87171', 
+                            border: isWeekend ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
                             fontSize: '9.5px', 
                             padding: '3px 6px', 
                             borderRadius: '4px', 
@@ -613,7 +613,7 @@ export const Guardias: React.FC = () => {
                 )}
  
                 {!isRaffling && newTechId > 0 && currentRaffleName && (
-                  <div style={{ marginTop: '10px', padding: '8px 12px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', fontSize: '12px', color: '#047857', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ marginTop: '10px', padding: '8px 12px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', fontSize: '12px', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span>Seleccionado: <strong>{currentRaffleName}</strong></span>
                   </div>
                 )}

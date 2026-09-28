@@ -27,7 +27,7 @@
 .hd-stat-number {
   font-size: 22px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-text-main);
   margin-top: 4px;
 }
 
@@ -85,12 +85,31 @@
   gap: 4px;
 }
 
+[data-theme="dark"] .badge-vencimiento-vigente {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+[data-theme="dark"] .badge-vencimiento-porvencer {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+[data-theme="dark"] .badge-vencimiento-vencido {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
 /* Modal Overlay & Responsive Fixed Box */
 .hd-modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 1100;
   display: flex;
   align-items: center;
@@ -98,33 +117,37 @@
   padding: 16px;
 }
 
+[data-theme="dark"] .hd-modal-overlay {
+  background: rgba(0, 0, 0, 0.75);
+}
+
 .hd-modal-container {
-  background: #ffffff;
+  background: var(--bg-panel);
   border-radius: 16px;
   width: 100%;
   max-width: 640px;
   max-height: 85vh;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--glass-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #eef2f6;
+  border: 1px solid var(--border-color);
 }
 
 .hd-modal-header {
   padding: 16px 20px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
-  background: #ffffff;
+  background: var(--bg-panel);
 }
 
 .hd-modal-header h2 {
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-text-main);
   margin: 0;
 }
 
@@ -132,15 +155,15 @@
   background: transparent;
   border: none;
   font-size: 18px;
-  color: #94a3b8;
+  color: var(--color-text-dim);
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 6px;
 }
 
 .hd-modal-close-btn:hover {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--bg-panel-hover);
+  color: var(--color-text-main);
 }
 
 .hd-modal-body {
@@ -161,8 +184,8 @@
 
 .hd-modal-footer {
   padding: 14px 20px;
-  border-top: 1px solid #f1f5f9;
-  background: #f8fafc;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-panel-hover);
   display: flex;
   justify-content: flex-end;
   gap: 10px;

@@ -330,9 +330,9 @@ export const BaseConocimiento: React.FC = () => {
                 style={{
                   padding: "16px 20px",
                   borderRadius: "10px",
-                  border: "1px solid #f1f5f9",
-                  background: "#ffffff",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-panel)",
+                  boxShadow: "var(--glass-shadow)",
                   transition: "all 0.2s ease",
                 }}
               >
@@ -359,9 +359,9 @@ export const BaseConocimiento: React.FC = () => {
                         className="badge badge-process"
                         style={{
                           fontSize: "10.5px",
-                          background: "rgba(37,99,235,0.1)",
-                          color: "#2563eb",
-                          border: "1px solid rgba(37,99,235,0.2)",
+                          background: "rgba(99, 102, 241, 0.15)",
+                          color: "var(--color-primary)",
+                          border: "1px solid rgba(99, 102, 241, 0.3)",
                           fontWeight: "600",
                         }}
                       >
@@ -372,8 +372,9 @@ export const BaseConocimiento: React.FC = () => {
                           className="badge badge-media"
                           style={{
                             fontSize: "10px",
-                            background: "#f1f5f9",
-                            color: "#64748b",
+                            background: "var(--bg-panel-hover)",
+                            color: "var(--color-text-muted)",
+                            border: "1px solid var(--border-color)",
                           }}
                         >
                           Origen: Ticket #{art.ticket_origen_id}
@@ -384,7 +385,7 @@ export const BaseConocimiento: React.FC = () => {
                       style={{
                         fontSize: "15px",
                         fontWeight: "700",
-                        color: "#0f172a",
+                        color: "var(--color-text-main)",
                         margin: "0 0 4px 0",
                         lineHeight: "1.4",
                       }}
@@ -394,7 +395,7 @@ export const BaseConocimiento: React.FC = () => {
                     <div
                       style={{
                         fontSize: "11.5px",
-                        color: "#64748b",
+                        color: "var(--color-text-dim)",
                         display: "flex",
                         gap: "14px",
                       }}
@@ -436,9 +437,6 @@ export const BaseConocimiento: React.FC = () => {
                           style={{
                             padding: "4px 8px",
                             fontSize: "12px",
-                            background: "#fef2f2",
-                            border: "1px solid #fee2e2",
-                            color: "#dc2626",
                           }}
                           onClick={() => handleDelete(art.id)}
                           title="Eliminar Guía"
@@ -470,13 +468,13 @@ export const BaseConocimiento: React.FC = () => {
                     style={{
                       marginTop: "14px",
                       paddingTop: "14px",
-                      borderTop: "1px solid #e2e8f0",
-                      background: "#f8fafc",
+                      borderTop: "1px solid var(--border-color)",
+                      background: "var(--bg-panel-hover)",
                       padding: "16px",
                       borderRadius: "8px",
                       fontSize: "13px",
                       lineHeight: "1.6",
-                      color: "#334155",
+                      color: "var(--color-text-main)",
                     }}
                   >
                     <h4
@@ -485,7 +483,7 @@ export const BaseConocimiento: React.FC = () => {
                         fontWeight: "bold",
                         textTransform: "uppercase",
                         letterSpacing: "0.04em",
-                        color: "#2563eb",
+                        color: "var(--color-primary)",
                         marginBottom: "10px",
                       }}
                     >
@@ -600,8 +598,8 @@ export const BaseConocimiento: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(15,23,42,0.6)",
-            backdropFilter: "blur(4px)",
+            background: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(6px)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
@@ -614,20 +612,21 @@ export const BaseConocimiento: React.FC = () => {
             style={{
               width: "100%",
               maxWidth: "650px",
-              background: "#ffffff",
+              background: "var(--bg-panel)",
+              border: "1px solid var(--border-color)",
               borderRadius: "12px",
               overflow: "hidden",
-              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
+              boxShadow: "var(--glass-shadow)",
             }}
           >
             <div
               style={{
                 padding: "16px 20px",
-                borderBottom: "1px solid #e2e8f0",
+                borderBottom: "1px solid var(--border-color)",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                background: "#f8fafc",
+                background: "var(--bg-panel-hover)",
               }}
             >
               <h3
@@ -635,7 +634,7 @@ export const BaseConocimiento: React.FC = () => {
                   margin: 0,
                   fontSize: "16px",
                   fontWeight: "bold",
-                  color: "#0f172a",
+                  color: "var(--color-text-main)",
                 }}
               >
                 {isEditing
@@ -650,7 +649,7 @@ export const BaseConocimiento: React.FC = () => {
                   border: "none",
                   fontSize: "18px",
                   cursor: "pointer",
-                  color: "#64748b",
+                  color: "var(--color-text-dim)",
                 }}
               >
                 &times;
@@ -664,7 +663,7 @@ export const BaseConocimiento: React.FC = () => {
                     display: "block",
                     fontSize: "12px",
                     fontWeight: "bold",
-                    color: "#334155",
+                    color: "var(--color-text-muted)",
                     marginBottom: "6px",
                   }}
                 >
@@ -686,7 +685,7 @@ export const BaseConocimiento: React.FC = () => {
                     display: "block",
                     fontSize: "12px",
                     fontWeight: "bold",
-                    color: "#334155",
+                    color: "var(--color-text-muted)",
                     marginBottom: "6px",
                   }}
                 >
@@ -712,7 +711,7 @@ export const BaseConocimiento: React.FC = () => {
                     display: "block",
                     fontSize: "12px",
                     fontWeight: "bold",
-                    color: "#334155",
+                    color: "var(--color-text-muted)",
                     marginBottom: "6px",
                   }}
                 >
@@ -739,7 +738,7 @@ export const BaseConocimiento: React.FC = () => {
                   justifyContent: "flex-end",
                   gap: "10px",
                   paddingTop: "10px",
-                  borderTop: "1px solid #e2e8f0",
+                  borderTop: "1px solid var(--border-color)",
                 }}
               >
                 <button

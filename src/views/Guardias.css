@@ -32,30 +32,28 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
 }
 
 .sede-shift-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-  border-color: #cbd5e1;
+  border-color: var(--color-primary);
 }
 
 .sede-shift-card.active-weekend-guard {
-  background: #fffbeb;
-  border-color: #fef3c7;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.05);
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
 }
 
 .sede-shift-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 8px;
 }
 
@@ -71,14 +69,14 @@
   font-weight: 700;
   text-transform: uppercase;
   color: var(--color-text-dim);
-  background: #f1f5f9;
+  background: var(--bg-panel-hover);
   padding: 2px 6px;
   border-radius: 4px;
 }
 
 .active-weekend-guard .shift-type-label {
-  background: #fef3c7;
-  color: #b45309;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
 }
 
 .sede-shift-body {
@@ -91,17 +89,17 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #eff6ff;
+  background: rgba(59, 130, 246, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2563eb;
+  color: #3b82f6;
   flex-shrink: 0;
 }
 
 .active-weekend-guard .shift-avatar {
-  background: #fffbeb;
-  color: #d97706;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
 }
 
 .shift-info {
@@ -133,22 +131,20 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
 }
 .guardia-card:hover {
-  border-color: #cbd5e1;
+  border-color: var(--color-primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
 }
 
 .guardia-card.active-today {
   border-color: #c084fc;
-  background: #faf5ff;
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.08);
+  background: rgba(168, 85, 247, 0.08);
 }
 
 .guardia-left {
@@ -166,9 +162,9 @@
   width: 54px;
   height: 54px;
   border-radius: 10px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #334155;
+  background: var(--bg-panel-hover);
+  border: 1px solid var(--border-color);
+  color: var(--color-text-main);
   flex-shrink: 0;
 }
 
@@ -217,9 +213,9 @@
 
 /* Today active badge */
 .today-badge {
-  background: #faf5ff;
-  border: 1px solid #d8b4fe;
-  color: #7e22ce;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #c084fc;
   font-size: 10.5px;
   font-weight: 700;
   padding: 3px 8px;
@@ -238,7 +234,7 @@
   transition: var(--transition-smooth);
 }
 .btn-delete:hover {
-  background: #fee2e2;
+  background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
 }
 
@@ -268,21 +264,24 @@
 }
 
 .calendar-day-cell {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  color: var(--color-text-main);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .calendar-day-cell:hover:not(.blank) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
 }
 
 .calendar-day-cell.today {
-  border-color: #f0abfc !important;
-  background: #fdf4ff !important;
+  border-color: rgba(168, 85, 247, 0.6) !important;
+  background: rgba(168, 85, 247, 0.08) !important;
 }
 
 .calendar-day-cell.weekend {
-  background: #f8fafc;
+  background: var(--bg-panel-hover);
 }
 
 .calendar-day-cell.blank {
