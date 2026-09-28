@@ -610,14 +610,19 @@ export const EntregaCredenciales: React.FC = () => {
                         const cleanName = getEmpresaCleanName(empresaId);
                         const isShoppingMain = !cleanName || cleanName === 'shopping' || cleanName === 'shopping-managements';
                         if (!isShoppingMain) {
+                          const logoSrc = cleanName.includes('teatro') ? '/logo-el-teatro.png' : `/logo-${cleanName}.png`;
                           return (
                             <img 
                               key={`left-${empresaId}`}
-                              src={`/logo-${cleanName}.png`}
+                              src={logoSrc}
                               alt={cleanName}
                               style={{ maxHeight: '55px', width: 'auto', display: 'block' }}
                               onError={(e) => {
-                                e.currentTarget.style.display = 'none';
+                                if (cleanName.includes('teatro') && !e.currentTarget.src.includes('logo-teatro.png')) {
+                                  e.currentTarget.src = '/logo-teatro.png';
+                                } else {
+                                  e.currentTarget.style.display = 'none';
+                                }
                               }}
                             />
                           );
@@ -626,23 +631,31 @@ export const EntregaCredenciales: React.FC = () => {
                       })()}
                     </div>
 
-                    {/* Top Right: Logo Shopping Fijo */}
-                    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                      <img 
-                        src="/logo-shopping.png" 
-                        alt="shoppingmanagements" 
-                        style={{ height: '42px', width: 'auto', display: 'block' }}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const sibling = e.currentTarget.nextElementSibling as HTMLElement;
-                          if (sibling) sibling.style.display = 'block';
-                        }}
-                      />
-                      <svg width="140" height="28" viewBox="0 0 180 40" style={{ display: 'none' }}>
-                        <polygon points="15,5 170,5 175,0 180,30 177,35 165,35 15,35 3,35 0,30 5,0" fill="#304d69" />
-                        <text x="90" y="24" fill="#ffffff" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="Helvetica, Arial, sans-serif">shoppingmanagements</text>
-                      </svg>
-                    </div>
+                    {/* Top Right: Logo Shopping Fijo (Oculto si es EL TEATRO) */}
+                    {(() => {
+                      const cleanName = getEmpresaCleanName(empresaId);
+                      const isOmitCorporate = cleanName === 'el-teatro' || cleanName === 'teatro' || cleanName.includes('teatro');
+                      if (isOmitCorporate) return null;
+
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                          <img 
+                            src="/logo-shopping.png" 
+                            alt="shoppingmanagements" 
+                            style={{ height: '42px', width: 'auto', display: 'block' }}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const sibling = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (sibling) sibling.style.display = 'block';
+                            }}
+                          />
+                          <svg width="140" height="28" viewBox="0 0 180 40" style={{ display: 'none' }}>
+                            <polygon points="15,5 170,5 175,0 180,30 177,35 165,35 15,35 3,35 0,30 5,0" fill="#304d69" />
+                            <text x="90" y="24" fill="#ffffff" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="Helvetica, Arial, sans-serif">shoppingmanagements</text>
+                          </svg>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Quito, Date */}

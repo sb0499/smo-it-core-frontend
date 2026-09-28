@@ -949,10 +949,10 @@ export const Inventario: React.FC = () => {
       const [personasList, proveedoresList, empresaList, allTipoEquiposList, tipoInventariosList, bodegasList] = await Promise.all([
         inventoryService.getPersonas().catch(() => []),
         inventoryService.getProveedores().catch(() => []),
-        apiClient.get<any[]>('/empresas').catch(() => []),
+        apiClient.get<any[]>('/empresas?all=true').catch(() => []),
         inventoryService.getTipoEquipos().catch(() => []),
         inventoryService.getTipoInventarios().catch(() => []),
-        inventoryService.getBodegas().catch(() => []),
+        inventoryService.getBodegas(undefined, undefined, '', undefined, true).catch(() => []),
       ]);
 
       setPersonas(personasList);
@@ -2322,20 +2322,17 @@ export const Inventario: React.FC = () => {
                 
                 <div className="form-row">
                   <div className="form-group half">
-                    <label className="form-label">SEDE / EMPRESA *</label>
+                    <label className="form-label">SEDE / EMPRESA DE ORIGEN DEL ACTIVO *</label>
                     <select
                       className="form-control"
                       value={recepcionEmpresaId}
                       onChange={(e) => {
                         setRecepcionEmpresaId(Number(e.target.value));
                         setRecepcionSucursalId(0);
-                        setRecepcionPersonaId(0);
-                        setRecepcionPersonaSearchText('');
-                        setShowRecepcionPersonaDropdown(false);
                       }}
                       required
                     >
-                      <option value="0">Seleccionar sede...</option>
+                      <option value="0">Seleccionar sede de origen...</option>
                       {empresas.map(emp => (
                         <option key={emp.id} value={emp.id}>{emp.nombre}</option>
                       ))}
@@ -2364,27 +2361,23 @@ export const Inventario: React.FC = () => {
                     return null;
                   })()}
 
-                  <div ref={recepcionPersonaRef} className="form-group half" style={{ position: 'relative', width: '100%', opacity: recepcionEmpresaId <= 0 ? 0.65 : 1 }}>
+                  <div ref={recepcionPersonaRef} className="form-group half" style={{ position: 'relative', width: '100%' }}>
                     <label className="form-label">EMPLEADO / CUSTODIO QUE DEVUELVE *</label>
                     <div style={{ position: 'relative', width: '100%' }}>
                       <input
                         type="text"
                         className="form-control"
-                        placeholder={recepcionEmpresaId <= 0 ? "Primero selecciona una Sede / Empresa..." : "Buscar por nombre o cédula..."}
+                        placeholder="Buscar por nombre o cédula..."
                         value={recepcionPersonaSearchText}
-                        disabled={recepcionEmpresaId <= 0}
                         onChange={(e) => {
-                          if (recepcionEmpresaId <= 0) return;
                           setRecepcionPersonaSearchText(e.target.value);
                           setShowRecepcionPersonaDropdown(true);
                           if (recepcionPersonaId > 0) {
                             setRecepcionPersonaId(0);
                           }
                         }}
-                        onFocus={() => {
-                          if (recepcionEmpresaId > 0) setShowRecepcionPersonaDropdown(true);
-                        }}
-                        style={{ paddingRight: '32px', width: '100%', cursor: recepcionEmpresaId <= 0 ? 'not-allowed' : 'text' }}
+                        onFocus={() => setShowRecepcionPersonaDropdown(true)}
+                        style={{ paddingRight: '32px', width: '100%', cursor: 'text' }}
                         required={recepcionPersonaId <= 0}
                       />
                       <svg
@@ -2426,14 +2419,26 @@ export const Inventario: React.FC = () => {
                         }}
                       >
                         {personas
-                          .filter(p => !recepcionPersonaSearchText || p.nombre.toLowerCase().includes(recepcionPersonaSearchText.toLowerCase()) || (p.cedula && p.cedula.includes(recepcionPersonaSearchText)) || (p.cargo && p.cargo.toLowerCase().includes(recepcionPersonaSearchText.toLowerCase())))
+                          .filter(p => {
+                            return !recepcionPersonaSearchText || 
+                              p.nombre.toLowerCase().includes(recepcionPersonaSearchText.toLowerCase()) || 
+                              (p.cedula && p.cedula.includes(recepcionPersonaSearchText)) || 
+                              (p.cargo && p.cargo.toLowerCase().includes(recepcionPersonaSearchText.toLowerCase())) ||
+                              (p.empresa_nombre && p.empresa_nombre.toLowerCase().includes(recepcionPersonaSearchText.toLowerCase()));
+                          })
                           .length === 0 ? (
                             <div style={{ padding: '12px 14px', color: '#64748b', fontSize: '12.5px', textAlign: 'center' }}>
                               No se encontraron empleados coincidentes
                             </div>
                           ) : (
                             personas
-                              .filter(p => !recepcionPersonaSearchText || p.nombre.toLowerCase().includes(recepcionPersonaSearchText.toLowerCase()) || (p.cedula && p.cedula.includes(recepcionPersonaSearchText)) || (p.cargo && p.cargo.toLowerCase().includes(recepcionPersonaSearchText.toLowerCase())))
+                              .filter(p => {
+                                return !recepcionPersonaSearchText || 
+                                  p.nombre.toLowerCase().includes(recepcionPersonaSearchText.toLowerCase()) || 
+                                  (p.cedula && p.cedula.includes(recepcionPersonaSearchText)) || 
+                                  (p.cargo && p.cargo.toLowerCase().includes(recepcionPersonaSearchText.toLowerCase())) ||
+                                  (p.empresa_nombre && p.empresa_nombre.toLowerCase().includes(recepcionPersonaSearchText.toLowerCase()));
+                              })
                               .map(p => (
                                 <div
                                   key={p.id}
@@ -2459,7 +2464,7 @@ export const Inventario: React.FC = () => {
                                 >
                                   <strong style={{ color: 'var(--color-text-main)', display: 'block', fontSize: '13px' }}>{p.nombre}</strong>
                                   <span style={{ fontSize: '11px', color: '#64748b' }}>
-                                    {p.cargo || p.departamento || 'Sin cargo'} • {p.empresa_nombre || 'Sede'} • C.I. {p.cedula || 'N/A'}
+                                    {p.cargo || p.departamento || 'Sin cargo'} • {p.empresa_nombre || 'Sede Principal'} • C.I. {p.cedula || 'N/A'}
                                   </span>
                                 </div>
                               ))
@@ -2488,11 +2493,12 @@ export const Inventario: React.FC = () => {
                       value={recepcionBodegaId}
                       onChange={(e) => setRecepcionBodegaId(Number(e.target.value))}
                     >
-                      <option value="0">Seleccionar bodega de la sede...</option>
+                      <option value="0">Seleccionar bodega destino...</option>
                       {bodegas
-                        .filter(b => recepcionEmpresaId <= 0 || b.empresa_id === recepcionEmpresaId)
                         .map(b => (
-                          <option key={b.id} value={b.id}>{b.nombre}</option>
+                          <option key={b.id} value={b.id}>
+                            {b.nombre} {b.empresa_nombre ? `(${b.empresa_nombre})` : ''}
+                          </option>
                         ))}
                     </select>
                   </div>
@@ -2538,12 +2544,19 @@ export const Inventario: React.FC = () => {
                   )}
                 </div>
 
-                {recepcionEmpresaId <= 0 ? (
-                  <p className="text-muted font-xs text-center py-3">Selecciona la Sede de la cual se devolverán los activos para generar su acta de recepción.</p>
-                ) : recepcionPersonaId <= 0 ? (
-                  <p className="text-muted font-xs text-center py-3">Selecciona un empleado arriba para cargar sus activos asignados en esta sede.</p>
+                {recepcionPersonaId <= 0 ? (
+                  <p className="text-muted font-xs text-center py-3">Selecciona o busca un empleado arriba para cargar sus activos asignados.</p>
+                ) : recepcionEmpresaId <= 0 ? (
+                  <p className="text-muted font-xs text-center py-3">Selecciona la Sede / Empresa de origen arriba para filtrar los activos asignados a este empleado en esa sede.</p>
                 ) : personaAssignedActivos.length === 0 ? (
-                  <p className="text-muted font-xs text-center py-3">El empleado no tiene activos asignados registrados en la sede seleccionada.</p>
+                  <div style={{ textAlign: 'center', padding: '1.5rem 1rem', background: 'var(--bg-panel)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+                    <p style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 'bold', color: 'var(--color-text-main)' }}>
+                      No se registran activos asignados a este empleado en {empresas.find(e => e.id === recepcionEmpresaId)?.nombre || 'esta sede'}.
+                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
+                      Si el empleado va a devolver activos de otra sede (ej: Scala, Condado, Apparca, etc.), selecciona esa sede en el campo <strong>"SEDE / EMPRESA DE ORIGEN"</strong> de arriba.
+                    </p>
+                  </div>
                 ) : (
                   <>
                     {/* FILTROS EN TIEMPO REAL PARA LOS ACTIVOS */}
