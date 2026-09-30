@@ -9,6 +9,9 @@ export const ReporteDiarioView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [selectedTecId, setSelectedTecId] = useState<number | null>(null);
+
+  const selectedTec = data?.tecnicos?.find((t: any) => t.tecnico_id === selectedTecId);
 
   useEffect(() => {
     fetchReporte(fecha);
@@ -247,17 +250,27 @@ export const ReporteDiarioView: React.FC = () => {
                   data.tecnicos.map((t: any, idx: number) => {
                     const totalSla = t.sla_cumplidos + t.sla_vencidos;
                     const slaPct = totalSla > 0 ? `${Math.round((t.sla_cumplidos / totalSla) * 100)}%` : '100%';
+                    const isSelected = selectedTecId === t.tecnico_id;
                     return (
-                      <tr key={idx} className="table-row-hover">
-                        <td style={{ fontWeight: '700', fontSize: '14px' }}>
+                      <tr 
+                        key={idx} 
+                        className={`table-row-hover ${isSelected ? 'active-row' : ''}`}
+                        onClick={() => setSelectedTecId(isSelected ? null : t.tecnico_id)}
+                        style={{ cursor: 'pointer', background: isSelected ? 'rgba(37, 99, 235, 0.08)' : undefined }}
+                        title="Haz clic para ver el desglose detallado de tickets de este técnico"
+                      >
+                        <td style={{ fontWeight: '700', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                            {isSelected ? '▼' : '►'}
+                          </span>
                           {t.nombre_completo}
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           <span
                             className="badge"
                             style={{
-                              background: 'rgba(99, 102, 241, 0.12)',
-                              color: '#6366f1',
+                              background: t.tecnico_id === 0 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(99, 102, 241, 0.12)',
+                              color: t.tecnico_id === 0 ? '#ef4444' : '#6366f1',
                               padding: '3px 8px',
                               borderRadius: '6px',
                               fontWeight: 600,
@@ -294,6 +307,117 @@ export const ReporteDiarioView: React.FC = () => {
             </table>
           </div>
 
+          {/* Detailed Tickets Drawer / Card when a technician is selected */}
+          {selectedTec && (
+            <div className="table-wrapper glass-panel animate-fade" style={{ marginBottom: '24px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: 'var(--color-text-main)' }}>
+                    Detalle de Tickets: {selectedTec.nombre_completo}
+                  </h3>
+                  <p className="text-muted" style={{ margin: '4px 0 0 0', fontSize: '12.5px' }}>
+                    Mostrando {selectedTec.tickets.length} ticket(s) gestionados / abiertos asignados a este especialista.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setSelectedTecId(null)}
+                >
+                  Cerrar Detalle ✕
+                </button>
+              </div>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table className="inventario-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Tipo</th>
+                      <th>Asunto / Requerimiento</th>
+                      <th>Empresa / Sucursal</th>
+                      <th>Solicitante</th>
+                      <th style={{ textAlign: 'center' }}>Estado</th>
+                      <th style={{ textAlign: 'center' }}>Fecha Creación</th>
+                      <th style={{ textAlign: 'center' }}>SLA</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedTec.tickets.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '20px', color: 'var(--color-text-muted)' }}>
+                          No hay tickets asignados a este especialista en este corte.
+                        </td>
+                      </tr>
+                    ) : (
+                      selectedTec.tickets.map((tk: any) => {
+                        const isSlaVencido = tk.sla_estado_str.includes('Vencido');
+                        const isEnRiesgo = tk.sla_estado_str.includes('Riesgo');
+                        return (
+                          <tr key={tk.id}>
+                            <td style={{ fontWeight: '700', color: '#2563eb' }}>#{tk.id}</td>
+                            <td>
+                              <span
+                                className="badge"
+                                style={{
+                                  background: tk.tipo_itil === 'Solicitud' ? 'rgba(2, 132, 199, 0.12)' : 'rgba(124, 58, 237, 0.12)',
+                                  color: tk.tipo_itil === 'Solicitud' ? '#0284c7' : '#7c3aed',
+                                  fontSize: '11px'
+                                }}
+                              >
+                                {tk.tipo_itil}
+                              </span>
+                            </td>
+                            <td style={{ maxWidth: '300px', fontWeight: '500' }}>
+                              <div style={{ fontWeight: '600', color: 'var(--color-text-main)' }}>{tk.titulo}</div>
+                              <div style={{ fontSize: '11.5px', color: 'var(--color-text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {tk.descripcion}
+                              </div>
+                            </td>
+                            <td style={{ fontSize: '12px' }}>
+                              <div>{tk.empresa_nombre}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{tk.sucursal_nombre}</div>
+                            </td>
+                            <td style={{ fontSize: '12.5px' }}>{tk.solicitante}</td>
+                            <td style={{ textAlign: 'center' }}>
+                              <span
+                                className="badge"
+                                style={{
+                                  background: tk.estado === 'Cerrado' || tk.estado === 'Resuelto' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(217, 119, 6, 0.12)',
+                                  color: tk.estado === 'Cerrado' || tk.estado === 'Resuelto' ? '#10b981' : '#d97706',
+                                  fontSize: '11.5px',
+                                  fontWeight: '700'
+                                }}
+                              >
+                                {tk.estado}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'center', fontSize: '12px' }}>
+                              {tk.created_at}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <span
+                                className="badge"
+                                style={{
+                                  background: isSlaVencido ? 'rgba(239, 68, 68, 0.12)' : isEnRiesgo ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                                  color: isSlaVencido ? '#ef4444' : isEnRiesgo ? '#d97706' : '#10b981',
+                                  fontSize: '11px',
+                                  fontWeight: '700'
+                                }}
+                              >
+                                {tk.sla_estado_str}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Information Card */}
           <div
             className="filters-card glass-panel"
@@ -310,7 +434,7 @@ export const ReporteDiarioView: React.FC = () => {
               <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
             <span style={{ fontSize: '13px', color: 'var(--color-text-dim)' }}>
-              <strong>Estructura del archivo Excel descargable:</strong> La primera hoja incluye la matriz y métricas ejecutivas consolidadas. Cada técnico cuenta con una hoja independiente con el detalle de tickets, bitácora de soporte y trazabilidad de atención.
+              <strong>Estructura del archivo Excel descargable:</strong> La primera hoja incluye la matriz y métricas ejecutivas consolidadas. Cada técnico cuenta con una hoja independiente con el detalle de tickets, bitácora de soporte y trazabilidad de atención. Haz clic sobre cualquier fila de la tabla para ver sus tickets detallados.
             </span>
           </div>
         </>
