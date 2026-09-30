@@ -399,8 +399,20 @@ export const ReporteDiarioView: React.FC = () => {
                               <span
                                 className="badge"
                                 style={{
-                                  background: isSlaVencido ? 'rgba(239, 68, 68, 0.12)' : isEnRiesgo ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-                                  color: isSlaVencido ? '#ef4444' : isEnRiesgo ? '#d97706' : '#10b981',
+                                  background: tk.sla_estado_str.includes('N3') || tk.sla_estado_str.includes('Sin SLA')
+                                    ? 'rgba(139, 92, 246, 0.12)'
+                                    : isSlaVencido 
+                                    ? 'rgba(239, 68, 68, 0.12)' 
+                                    : isEnRiesgo 
+                                    ? 'rgba(245, 158, 11, 0.12)' 
+                                    : 'rgba(16, 185, 129, 0.12)',
+                                  color: tk.sla_estado_str.includes('N3') || tk.sla_estado_str.includes('Sin SLA')
+                                    ? '#8b5cf6'
+                                    : isSlaVencido 
+                                    ? '#ef4444' 
+                                    : isEnRiesgo 
+                                    ? '#d97706' 
+                                    : '#10b981',
                                   fontSize: '11px',
                                   fontWeight: '700'
                                 }}
