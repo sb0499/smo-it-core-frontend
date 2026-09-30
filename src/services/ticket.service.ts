@@ -174,6 +174,10 @@ export const ticketService = {
   getReporteUrl(): string {
     const token = localStorage.getItem('smo_token');
     return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/tickets/reporte/semanal?token=${token}`;
+  },
+
+  async getReporteStats(params?: { start_date?: string; end_date?: string; tecnico_id?: string }): Promise<any> {
+    return apiClient.get('/reportes/stats', { params });
   }
 };
 
