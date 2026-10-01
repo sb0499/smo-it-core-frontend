@@ -77,7 +77,10 @@ export const Dashboard: React.FC = () => {
 
         // Filter tickets
         const filteredTickets = ticketsList.filter(
-          (t: Ticket) => t.tecnico_id === user.id,
+          (t: Ticket) =>
+            t.tecnico_id === user.id ||
+            t.tecnico_n1_id === user.id ||
+            t.tecnico_n2_id === user.id,
         );
 
         // Filter assets
