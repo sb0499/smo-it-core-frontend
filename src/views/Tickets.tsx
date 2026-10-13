@@ -607,7 +607,7 @@ export const Tickets: React.FC = () => {
         );
       }
       const updated = await ticketService.updateTicket(selectedTicket.id, {
-        estado: "Cerrado",
+        estado: isTechN2 ? "Resuelto" : "Cerrado",
         observaciones: cierreObs,
         tecnico_id: editTechId > 0 ? editTechId : user?.id,
       });
@@ -615,7 +615,11 @@ export const Tickets: React.FC = () => {
       setSelectedTicket(null);
       setCierreFiles([]);
       fetchTicketsData();
-      showAlert("Ticket cerrado definitivamente con éxito.");
+      if (isTechN2) {
+        showAlert("Ticket marcado como Resuelto y devuelto a N1 exitosamente.");
+      } else {
+        showAlert("Ticket cerrado definitivamente con éxito.");
+      }
     } catch (err: any) {
       showAlert("Error al finalizar el ticket: " + err.message);
     } finally {
