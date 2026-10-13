@@ -120,6 +120,15 @@ export interface IngresoBodegaItem {
   bodega_id?: number;
 }
 
+export interface HistorialIngresoBodega {
+  id: number;
+  ingreso_bodega_id: number;
+  usuario_id: number | null;
+  usuario_nombre?: string;
+  fecha: string;
+  cambios: string;
+}
+
 export interface IngresoBodega {
   id: number;
   codigo_ingreso: string;
@@ -141,7 +150,38 @@ export interface IngresoBodega {
   revisado_por_cargo?: string;
   cantidad_activos?: number;
   activos?: Activo[];
+  historial_ediciones?: HistorialIngresoBodega[];
   created_at: string;
+}
+
+export interface UpdateIngresoBodegaPayload {
+  proveedor_id?: number | null;
+  nro_orden_compra?: string;
+  nro_factura?: string | null;
+  nro_solicitud_pago?: string | null;
+  fecha_compra?: string;
+  fecha_ingreso?: string;
+  descripcion?: string;
+  revisado_por?: string;
+  revisado_por_cargo?: string;
+  activos_actualizar?: Array<{
+    id: number;
+    serial?: string;
+    marca?: string;
+    modelo?: string;
+    especificaciones?: string;
+    tipo_equipo_id?: number;
+    bodega_id?: number;
+  }>;
+  activos_nuevos?: Array<{
+    tipo_equipo_id: number;
+    marca: string;
+    modelo: string;
+    serial?: string;
+    especificaciones?: string;
+    bodega_id?: number;
+  }>;
+  activos_eliminar_ids?: number[];
 }
 
 export interface EgresoBodega {
@@ -308,6 +348,10 @@ export const inventoryService = {
     activos: IngresoBodegaItem[];
   }): Promise<IngresoBodega> {
     return apiClient.post<IngresoBodega>('/inventarios/ingresos', payload);
+  },
+
+  async updateIngresoBodega(id: number, payload: UpdateIngresoBodegaPayload): Promise<IngresoBodega> {
+    return apiClient.put<IngresoBodega>(`/inventarios/ingresos/${id}`, payload);
   },
 
   getActaIngresoUrl(ingresoId: number): string {
