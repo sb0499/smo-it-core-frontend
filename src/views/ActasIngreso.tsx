@@ -11,6 +11,28 @@ import { useAuth } from "../context/AuthContext";
 import { projectService, User } from "../services/project.service";
 import "./Inventario.css";
 
+interface EditActivoItem {
+  id: number;
+  codigo: string;
+  serial: string;
+  marca: string;
+  modelo: string;
+  especificaciones: string;
+  tipo_equipo_id: number;
+  bodega_id: number;
+  estado: string;
+}
+
+interface EditActivoNuevoItem {
+  tempId: string;
+  tipo_equipo_id: number;
+  marca: string;
+  modelo: string;
+  serial: string;
+  especificaciones: string;
+  bodega_id?: number;
+}
+
 export const ActasIngreso: React.FC = () => {
   const { user } = useAuth();
   const [loggedInTech, setLoggedInTech] = useState<User | null>(null);
@@ -56,29 +78,11 @@ export const ActasIngreso: React.FC = () => {
   const [editRevisadoPorCargo, setEditRevisadoPorCargo] = useState<string>('GERENTE DE TI');
 
   // Existing assets in editing
-  const [editActivosExistentes, setEditActivosExistentes] = useState<Array<{
-    id: number;
-    codigo: string;
-    serial: string;
-    marca: string;
-    modelo: string;
-    especificaciones: string;
-    tipo_equipo_id: number;
-    bodega_id: number;
-    estado: string;
-  }>>([]);
+  const [editActivosExistentes, setEditActivosExistentes] = useState<EditActivoItem[]>([]);
   const [editActivosEliminarIds, setEditActivosEliminarIds] = useState<number[]>([]);
 
   // Staged new assets to add
-  const [editActivosNuevos, setEditActivosNuevos] = useState<Array<{
-    tempId: string;
-    tipo_equipo_id: number;
-    marca: string;
-    modelo: string;
-    serial: string;
-    especificaciones: string;
-    bodega_id?: number;
-  }>>([]);
+  const [editActivosNuevos, setEditActivosNuevos] = useState<EditActivoNuevoItem[]>([]);
 
   // New asset staging inputs
   const [newTipoEquipoId, setNewTipoEquipoId] = useState<number>(0);
@@ -283,7 +287,7 @@ export const ActasIngreso: React.FC = () => {
     }
 
     const count = (newEsLote && newCantidad > 1) ? newCantidad : 1;
-    const newItems = [];
+    const newItems: EditActivoNuevoItem[] = [];
     for (let i = 0; i < count; i++) {
       newItems.push({
         tempId: 'new_' + Date.now() + '_' + i,
