@@ -18,6 +18,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   transition: var(--transition-smooth);
+  position: relative;
+  z-index: 20;
 }
 
 .view-content-wrapper {
