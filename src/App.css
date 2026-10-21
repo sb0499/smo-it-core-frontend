@@ -29,6 +29,19 @@
   width: 100%;
   max-width: 1720px;
   margin: 0 auto;
+  min-height: 0;
+}
+
+/* Chat view lock: prevents outer page scrolling so sidebar and chat stream scroll independently */
+.app-main-content.view-chats-active {
+  overflow: hidden;
+  padding-bottom: 24px;
+}
+
+.app-main-content.view-chats-active .view-content-wrapper {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Responsive adjustments across breakpoints */

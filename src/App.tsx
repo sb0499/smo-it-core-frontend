@@ -263,7 +263,11 @@ function AppContent() {
         setMobileOpen={setMobileOpen}
       />
 
-      <main className="app-main-content">
+      <main
+        className={`app-main-content ${
+          activeView === "chats" ? "view-chats-active" : ""
+        }`}
+      >
         <Navbar
           activeView={activeView}
           setActiveView={setActiveView}
