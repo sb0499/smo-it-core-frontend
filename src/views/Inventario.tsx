@@ -514,7 +514,7 @@ export const Inventario: React.FC = () => {
         empresa_id: assetEmpresaId,
         sucursal_id: assetSucursalId > 0 ? assetSucursalId : undefined,
         proveedor_id: assetProveedorId > 0 ? assetProveedorId : undefined,
-        nro_orden_compra: assetNroOrdenCompra.trim(),
+        nro_orden_compra: assetNroOrdenCompra.trim() || undefined,
         nro_factura: assetNroFactura.trim() || undefined,
         nro_solicitud_pago: assetNroSolicitudPago.trim() || undefined,
         fecha_compra: assetFechaCompra,

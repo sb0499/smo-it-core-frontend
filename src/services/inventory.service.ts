@@ -138,7 +138,7 @@ export interface IngresoBodega {
   sucursal_nombre?: string;
   proveedor_id?: number | null;
   proveedor_nombre?: string;
-  nro_orden_compra: string;
+  nro_orden_compra?: string | null;
   nro_factura?: string | null;
   nro_solicitud_pago?: string | null;
   fecha_compra: string;
@@ -156,7 +156,7 @@ export interface IngresoBodega {
 
 export interface UpdateIngresoBodegaPayload {
   proveedor_id?: number | null;
-  nro_orden_compra?: string;
+  nro_orden_compra?: string | null;
   nro_factura?: string | null;
   nro_solicitud_pago?: string | null;
   fecha_compra?: string;
@@ -337,7 +337,7 @@ export const inventoryService = {
     empresa_id: number;
     sucursal_id?: number;
     proveedor_id?: number;
-    nro_orden_compra: string;
+    nro_orden_compra?: string | null;
     nro_factura?: string;
     nro_solicitud_pago?: string;
     fecha_compra: string;

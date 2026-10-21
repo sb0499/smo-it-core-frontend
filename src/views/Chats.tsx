@@ -17,6 +17,10 @@ import {
   decryptMessage,
 } from "../utils/crypto";
 import "./Chats.css";
+import { EmojiStickerPicker } from "../components/EmojiStickerPicker";
+
+// Flag para ocultar temporalmente emojis y stickers del chat sin borrar su lógica
+const SHOW_EMOJIS_STICKERS = false;
 
 export const Chats: React.FC = () => {
   const { user, userPrivateKey } = useAuth();
@@ -43,6 +47,9 @@ export const Chats: React.FC = () => {
   // File attachment state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Emoji & Sticker picker state
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // Manage members modal
   const [showMembersModal, setShowMembersModal] = useState(false);
@@ -245,6 +252,55 @@ export const Chats: React.FC = () => {
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err: any) {
       showAlert("Error enviando mensaje: " + err.message);
+    }
+  };
+
+  const handleInsertEmoji = (emoji: string) => {
+    setNewMsg((prev) => prev + emoji);
+  };
+
+  const dataUrlToFile = (dataUrl: string, filename: string): File => {
+    const arr = dataUrl.split(",");
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : "image/png";
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], `${filename}.png`, { type: mime });
+  };
+
+  const handleSendSticker = async (
+    stickerDataUrl: string,
+    stickerName: string,
+  ) => {
+    if (!activeCanal) return;
+    try {
+      const stickerFile = dataUrlToFile(stickerDataUrl, stickerName);
+      const sent = await chatService.addMensaje(
+        activeCanal.id,
+        "[STICKER]",
+        stickerFile,
+      );
+
+      const decryptedSent: ChatMensaje = {
+        ...sent,
+        usuario_id: user?.id || sent.usuario_id,
+        mensaje: "[STICKER]",
+        archivo_nombre: stickerFile.name,
+        archivo_ruta: sent.archivo_ruta,
+        archivo_mimetype: "image/png",
+        usuario_nombre: user?.nombre || "Tú",
+        usuario_rol: user?.rol,
+      };
+      (decryptedSent as any).isEncrypted = true;
+
+      setMensajes((prev) => [...prev, decryptedSent]);
+      setShowEmojiPicker(false);
+    } catch (err: any) {
+      showAlert("Error enviando sticker: " + err.message);
     }
   };
 
@@ -801,13 +857,16 @@ export const Chats: React.FC = () => {
                       const isMe =
                         Boolean(user?.id) &&
                         Number(m.usuario_id) === Number(user?.id);
+                      const isSticker =
+                        m.mensaje === "[STICKER]" ||
+                        m.archivo_nombre?.startsWith("sticker_");
 
                       return (
                         <div
                           key={m.id}
                           className={`message-bubble-row ${
                             isMe ? "msg-sent" : "msg-received"
-                          } animate-slide-up`}
+                          } ${isSticker ? "is-sticker-row" : ""} animate-slide-up`}
                         >
                           <div className="msg-avatar">
                             {(
@@ -818,8 +877,34 @@ export const Chats: React.FC = () => {
                               .charAt(0)
                               .toUpperCase()}
                           </div>
-                          <div className="msg-content-wrapper">
-                            <div className="msg-meta">
+
+                          {isSticker && m.archivo_ruta ? (
+                            <div className="sticker-bubble-content">
+                              <img
+                                src={
+                                  API_BASE_URL.replace("/api/v1", "") +
+                                  m.archivo_ruta
+                                }
+                                alt={m.archivo_nombre || "Sticker"}
+                                className="chat-sticker-img"
+                              />
+                              <div className="sticker-meta-tag">
+                                <span className="msg-author-name">
+                                  {isMe
+                                    ? `${m.usuario_nombre || user?.nombre || "Tú"} (Tú)`
+                                    : m.usuario_nombre}
+                                </span>
+                                <span className="msg-time text-dim">
+                                  {new Date(m.created_at).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="msg-content-wrapper">
+                              <div className="msg-meta">
                               <span
                                 className="msg-author-name"
                                 style={
@@ -1001,11 +1086,12 @@ export const Chats: React.FC = () => {
                               )}
                             </div>
                           )}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    );
-                  })
-                )}
+                      );
+                    })
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
 
@@ -1074,61 +1160,101 @@ export const Chats: React.FC = () => {
                   </div>
                 )}
 
-                {/* Send message text box */}
-                <form
-                  onSubmit={handleSendMessage}
-                  className="message-composer-form"
-                >
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    style={{ display: "none" }}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-secondary attach-file-btn"
-                    onClick={triggerFileInput}
-                    title="Adjuntar archivo"
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: "8px",
-                      border: "1px solid var(--border-color)",
-                      background: "var(--bg-panel)",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
+                {/* Send message text box & Emoji/Sticker popover */}
+                <div style={{ position: "relative" }}>
+                  {SHOW_EMOJIS_STICKERS && showEmojiPicker && (
+                    <EmojiStickerPicker
+                      isOpen={showEmojiPicker}
+                      onClose={() => setShowEmojiPicker(false)}
+                      onSelectEmoji={handleInsertEmoji}
+                      onSendSticker={handleSendSticker}
+                    />
+                  )}
+                  <form
+                    onSubmit={handleSendMessage}
+                    className="message-composer-form"
                   >
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      style={{ display: "none" }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary attach-file-btn"
+                      onClick={triggerFileInput}
+                      title="Adjuntar archivo"
+                      style={{
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        border: "1px solid var(--border-color)",
+                        background: "var(--bg-panel)",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
                     >
-                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                    </svg>
-                  </button>
-                  <input
-                    type="text"
-                    className="form-control composer-input"
-                    placeholder={`Enviar mensaje a ${activeCanal.is_dm ? activeCanal.dm_destinatario_nombre || "chat directo" : "#" + activeCanal.nombre}...`}
-                    value={newMsg}
-                    onChange={(e) => setNewMsg(e.target.value)}
-                    required={!selectedFile}
-                  />
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-send-msg"
-                  >
-                    Enviar ➔
-                  </button>
-                </form>
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                      </svg>
+                    </button>
+
+                    {/* Emoji & Sticker button (Oculto temporalmente) */}
+                    {SHOW_EMOJIS_STICKERS && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary emoji-sticker-btn"
+                        onClick={() => setShowEmojiPicker((prev) => !prev)}
+                        title="Emojis y Stickers (WhatsApp)"
+                        style={{
+                          padding: "8px 10px",
+                          borderRadius: "8px",
+                          border: "1px solid var(--border-color)",
+                          background: showEmojiPicker
+                            ? "rgba(99, 102, 241, 0.15)"
+                            : "var(--bg-panel)",
+                          color: showEmojiPicker
+                            ? "var(--color-primary)"
+                            : "var(--color-text-main)",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "16px",
+                          lineHeight: 1,
+                        }}
+                      >
+                        😊
+                      </button>
+                    )}
+
+                    <input
+                      type="text"
+                      className="form-control composer-input"
+                      placeholder={`Enviar mensaje a ${activeCanal.is_dm ? activeCanal.dm_destinatario_nombre || "chat directo" : "#" + activeCanal.nombre}...`}
+                      value={newMsg}
+                      onChange={(e) => setNewMsg(e.target.value)}
+                      required={!selectedFile}
+                    />
+                    <button
+                      type="submit"
+                      className="btn btn-primary btn-send-msg"
+                    >
+                      Enviar ➔
+                    </button>
+                  </form>
+                </div>
               </>
             ) : (
               <div className="select-channel-placeholder">

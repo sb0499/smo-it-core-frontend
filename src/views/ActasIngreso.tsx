@@ -313,10 +313,6 @@ export const ActasIngreso: React.FC = () => {
 
   const handleSaveEditIngreso = async () => {
     if (!editingIngreso) return;
-    if (!editNroOrdenCompra.trim()) {
-      showAlert('El Nro. de Orden de Compra es obligatorio');
-      return;
-    }
     if (!editFechaCompra || !editFechaIngreso) {
       showAlert('Las fechas de compra e ingreso son obligatorias');
       return;
@@ -338,7 +334,7 @@ export const ActasIngreso: React.FC = () => {
 
       const payload: UpdateIngresoBodegaPayload = {
         proveedor_id: editProveedorId > 0 ? editProveedorId : null,
-        nro_orden_compra: editNroOrdenCompra.trim(),
+        nro_orden_compra: editNroOrdenCompra.trim() || null,
         nro_factura: editNroFactura.trim() || null,
         nro_solicitud_pago: editNroSolicitudPago.trim() || null,
         fecha_compra: editFechaCompra,
@@ -643,7 +639,7 @@ export const ActasIngreso: React.FC = () => {
                     </td>
                     <td>{ing.empresa_nombre || "-"}</td>
                     <td>{ing.proveedor_nombre || "Sin proveedor"}</td>
-                    <td>{ing.nro_orden_compra}</td>
+                    <td>{ing.nro_orden_compra || "-"}</td>
                     <td
                       style={{
                         maxWidth: "200px",
@@ -1173,7 +1169,7 @@ export const ActasIngreso: React.FC = () => {
                 </div>
                 <div>
                   <strong>Nro. Orden Compra:</strong>{" "}
-                  {detailIngreso.nro_orden_compra}
+                  {detailIngreso.nro_orden_compra || "N/A"}
                 </div>
                 <div>
                   <strong>Nro. Factura:</strong>{" "}
@@ -1725,13 +1721,13 @@ export const ActasIngreso: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="form-label">Nro. Orden de Compra *</label>
+                            <label className="form-label">Nro. Orden de Compra (Opcional)</label>
                             <input
                               type="text"
                               className="form-control"
                               value={editNroOrdenCompra}
                               onChange={(e) => setEditNroOrdenCompra(e.target.value)}
-                              placeholder="OC-2026-..."
+                              placeholder="OC-2026-... (opcional)"
                             />
                           </div>
 
