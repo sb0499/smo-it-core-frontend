@@ -232,6 +232,7 @@ export const Chats: React.FC = () => {
       // Keep it decrypted in local UI state
       const decryptedSent: ChatMensaje = {
         ...sent,
+        usuario_id: user?.id || sent.usuario_id,
         mensaje: newMsg,
         usuario_nombre: user?.nombre || "Tú",
         usuario_rol: user?.rol,
@@ -796,31 +797,53 @@ export const Chats: React.FC = () => {
                       </p>
                     </div>
                   ) : (
-                    mensajes.map((m) => (
-                      <div
-                        key={m.id}
-                        className="message-bubble-row animate-slide-up"
-                      >
-                        <div className="msg-avatar">
-                          {(m.usuario_nombre || "S").charAt(0).toUpperCase()}
-                        </div>
-                        <div className="msg-content-wrapper">
-                          <div className="msg-meta">
-                            <span className="msg-author-name">
-                              {m.usuario_nombre}
-                            </span>
-                            <span
-                              className={`msg-role-lbl role-${(m.usuario_rol || "usuario").toLowerCase()}`}
-                            >
-                              {getRoleLabel(m.usuario_rol)}
-                            </span>
-                            <span className="msg-time text-dim">
-                              {new Date(m.created_at).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
+                    mensajes.map((m) => {
+                      const isMe =
+                        Boolean(user?.id) &&
+                        Number(m.usuario_id) === Number(user?.id);
+
+                      return (
+                        <div
+                          key={m.id}
+                          className={`message-bubble-row ${
+                            isMe ? "msg-sent" : "msg-received"
+                          } animate-slide-up`}
+                        >
+                          <div className="msg-avatar">
+                            {(
+                              m.usuario_nombre ||
+                              (isMe ? user?.nombre : "S") ||
+                              "S"
+                            )
+                              .charAt(0)
+                              .toUpperCase()}
                           </div>
+                          <div className="msg-content-wrapper">
+                            <div className="msg-meta">
+                              <span
+                                className="msg-author-name"
+                                style={
+                                  isMe
+                                    ? { color: "var(--color-primary)" }
+                                    : undefined
+                                }
+                              >
+                                {isMe
+                                  ? `${m.usuario_nombre || user?.nombre || "Tú"} (Tú)`
+                                  : m.usuario_nombre}
+                              </span>
+                              <span
+                                className={`msg-role-lbl role-${(m.usuario_rol || "usuario").toLowerCase()}`}
+                              >
+                                {getRoleLabel(m.usuario_rol)}
+                              </span>
+                              <span className="msg-time text-dim">
+                                {new Date(m.created_at).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
 
                           {m.mensaje && (
                             <p
@@ -980,8 +1003,9 @@ export const Chats: React.FC = () => {
                           )}
                         </div>
                       </div>
-                    ))
-                  )}
+                    );
+                  })
+                )}
                   <div ref={messagesEndRef} />
                 </div>
 

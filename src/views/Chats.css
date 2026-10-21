@@ -237,16 +237,70 @@
 
 .message-bubble-row {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   align-items: flex-start;
   flex-shrink: 0;
+  width: 100%;
+}
+
+/* MENSAJES RECIBIDOS (IZQUIERDA) */
+.message-bubble-row.msg-received {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.message-bubble-row.msg-received .msg-avatar {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+}
+
+.message-bubble-row.msg-received .msg-content-wrapper {
+  background: var(--overlay-02);
+  border: var(--border-glass);
+  border-radius: 4px 16px 16px 16px;
+  max-width: 75%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.message-bubble-row.msg-received .msg-meta {
+  justify-content: flex-start;
+}
+
+/* MENSAJES ENVIADOS POR MÍ (DERECHA) */
+.message-bubble-row.msg-sent {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.message-bubble-row.msg-sent .msg-avatar {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.message-bubble-row.msg-sent .msg-content-wrapper {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(139, 92, 246, 0.12));
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 16px 4px 16px 16px;
+  max-width: 75%;
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.12);
+}
+
+.message-bubble-row.msg-sent .msg-meta {
+  flex-direction: row-reverse;
+}
+
+.message-bubble-row.msg-sent .msg-author-name {
+  color: var(--color-primary);
+}
+
+.message-bubble-row.msg-sent .msg-attachment-box {
+  align-self: flex-end;
 }
 
 .msg-avatar {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: #ffffff;
   font-weight: 700;
   display: flex;
@@ -260,11 +314,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  background: var(--overlay-01);
-  border: var(--border-glass);
-  padding: 10px 14px;
-  border-radius: 0 12px 12px 12px;
-  max-width: 80%;
+  padding: 11px 15px;
   word-break: break-word;
 }
 
@@ -298,8 +348,8 @@
 }
 
 .msg-content-text {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 13.5px;
+  line-height: 1.55;
   color: var(--color-text-main);
   white-space: pre-wrap;
   word-break: break-word;
@@ -357,6 +407,10 @@
     max-height: 180px;
     border-right: none;
     border-bottom: 1px solid var(--border-color);
+  }
+  .message-bubble-row.msg-received .msg-content-wrapper,
+  .message-bubble-row.msg-sent .msg-content-wrapper {
+    max-width: 88%;
   }
 }
 
