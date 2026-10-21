@@ -49,7 +49,17 @@ export const Chats: React.FC = () => {
   const [channelMembers, setChannelMembers] = useState<ChatCanalMiembro[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const decryptedCacheRef = useRef<Map<number, string>>(new Map());
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior,
+      });
+    }
+  };
 
   const fetchChannels = async () => {
     try {
@@ -105,6 +115,7 @@ export const Chats: React.FC = () => {
         channelKey,
       );
       setMensajes(decryptedHistory);
+      setTimeout(() => scrollToBottom("auto"), 50);
       if (canal.is_private) {
         const members = await chatService.getCanalMiembros(canal.id);
         setChannelMembers(members);
@@ -120,7 +131,7 @@ export const Chats: React.FC = () => {
 
   // Scroll to bottom when messages list changes
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollToBottom("smooth");
   }, [mensajes]);
 
   // Dynamic message fetch loop
@@ -705,7 +716,7 @@ export const Chats: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="messages-timeline-box">
+                <div className="messages-timeline-box" ref={messagesContainerRef}>
                   {/* Security Server-Side Encryption Banner */}
                   {(activeCanal.is_private || activeCanal.is_dm) && (
                     <div
