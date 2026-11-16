@@ -236,8 +236,8 @@ export const ActasIngreso: React.FC = () => {
       setEditNroOrdenCompra(full.nro_orden_compra || '');
       setEditNroFactura(full.nro_factura || '');
       setEditNroSolicitudPago(full.nro_solicitud_pago || '');
-      setEditFechaCompra(full.fecha_compra ? full.fecha_compra.split('T')[0] : '');
-      setEditFechaIngreso(full.fecha_ingreso ? full.fecha_ingreso.split('T')[0] : '');
+      setEditFechaCompra(full.fecha_compra ? full.fecha_compra.split(/[T ]/)[0] : '');
+      setEditFechaIngreso(full.fecha_ingreso ? full.fecha_ingreso.split(/[T ]/)[0] : '');
       setEditDescripcion(full.descripcion || '');
       setEditRevisadoPor(full.revisado_por || 'Paulina Porras');
       setEditRevisadoPorCargo(full.revisado_por_cargo || 'GERENTE DE TI');
@@ -652,7 +652,7 @@ export const ActasIngreso: React.FC = () => {
                     </td>
                     <td>
                       {ing.fecha_ingreso
-                        ? ing.fecha_ingreso.split("T")[0]
+                        ? ing.fecha_ingreso.split(/[T ]/)[0]
                         : "-"}
                     </td>
                     <td>
@@ -772,9 +772,9 @@ export const ActasIngreso: React.FC = () => {
                     </td>
                     <td>
                       {egr.fecha_egreso
-                        ? egr.fecha_egreso.split("T")[0]
+                        ? egr.fecha_egreso.split(/[T ]/)[0]
                         : egr.created_at
-                          ? egr.created_at.split("T")[0]
+                          ? egr.created_at.split(/[T ]/)[0]
                           : "-"}
                     </td>
                     <td>
@@ -937,9 +937,9 @@ export const ActasIngreso: React.FC = () => {
                         </td>
                         <td>
                           {egr.fecha_egreso
-                            ? egr.fecha_egreso.split("T")[0]
+                            ? egr.fecha_egreso.split(/[T ]/)[0]
                             : egr.created_at
-                              ? egr.created_at.split("T")[0]
+                              ? egr.created_at.split(/[T ]/)[0]
                               : "-"}
                         </td>
                         <td>
@@ -1040,9 +1040,9 @@ export const ActasIngreso: React.FC = () => {
                     <td>{r.area || "-"}</td>
                     <td>
                       {r.fecha_recepcion
-                        ? r.fecha_recepcion.split("T")[0]
+                        ? r.fecha_recepcion.split(/[T ]/)[0]
                         : r.created_at
-                          ? r.created_at.split("T")[0]
+                          ? r.created_at.split(/[T ]/)[0]
                           : "-"}
                     </td>
                     <td>
@@ -1178,7 +1178,7 @@ export const ActasIngreso: React.FC = () => {
                 <div>
                   <strong>Fecha Ingreso:</strong>{" "}
                   {detailIngreso.fecha_ingreso
-                    ? detailIngreso.fecha_ingreso.split("T")[0]
+                    ? detailIngreso.fecha_ingreso.split(/[T ]/)[0]
                     : "-"}
                 </div>
                 <div>
@@ -2191,7 +2191,7 @@ export const ActasIngreso: React.FC = () => {
                 <div>
                   <strong>Fecha Egreso:</strong>{" "}
                   {detailEgreso.fecha_egreso
-                    ? detailEgreso.fecha_egreso.split("T")[0]
+                    ? detailEgreso.fecha_egreso.split(/[T ]/)[0]
                     : "-"}
                 </div>
                 <div>
